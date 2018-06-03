@@ -701,7 +701,7 @@ var animals = [
 ]
 
 function getRandomServerName() {
-	return	fruits[Math.floor(Math.random() * fruits.length)] + 
+	return	fruits[Math.floor(Math.random() * fruits.length)] + " " +
 			animals[Math.floor(Math.random() * animals.length)];
 }
 
