@@ -1,0 +1,23 @@
+{
+	"name": "phoenixbot",
+	"version": "1.0.0",
+	"description": "a Discord bot for the phoenix legacy community",
+	"main": "entry.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://gitlab.com/codakairos/phoenixbot.git"
+	},
+	"author": "CodaKairos",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://gitlab.com/codakairos/phoenixbot/issues"
+	},
+	"homepage": "https://gitlab.com/codakairos/phoenixbot#README",
+	"dependencies": {
+		"discord.js": "^11.2.1",
+		"npm": "^5.5.1"
+	}
+}

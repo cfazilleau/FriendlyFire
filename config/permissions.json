@@ -1,0 +1,38 @@
+{
+    "global": {
+        "ping": true,
+        "plug": true,
+        "rules": true,
+        "yn": true,
+        "ynu": true,
+        "poll": true
+    },
+    "roles": {
+        "Admin": {
+            "17": true,
+            "hook": true,
+            "alias": true,
+            "aliases": true,
+            "say": true,
+            "invite": true,
+            "delete": true,
+            "setgender": true,
+            "getgender": true
+        },
+        "Original": {
+            "invite": true
+        },
+        "Habitués": {
+            "invite": true
+        },
+        "Membres": {
+            "invite": true
+        },
+        "Invités": {}
+    },
+    "users": {
+        "145893868410372096": {
+            "17": true
+        }
+    }
+}

@@ -1,0 +1,6 @@
+{
+	"main": "hooker.js",
+	"dependencies": {
+		"request": "^2.83.0"
+	}
+}
