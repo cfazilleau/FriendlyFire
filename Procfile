@@ -1,1 +1,1 @@
-bot: node entry.js
+bot: node .

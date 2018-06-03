@@ -1,5 +1,5 @@
 node_modules
-auth.json
+#auth.json
 *.code-workspace
 package-lock.json
 .vscode
