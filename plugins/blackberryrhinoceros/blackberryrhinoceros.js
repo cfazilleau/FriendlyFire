@@ -697,7 +697,7 @@ var animals = [
 	"Zebra Shark",
 	"Zebu",
 	"Zonkey",
-	"Zorse",
+	"Zorse"
 ]
 
 function getRandomServerName() {
@@ -713,6 +713,6 @@ exports.servername = {
 	usage: '',
 	description: '10000 balles si tu trouves lemon squid',
 	process: function (bot, msg, suffix) {
-		mag.reply(getRandomServerName());
+		msg.reply(getRandomServerName());
 	}
 }
