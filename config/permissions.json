@@ -7,9 +7,15 @@
 			"invite": true,
 			"testjoin": true
 		},
-		"Original": {},
-		"Habitués": {},
-		"Membres": {},
+		"Original": {
+			"invite": true
+		},
+		"Habitués": {
+			"invite": true
+		},
+		"Membres": {
+			"invite": true
+		},
 		"Invités": {}
 	},
 	"users": {}
