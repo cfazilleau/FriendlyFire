@@ -19,6 +19,12 @@
 		"Original": {},
 		"Habitués": {},
 		"Membres": {},
+		"Aspirant": {
+			"yn": false,
+			"ynu": false,
+			"poll": false,
+			"invite": false
+		},
 		"Invités": {
 			"yn": false,
 			"ynu": false,

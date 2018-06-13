@@ -12,6 +12,7 @@ exports.say = {
 	description: 'make the bot say something',
 	process: function (bot, msg, suffix) {
 		msg.channel.send(suffix);
+		return msg.delete();
 	}
 }
 
