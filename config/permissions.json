@@ -2,7 +2,10 @@
 	"global": {
 		"invite": true,
 		"plug": true,
-		"rules": true
+		"rules": true,
+		"yn": true,
+		"ynu": true,
+		"poll": true
 	},
 	"roles": {
 		"Admin": {
@@ -16,6 +19,9 @@
 		"Habitués": {},
 		"Membres": {},
 		"Invités": {
+			"yn": false,
+			"ynu": false,
+			"poll": false,
 			"invite": false
 		}
 	},
