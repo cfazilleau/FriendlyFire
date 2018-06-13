@@ -8,7 +8,6 @@
 		"Admin": {
 			"alias": true,
 			"aliases": true,
-			"invite": true,
 			"testjoin": true,
 			"17": true,
 			"delete": true
