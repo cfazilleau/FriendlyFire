@@ -44,7 +44,7 @@ function getRandomGreeting() {
 
 exports.commands = [
 	'invite',
-	'test'
+	'testjoin'
 ];
 
 exports.events = [
@@ -118,8 +118,8 @@ exports.invite = {
 	}
 }
 
-exports.test = {
-	usage: 'test function',
+exports.testjoin = {
+	usage: 'test join event',
 	description: '',
 	process: function (bot, msg, suffix) {
 		exports.guildMemberAdd.process(msg.author);

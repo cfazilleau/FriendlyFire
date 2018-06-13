@@ -3,7 +3,9 @@
 	"roles": {
 		"Admin": {
 			"alias": true,
-			"aliases": true
+			"aliases": true,
+			"invite": true,
+			"testjoin": true
 		},
 		"Original": {},
 		"Habitués": {},
