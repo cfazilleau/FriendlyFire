@@ -1,32 +1,14 @@
 {
-    "global": {
-        "ping": true,
-        "plug": true,
-        "rules": true,
-        "yn": true,
-        "ynu": true,
-        "poll": true,
-        "test": true,
-        "invite": true
-    },
-    "roles": {
-        "Admin": {
-            "17": true,
-            "hook": true,
-            "alias": true,
-            "aliases": true,
-            "say": true,
-            "delete": true,
-            "setgender": true,
-            "getgender": true
-        },
-        "Original": {},
-        "Habitués": {},
-        "Membres": {},
-        "Invités": {
-            "invite": false
-        }
-    },
-    "users": {
-    }
+	"global": {},
+	"roles": {
+		"Admin": {
+			"alias": true,
+			"aliases": true
+		},
+		"Original": {},
+		"Habitués": {},
+		"Membres": {},
+		"Invités": {}
+	},
+	"users": {}
 }
