@@ -24,7 +24,7 @@ var greetings = [
 
 var welcomeMessage = 
 	'**BIENVENUE SUR PHOENIX !!**\n' +
-	'Bienvenue a toi, ' + user + ', sur le discord de Phoenix Legacy.\n' +
+	'Bienvenue a toi sur le discord de Phoenix Legacy.\n' +
 	'ici, on essaie au maximum de ne pas ressembler aux *X* autres serveurs discord que l\'on peut trouver.\n' +
 	'c\'est pourquoi on tiens a connaitre tout le monde, alors n\'hesite pas a venir discuter avec des plus "haut gradés" :D\n' +
 	/*
