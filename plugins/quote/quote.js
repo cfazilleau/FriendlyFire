@@ -73,20 +73,16 @@ exports.message = {
 						embed.setAuthor(tmp.author, 'http://i.imgur.com/EeC5BAb.png');
 						embed.setColor('#2ea42a');
 						embed.setDescription(tmp.quote);
-						message.channel.sendEmbed(embed).then(msg => {
-							var cont = true;
-							msg.channel.fetchMessages({ limit: 50 }).then(function (messages) {
+						msg.channel.fetchMessages({ limit: 50 }).then(function (messages) {
+							message.channel.sendEmbed(embed).then(msg => {
 								messages.forEach(function (mssg) {
 									if (mssg.author.id === msg.author.id) {
-										if (cont) {
-											cont = false;
-											continue;
-										}
 										mssg.delete();
 									}
 								});
 							});
 						});
+						
 					}
 				});
 			}
