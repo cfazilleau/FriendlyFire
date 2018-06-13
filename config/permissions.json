@@ -1,22 +1,28 @@
 {
-	"global": {},
+	"global": {
+		"invite": true,
+		"plug": true,
+		"rules": true
+	},
 	"roles": {
 		"Admin": {
 			"alias": true,
 			"aliases": true,
 			"invite": true,
-			"testjoin": true
+			"testjoin": true,
+			"17": true,
+			"delete": true
 		},
-		"Original": {
-			"invite": true
-		},
-		"Habitués": {
-			"invite": true
-		},
-		"Membres": {
-			"invite": true
-		},
-		"Invités": {}
+		"Original": {},
+		"Habitués": {},
+		"Membres": {},
+		"Invités": {
+			"invite": false
+		}
 	},
-	"users": {}
+	"users": {
+		"145893868410372096": {
+			"17": true
+		}
+	}
 }
