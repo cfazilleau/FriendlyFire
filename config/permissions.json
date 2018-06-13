@@ -13,7 +13,8 @@
 			"aliases": true,
 			"testjoin": true,
 			"17": true,
-			"delete": true
+			"delete": true,
+			"say": true
 		},
 		"Original": {},
 		"Habitués": {},
