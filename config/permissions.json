@@ -16,6 +16,7 @@
 		"Habitués": {},
 		"Membres": {},
 		"Invités": {
+			"invite": false
 		}
 	},
 	"users": {
