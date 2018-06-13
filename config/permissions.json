@@ -6,7 +6,6 @@
         "yn": true,
         "ynu": true,
         "poll": true,
-        "servername": true,
         "test": true,
         "invite": true
     },
@@ -29,8 +28,5 @@
         }
     },
     "users": {
-        "145893868410372096": {
-            "17": true
-        }
     }
 }

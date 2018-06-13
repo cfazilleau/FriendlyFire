@@ -1,6 +1,0 @@
-{
-	"main": "invites.js",
-	"dependencies": {
-		"moment": "^2.20.1"
-	}
-}
