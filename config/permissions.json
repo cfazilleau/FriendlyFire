@@ -1,40 +1,40 @@
 {
-	"global": {
-		"invite": true,
-		"plug": true,
-		"rules": true,
-		"yn": true,
-		"ynu": true,
-		"poll": true
-	},
-	"roles": {
-		"Admin": {
-			"alias": true,
-			"aliases": true,
-			"testjoin": true,
-			"17": true,
-			"delete": true,
-			"say": true
-		},
-		"Original": {},
-		"Habitués": {},
-		"Membres": {},
-		"Aspirant": {
-			"yn": false,
-			"ynu": false,
-			"poll": false,
-			"invite": false
-		},
-		"Invités": {
-			"yn": false,
-			"ynu": false,
-			"poll": false,
-			"invite": false
-		}
-	},
-	"users": {
-		"145893868410372096": {
-			"17": true
-		}
-	}
+    "global": {
+        "invite": true,
+        "plug": true,
+        "rules": true,
+        "yn": true,
+        "ynu": true,
+        "poll": true
+    },
+    "roles": {
+        "Admin": {
+            "17": true,
+            "alias": true,
+            "aliases": true,
+            "testjoin": true,
+            "delete": true,
+            "say": true
+        },
+        "Original": {},
+        "Habitués": {},
+        "Membres": {},
+        "Aspirant": {
+            "yn": false,
+            "ynu": false,
+            "poll": false,
+            "invite": false
+        },
+        "Invités": {
+            "yn": false,
+            "ynu": false,
+            "poll": false,
+            "invite": false
+        }
+    },
+    "users": {
+        "145893868410372096": {
+            "17": true
+        }
+    }
 }

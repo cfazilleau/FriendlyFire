@@ -186,7 +186,7 @@ exports.guildMemberAdd = {
 
 			fs.writeFile(GENERATED_PATH, JSON.stringify(generated, null, 2));
 
-			guild.defaultChannel.send(
+			guild.channels.find("name", "general").send(
 				'Bienvenue ' + user + inviter + ', sur le discord de Phoenix Legacy.\n' + getRandomGreeting()
 			);
 		});
