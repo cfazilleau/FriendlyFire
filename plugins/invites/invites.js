@@ -22,6 +22,24 @@ var greetings = [
 	'Du sucre, Des épices et des Tas de bonnes choses. C\'est le genre de trucs qu\'on trouve dans le coin'
 ]
 
+var welcomeMessage = 
+	'**BIENVENUE SUR PHOENIX !!**\n' +
+	'Bienvenue a toi sur le discord de Phoenix Legacy.\n' +
+	'ici, on essaie au maximum de ne pas ressembler aux *X* autres serveurs discord que l\'on peut trouver.\n' +
+	'c\'est pourquoi on tiens a connaitre tout le monde, alors n\'hesite pas a venir discuter avec des plus "haut gradés" :D\n' +
+	/*
+	'la hierarchie ici est la suivante:\n```' +
+	'Admin      les gentils admins du serveur (Demo le leader de la team et CODA mon createur)\n' +
+	'Habitués   les plus vieux membres du serveur\n' +
+	'Membres    Les membres valides du serveur\n' +
+	'Invités    Toi, qui viens de nous rejoindre\n```' +
+	*/
+	'Le grade invité que tu as actuellement te permets de rester temporairement et d\'avoir acces a tout le necessaire pour passer de bons moments\n' +
+	'si tu souhaite plus t\'impliquer dans l\'equipe et devenir membre, je t\'invite a te presenter sur le channel presentation!\n' +
+	'moi je te dis a plus dans le bus (I2C) et bon jeu !\n\n' +
+	'**En etant present sur ce serveur, vous vous engagez a respecter les "conditions d\'utilisation"\n' +
+	'vous pouvez y acceder via la commande !rules sur le discord**'
+
 var _gen = {};
 try {
 	_gen = require(GENERATED_PATH);
@@ -44,7 +62,7 @@ function getRandomGreeting() {
 
 exports.commands = [
 	'invite',
-	'test'
+	'testjoin'
 ];
 
 exports.events = [
@@ -118,9 +136,9 @@ exports.invite = {
 	}
 }
 
-exports.test = {
-	usage: 'test function',
-	description: '',
+exports.testjoin = {
+	usage: '',
+	description: 'test join event',
 	process: function (bot, msg, suffix) {
 		exports.guildMemberAdd.process(msg.author);
 	}
@@ -168,26 +186,12 @@ exports.guildMemberAdd = {
 
 			fs.writeFile(GENERATED_PATH, JSON.stringify(generated, null, 2));
 
-			guild.defaultChannel.send(
+			guild.channels.find("name", "general").send(
 				'Bienvenue ' + user + inviter + ', sur le discord de Phoenix Legacy.\n' + getRandomGreeting()
 			);
 		});
 
 		//dm message
-		user.send('**BIENVENUE SUR PHOENIX !!**\n' +
-			'Bienvenue a toi, ' + user + ', sur le discord de Phoenix Legacy.\n' +
-			'ici, on essaie au maximum de ne pas ressembler aux *NaN* autres serveurs discord que l\'on peut trouver.\n' +
-			'c\'est pourquoi on tiens a connaitre tout le monde, alors n\'hesite pas a venir discuter avec des plus "haut gradés" :D\n' +
-			'la hierarchie ici est la suivante:\n```' +
-			'Admin      les gentils admins du serveur (Demo le leader de la team et CODA mon createur)\n' +
-			'Habitués   les plus vieux membres du serveur\n' +
-			'Membres    Les membres valides du serveur\n' +
-			'Invités    Toi, qui viens de nous rejoindre\n```' +
-			'Le grade invité que tu as actuellement te permets de rester temporairement et d\'avoir acces a tout le necessaire pour passer de bonnes games\n' +
-			'si tu souhaite plus t\'impliquer dans l\'equipe et devenir membre, je t\'invite a te presenter sur le channel presentation!\n' +
-			'moi je te dis a plus dans le bus (I2C) et bon jeu !\n\n' +
-			'**En etant present sur ce serveur, vous vous engagez a respecter les "conditions d\'utilisation"\n' +
-			'vous pouvez y acceder via la commande !rules sur le discord'
-		);
+		user.send(welcomeMessage);
 	}
 }
