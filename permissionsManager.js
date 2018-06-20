@@ -1,15 +1,17 @@
-// LOAD PERMISSIONS
+const fs = require('fs');
+
+const permissionsPath = './config/permissions.json';
 
 var permissionsDetails = {};
 try {
-	permissionsDetails = require(PERMISSIONSDETAILS_PATH);
+	permissionsDetails = require(permissionsPath);
 } catch (e) {
-	console.error('can\'t find a valid permissions file file, generating a new one as ' + PERMISSIONSDETAILS_PATH);
+	console.error('can\'t find a valid permissions file file, generating a new one as ' + permissionsPath);
 	permissionsDetails.global = {};
 	permissionsDetails.roles = {};
 	permissionsDetails.users = {};
 }
-fs.writeFile(PERMISSIONSDETAILS_PATH, JSON.stringify(permissionsDetails, null, 4));
+fs.writeFile(permissionsPath, JSON.stringify(permissionsDetails, null, 4));
 
 //TODO CLEAN
 permissionsDetails.hasPermission = function (user, permission) {
@@ -39,4 +41,6 @@ permissionsDetails.hasPermission = function (user, permission) {
 	return allowed;
 }
 
-+- 
+exports.Load = function (bot) {
+	console.log("load permMgr");
+}
