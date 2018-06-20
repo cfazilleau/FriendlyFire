@@ -93,7 +93,7 @@ exports.typical = {
 	usage: '<text to say>',
 	description: 'pensee typique, mais bon...',
 	process: function (bot, msg, suffix) {
-		msg.channel.send("pensée typique de croire que " + suffix + "mais bon, passons.");
+		msg.channel.send("pensée typique de croire que " + suffix + " mais bon, passons.");
 		return msg.delete();
 	}
 }
