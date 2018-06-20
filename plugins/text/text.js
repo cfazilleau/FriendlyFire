@@ -4,7 +4,8 @@ exports.commands = [
 	'say',
 	'plug',
 	'rules',
-	'17'
+	'17',
+	'typical'
 ];
 
 exports.say = {
@@ -84,6 +85,15 @@ exports['17'] = {
 		embed.setDescription(args[2]);
 		embed.setFooter(msg.author.username, msg.author.avatarURL);
 		msg.channel.send(embed);
+		return msg.delete();
+	}
+}
+
+exports.typical = {
+	usage: '<text to say>',
+	description: 'pensee typique, mais bon...',
+	process: function (bot, msg, suffix) {
+		msg.channel.send("pensée typique de croire que " + suffix + "mais bon, passons.");
 		return msg.delete();
 	}
 }
