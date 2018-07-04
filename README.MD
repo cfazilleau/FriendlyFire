@@ -3,16 +3,23 @@ Phoenix Bot
 
 ## Installation
 
-create a auth.json file like this example:
+in order to log in, the bot uses the env vars:
 
-    {
-    	"client_id" : "YOUR_CLIENT_ID",
-	    "bot_token" : "YOUR_BOT_TOKEN"
+>FF_ID as the client ID.
+>FF_TOKEN as the auth token.
+
+*for debug purposes*, you can create a envloader.js file to load your keys as env vars.
+Everytime the bot starts, it will try to execute the Load() function of the 'envloader.js' file.
+so you can do something like:
+
+    exports.Load = () => {
+        process.env.FF_TOKEN = 'AUTH_TOKEN';
+        process.env.FF_ID = 'CLIENT_ID';
     }
 
 install all the required modules with a 
 
-    npm install
+>npm install
 
 then you're good to go, the entry point is phoenixbot.js
 

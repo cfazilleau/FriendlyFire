@@ -1,6 +1,5 @@
 const discord		= require('discord.js');
 
-const configMgr		= require('./configManager.js');
 const permMgr		= require('./permissionsManager.js');
 const commandMgr	= require('./commandManager.js');
 const eventMgr		= require('./eventManager.js');
@@ -61,13 +60,13 @@ exports.Start = function () {
 		eventMgr.processMessageDelete(member);
 	});
 
-	console.log('invite link: https://discordapp.com/oauth2/authorize?&client_id=' + configMgr.client_id + '&scope=bot&permissions=470019135');
-	bot.login(configMgr.bot_token)
+	console.log('invite link: https://discordapp.com/oauth2/authorize?&client_id=' + process.env.FF_ID + '&scope=bot&permissions=470019135');
+	bot.login(process.env.FF_TOKEN)
 		.then(
 			console.log("login success")
 		)
 		.catch((error) => {
-			console.error('failed to login ' + configMgr.bot_token);
+			console.error('failed to login ' + process.env.FF_TOKEN);
 		});
 
 	permMgr.Load(bot);

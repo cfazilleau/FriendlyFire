@@ -10,8 +10,8 @@ try {
 	permissionsDetails.global = {};
 	permissionsDetails.roles = {};
 	permissionsDetails.users = {};
+	fs.writeFile(permissionsPath, JSON.stringify(permissionsDetailsr, null, 4));
 }
-fs.writeFile(permissionsPath, JSON.stringify(permissionsDetails, null, 4));
 
 //TODO CLEAN
 permissionsDetails.hasPermission = function (user, permission) {
