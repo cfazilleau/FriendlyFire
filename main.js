@@ -3,7 +3,8 @@ const bot			= require('./bot.js');
 
 try {
 	require('./envloader.js').Load();
-} catch {
+} 
+catch {
 	console.log('envloader not found, using global env vars.');
 }
 
