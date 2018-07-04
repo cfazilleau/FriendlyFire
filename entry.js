@@ -1,4 +1,3 @@
-const AUTHDETAILS_PATH = './config/auth.json';
 const PERMISSIONSDETAILS_PATH = './config/permissions.json';
 const CONFIGURATION_PATH = './config/config.json';
 const ALIASES_PATH = './config/alias.json';
@@ -15,15 +14,10 @@ process.on('unhandledRejejection', (reason) => {
 });
 
 // AUTHENTICATION
-var authDetails = {};
 try {
-	authDetails = require(AUTHDETAILS_PATH);
+	require('./envloader.js').Load();
 } catch (e) {
-	console.error('can\'t find a valid auth file, generating a new one as ' + AUTHDETAILS_PATH);
-	authDetails.client_id = 'YOUR_CLIENT_ID_GOES_HERE';
-	authDetails.bot_token = 'YOUR_BOT_TOKEN_GOES_HERE';
-	fs.writeFile(AUTHDETAILS_PATH, JSON.stringify(authDetails, null, 4));
-	return 1;
+	console.error(e + ', using env vars');
 }
 
 // LOAD PERMISSIONS
@@ -337,12 +331,6 @@ function processEvent(name, arg1, arg2, arg3, arg4, arg5) {
 
 // AUTH
 
-if (authDetails.hasOwnProperty('client_id')) {
-	console.log('invite link: https://discordapp.com/oauth2/authorize?&client_id=' + authDetails.client_id + '&scope=bot&permissions=470019135');
-}
-if (authDetails.bot_token) {
-	console.log('logging in with token');
-	bot.login(authDetails.bot_token);
-} else {
-	console.error('you need a token in order to log in -> ./auth.json');
-}
+console.log('invite link: https://discordapp.com/oauth2/authorize?&client_id=' + process.env.FF_ID + '&scope=bot&permissions=470019135');
+console.log('logging in with token');
+bot.login(process.env.FF_TOKEN);

@@ -1,6 +1,6 @@
 node_modules
-#auth.json
 #config
 *.code-workspace
 package-lock.json
 .vscode
+envloader.js
