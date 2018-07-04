@@ -4,8 +4,8 @@ const bot			= require('./bot.js');
 try {
 	require('./envloader.js').Load();
 } 
-catch {
-	console.log('envloader not found, using global env vars.');
+catch (e) {
+	console.log(e + ', using global env vars.');
 }
 
 process.on('unhandledRejejection', (reason) => {
