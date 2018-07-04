@@ -1,4 +1,6 @@
 {
     "debug": false,
-    "commandPrefix": "!"
+    "commandPrefix": "!",
+    "client_id": "458899722183245825",
+	"bot_token": "NDU4ODk5NzIyMTgzMjQ1ODI1.DgudPA.N-PZB1OzR6aboDc3Zg_Xof8pTcI"
 }

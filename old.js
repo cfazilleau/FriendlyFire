@@ -1,149 +1,18 @@
 const AUTHDETAILS_PATH = './config/auth.json';
 const PERMISSIONSDETAILS_PATH = './config/permissions.json';
-const CONFIGURATION_PATH = './config/config.json';
-const ALIASES_PATH = './config/alias.json';
 
 const HELPCOMMAND_TEXT = 'help';
 
-var fs = require('fs');
-var discord = require('discord.js');
 var pluginManager = require('./plugins.js');
 
-process.on('unhandledRejejection', (reason) => {
-	console.error(reason);
-	process.exit(1);
-});
-
-// AUTHENTICATION
-var authDetails = {};
-try {
-	authDetails = require(AUTHDETAILS_PATH);
-} catch (e) {
-	console.error('can\'t find a valid auth file, generating a new one as ' + AUTHDETAILS_PATH);
-	authDetails.client_id = 'YOUR_CLIENT_ID_GOES_HERE';
-	authDetails.bot_token = 'YOUR_BOT_TOKEN_GOES_HERE';
-	fs.writeFile(AUTHDETAILS_PATH, JSON.stringify(authDetails, null, 4));
-	return 1;
-}
-
-
-
-// LOAD CONFIGURATION
-
-var configuration = {};
-try {
-	configuration = require(CONFIGURATION_PATH);
-} catch (e) {
-	console.error('can\'t find a valid configuration file, generating a new one as ' + CONFIGURATION_PATH);
-	configuration.debug = false;
-	configuration.commandPrefix = '!';
-}
-fs.writeFile(CONFIGURATION_PATH, JSON.stringify(configuration, null, 4));
 
 // ALIASES
 
-var aliases = {};
-try {
-	aliases = require(ALIASES_PATH);
-} catch (e) {
-	console.error('can\'t find a valid alias file, generating a new one as ' + ALIASES_PATH);
-}
-fs.writeFile(ALIASES_PATH, JSON.stringify(aliases, null, 4));
 
 // COMMANDS
 
-var commands = {
-	'alias': {
-		usage: '<name> <actual command>',
-		description: 'creates command aliases. Useful for making simple commands on the fly',
-		process: function (bot, msg, suffix) {
-			var args = suffix.split(' ');
-			var name = args.shift();
-			if (!name) {
-				msg.channel.send(Config.commandPrefix + 'alias ' + this.usage + '\n' + this.description);
-			} else if (commands[name] || name === HELPCOMMAND_TEXT) {
-				msg.channel.send('overwriting commands with aliases is not allowed!');
-			} else {
-				var command = args.shift();
-				aliases[name] = [command, args.join(' ')];
-				//now save the new alias
-				fs.writeFile(ALIASES_PATH, JSON.stringify(aliases, null, 4), null);
-				msg.channel.send('created alias ' + name);
-			}
-		}
-	},
-	'aliases': {
-		description: 'lists all recorded aliases',
-		process: function (bot, msg, suffix) {
-			var text = 'current aliases:\n';
-			for (var a in aliases) {
-				if (typeof a === 'string')
-					text += a + ' ';
-			}
-			msg.channel.send(text);
-		}
-	}
-};
-
 // EVENTS
 
-var events = {};
-
-// MAIN
-
-const bot = new discord.Client();
-
-bot.on('ready', () => {
-	console.log('connected successfully. Serving in ' + bot.guilds.array().length + ' servers');
-	pluginManager.init();
-});
-
-bot.on('disconnect', () => {
-	console.log('bot disconnected.');
-	process.exit(1);
-});
-
-bot.on('reconnecting', () => {
-	console.log('trying to reconnect...');
-});
-
-bot.on('resume', (replayedCount) => {
-	console.log('reconnected after ' + replayedCount + ' tries.');
-});
-
-/************/
-
-bot.on('message', (message) => {
-	processCommand(message);
-	processEvent('message', message);
-});
-
-bot.on('messageUpdate', (oldMessage, newMessage) => {
-	processCommand(newMessage);
-	processEvent('message', newMessage);
-});
-
-bot.on('guildMemberAdd', (member) => {
-	processEvent('guildMemberAdd', member);
-});
-
-bot.on('guildMemberRemove', (member) => {
-	processEvent('guildMemberRemove', member);
-});
-
-bot.on('messageDelete', (message) => {
-	processEvent('messageDelete', message);
-});
-
-/************/
-
-bot.on('warn', (warning) => {
-	console.warn(warning);
-});
-
-bot.on('error', (error) => {
-	console.error(error);
-});
 
 // EXPORTS
 
@@ -294,16 +163,4 @@ function processEvent(name, arg1, arg2, arg3, arg4, arg5) {
 			events[name][event].process(arg1, arg2, arg3, arg4, arg5);
 		}
 	}
-}
-
-// AUTH
-
-if (authDetails.hasOwnProperty('client_id')) {
-	console.log('invite link: https://discordapp.com/oauth2/authorize?&client_id=' + authDetails.client_id + '&scope=bot&permissions=470019135');
-}
-if (authDetails.bot_token) {
-	console.log('logging in with token');
-	bot.login(authDetails.bot_token);
-} else {
-	console.error('you need a token in order to log in -> ./auth.json');
 }
