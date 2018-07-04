@@ -39,25 +39,25 @@ exports.Start = function () {
 	});
 
 	bot.on('message', (message) => {
-		commandMgr.process(message);
-		eventMgr.processMessage(message);
+		commandMgr.Process(message);
+		eventMgr.ProcessMessage(message);
 	});
 
 	bot.on('messageUpdate', (oldMessage, newMessage) => {
-		commandMgr.process(newMessage);
-		eventMgr.processMessage(newMessage);
+		commandMgr.Process(newMessage);
+		eventMgr.ProcessMessage(newMessage);
 	});
 
 	bot.on('guildMemberAdd', (member) => {
-		eventMgr.processGuildMemberAdd(member);
+		eventMgr.ProcessGuildMemberAdd(member);
 	});
 
 	bot.on('guildMemberRemove', (member) => {
-		eventMgr.processGuildMemberRemove(member);
+		eventMgr.ProcessGuildMemberRemove(member);
 	});
 
 	bot.on('messageDelete', (message) => {
-		eventMgr.processMessageDelete(member);
+		eventMgr.ProcessMessageDelete(member);
 	});
 
 	console.log('invite link: https://discordapp.com/oauth2/authorize?&client_id=' + process.env.FF_ID + '&scope=bot&permissions=470019135');
