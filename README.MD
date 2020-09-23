@@ -7,7 +7,7 @@ create a auth.json file like this example:
 
     {
     	"client_id" : "YOUR_CLIENT_ID",
-	    "bot_token" : "YOUR_BOT_TOKEN"
+    	"bot_token" : "YOUR_BOT_TOKEN"
     }
 
 install all the required modules with a 
