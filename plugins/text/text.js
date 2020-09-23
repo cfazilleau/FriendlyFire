@@ -53,14 +53,17 @@ exports['17'] = {
 	process: function (bot, msg, suffix) {
 
 		//if the message is not sent in the correct channel
-		if (msg.channel.name != 'doge_news')
+		if (msg.channel.name != 'news')
+		{
+			var m = msg.reply('!17 command is only working in #news').then(message => message.delete(5000));
 			return msg.delete();
+		}
 
 		var args = suffix.split('--');
 		if (args.length !== 3)
 			return msg.reply('pas assez d\'arguments pour un appel.');
 
-		var embed = new Discord.RichEmbed();
+		var embed = new Discord.MessageEmbed();
 		embed.setAuthor(args[0]);
 		var color;
 		switch (args[1].trim().toLowerCase()) {
@@ -84,7 +87,7 @@ exports['17'] = {
 		embed.setColor(color);
 		embed.setDescription(args[2]);
 		embed.setFooter(msg.author.username, msg.author.avatarURL);
-		msg.channel.send(embed);
+		msg.reply(embed);
 		return msg.delete();
 	}
 }

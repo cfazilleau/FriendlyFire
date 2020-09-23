@@ -14,8 +14,8 @@
             "aliases": true,
             "testjoin": true,
             "delete": true,
-			"say": true,
-			"typical": true
+            "say": true,
+            "typical": true
         },
         "Original": {},
         "Habitués": {},

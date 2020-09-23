@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const PERMISSIONSDETAILS_PATH = './config/permissions.json';
 const CONFIGURATION_PATH = './config/config.json';
 const ALIASES_PATH = './config/alias.json';
@@ -13,13 +15,6 @@ process.on('unhandledRejejection', (reason) => {
 	process.exit(1);
 });
 
-// AUTHENTICATION
-try {
-	require('./envloader.js').Load();
-} catch (e) {
-	console.error(e + ', using env vars');
-}
-
 // LOAD PERMISSIONS
 
 var permissionsDetails = {};
@@ -31,7 +26,9 @@ try {
 	permissionsDetails.roles = {};
 	permissionsDetails.users = {};
 }
-fs.writeFile(PERMISSIONSDETAILS_PATH, JSON.stringify(permissionsDetails, null, 4));
+fs.writeFile(PERMISSIONSDETAILS_PATH, JSON.stringify(permissionsDetails, null, 4), (e) => {
+	if (e) throw e;
+});
 
 //TODO CLEAN
 permissionsDetails.hasPermission = function (user, permission) {
@@ -45,7 +42,7 @@ permissionsDetails.hasPermission = function (user, permission) {
 	//roles
 	var roles = bot.guilds.values().next().value.roles
 	roles.forEach( (role) => {
-		if (role.members.find('id', user.id)) {
+		if (role.members.find(u => u.id == user.id)) {
 			if (permissionsDetails.roles.hasOwnProperty(role.name) &&
 				permissionsDetails.roles[role.name].hasOwnProperty(permission)) {
 				allowed = permissionsDetails.roles[role.name][permission] === true;
@@ -71,7 +68,9 @@ try {
 	configuration.debug = false;
 	configuration.commandPrefix = '!';
 }
-fs.writeFile(CONFIGURATION_PATH, JSON.stringify(configuration, null, 4));
+fs.writeFile(CONFIGURATION_PATH, JSON.stringify(configuration, null, 4), (e) => {
+	if (e) throw e;
+});
 
 // ALIASES
 
@@ -81,7 +80,9 @@ try {
 } catch (e) {
 	console.error('can\'t find a valid alias file, generating a new one as ' + ALIASES_PATH);
 }
-fs.writeFile(ALIASES_PATH, JSON.stringify(aliases, null, 4));
+fs.writeFile(ALIASES_PATH, JSON.stringify(aliases, null, 4), (e) => {
+	if (e) throw e;
+});
 
 // COMMANDS
 

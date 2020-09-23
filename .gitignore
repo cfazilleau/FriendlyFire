@@ -3,4 +3,4 @@ node_modules
 *.code-workspace
 package-lock.json
 .vscode
-envloader.js
+.env
