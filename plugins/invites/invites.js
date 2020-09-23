@@ -3,24 +3,9 @@ const moment = require('moment');
 
 const GENERATED_PATH = './config/generated.json'
 const INVITES_PATH = './config/invites.json'
+const GREETINGS_PATH = './plugins/invites/greetings.json'
 
-var greetings = [
-	'Fait pas trop de betises ;)',
-	'Pas touche a minouche !',
-	'(Les autres, bizutez-le!)',
-	'Premiere conso offerte par elie',
-	'Les toilettes sont au fond à droite !',
-	'Faites comme chez vous ! (enfin dans la limite du raisonable)',
-	'Noté #3eme endroit le plus "pas mal" par le guide des explorateurs',
-	'Faites pas attention au gros là bas',
-	'*ferme son livre* Je vous avais pas vu entrer...',
-	'Hé ! Tout le monde ! Voila de la viande fraiche.',
-	'Bienvenue a PhoenixLegacy Town, Population : Un de plus qu\'avant',
-	'Bonjour ! Hello ! Guten Tag ! Inserez le langage de votre choix',
-	'Le meilleur zelda c\'est Ocarina Of Time, comme ça vous saurez !',
-	'Random Fact 74 : Le briquet a été inventé avant les allumettes',
-	'Du sucre, Des épices et des Tas de bonnes choses. C\'est le genre de trucs qu\'on trouve dans le coin'
-]
+var greetings = require(GREETINGS_PATH).greetings;
 
 var welcomeMessage = 
 	'**BIENVENUE SUR PHOENIX !!**\n' +
