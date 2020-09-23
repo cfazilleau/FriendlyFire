@@ -8,9 +8,9 @@ mongoose.Promise = global.Promise;
 
 mongoose.connect(MONGODB_URI, { useMongoClient: true }, function (err) {
 	if (err)
-		console.log('\033[31m[MONGOOSE] erreur de connection a la base de données\033[0m');
+		console.log('failed connecting to mongodb');
 	else
-		console.log('\033[32m[MONGOOSE] connecté a la base de données\033[0m');
+		console.log('connected to mongodb');
 });
 
 QuoteSchema = new mongoose.Schema({
@@ -44,7 +44,7 @@ exports.message = {
 		if (mongoose.connection.readyState === 0) {
 			embed.setAuthor('Erreur de sauvegarde !', 'http://i.imgur.com/jkdLeKt.png');
 			embed.setColor('#ff522c');
-			embed.setDescription('Problème de Database \n-> go appeler Clefaz');
+			embed.setDescription('Problème de Database \n-> go appeler Coda');
 			embed.setFooter('noticed by ' + message.author.username, message.author.avatarURL);
 			message.channel.sendEmbed(embed);
 			return;
@@ -63,7 +63,7 @@ exports.message = {
 						console.log('\033[31m[QUOTE] error saving quote\033[0m');
 						embed.setColor('#ff522c');
 						embed.setAuthor('Erreur de sauvegarde !', 'http://i.imgur.com/jkdLeKt.png');
-						embed.setDescription('Problème de tmp.save \n-> go appeler Clefaz');
+						embed.setDescription('Problème de tmp.save \n-> go appeler Coda');
 						embed.setFooter('noticed by ' + message.author.username, message.author.avatarURL);
 						message.channel.sendEmbed(embed);
 					}
