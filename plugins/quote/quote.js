@@ -6,7 +6,7 @@ const MONGODB_URI = 'mongodb://bot:clefaz@ds145220.mlab.com:45220/codabot';
 
 mongoose.Promise = global.Promise;
 
-mongoose.connect(MONGODB_URI, function (err) {
+mongoose.connect(MONGODB_URI, { useMongoClient: true }, function (err) {
 	if (err)
 		console.log('\033[31m[MONGOOSE] erreur de connection a la base de données\033[0m');
 	else
