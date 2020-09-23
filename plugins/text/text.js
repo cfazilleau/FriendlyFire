@@ -63,7 +63,7 @@ exports['17'] = {
 		if (args.length !== 3)
 			return msg.reply('pas assez d\'arguments pour un appel.');
 
-		var embed = new Discord.MessageEmbed();
+		var embed = new Discord.RichEmbed();
 		embed.setAuthor(args[0]);
 		var color;
 		switch (args[1].trim().toLowerCase()) {
@@ -87,7 +87,7 @@ exports['17'] = {
 		embed.setColor(color);
 		embed.setDescription(args[2]);
 		embed.setFooter(msg.author.username, msg.author.avatarURL);
-		msg.reply(embed);
+		msg.channel.send(embed);
 		return msg.delete();
 	}
 }
