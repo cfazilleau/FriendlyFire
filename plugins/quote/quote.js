@@ -2,15 +2,15 @@ const Discord = require('discord.js');
 const mongoose = require('mongoose');
 const moment = require('moment');
 
-const MONGODB_URI = 'mongodb://bot:clefaz@ds145220.mlab.com:45220/codabot';
+const MONGODB_URI = 'mongodb+srv://bot:clefaz@friendlyfire.mqhih.gcp.mongodb.net/';
 
 mongoose.Promise = global.Promise;
 
-mongoose.connect(MONGODB_URI, { useMongoClient: true }, function (err) {
+mongoose.connect(MONGODB_URI, { dbName: 'codabot', useNewUrlParser: true, useUnifiedTopology: true }, function (err) {
 	if (err)
-		console.log('failed connecting to mongodb');
+		console.log('failed connecting to quote database: ' + err);
 	else
-		console.log('connected to mongodb');
+		console.log('connected to quote database');
 });
 
 QuoteSchema = new mongoose.Schema({
@@ -23,6 +23,10 @@ mongoose.model('quotes', QuoteSchema);
 
 exports.events = [
 	'message'
+]
+
+exports.commands = [
+	'quote'
 ]
 
 exports.message = {
@@ -51,7 +55,7 @@ exports.message = {
 		}
 
 		var auteur = quote[2].split('-');
-		mongoose.models.quotes.count({}, function (err, result) {
+		mongoose.models.quotes.countDocuments({}, function (err, result) {
 			if (!err) {
 				var tmp = new mongoose.models.quotes();
 				tmp.author = auteur[auteur.length - 1];//
@@ -74,7 +78,7 @@ exports.message = {
 						embed.setColor('#2ea42a');
 						embed.setDescription(tmp.quote);
 						message.channel.fetchMessages({ limit: 50 }).then(function (messages) {
-							message.channel.sendEmbed(embed).then(msg => {
+							message.channel.send(embed).then(msg => {
 								messages.forEach(function (mssg) {
 									if (mssg.author.id === msg.author.id) {
 										mssg.delete();
@@ -82,10 +86,33 @@ exports.message = {
 								});
 							});
 						});
-						
+
 					}
 				});
 			}
 		});
+	}
+}
+
+exports.quote = {
+	usage: '',
+	description: 'get a random quote from the database',
+	process: function (bot, msg, suffix) {
+		mongoose.models.quotes.countDocuments().exec(function (err, count) {
+		if (!err)
+		{
+			var random = Math.floor(Math.random() * count);
+			mongoose.models.quotes.findOne().skip(random).exec(
+				function (err, result) {
+					var embed = new Discord.RichEmbed();
+					embed.setColor('#30c8fc');
+					embed.setDescription('"' + result.quote + '"');
+					embed.setFooter(result.author);
+					msg.channel.send(embed);
+				});
+			}
+		});
+
+		return msg.delete();
 	}
 }

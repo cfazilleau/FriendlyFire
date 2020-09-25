@@ -5,7 +5,8 @@
         "rules": true,
         "yn": true,
         "ynu": true,
-        "poll": true
+        "poll": true,
+        "quote": true
     },
     "roles": {
         "Admin": {
