@@ -110,7 +110,5 @@ exports.quote = {
 				});
 			}
 		});
-
-		return msg.delete();
 	}
 }
