@@ -2,11 +2,9 @@ const Discord = require('discord.js');
 const mongoose = require('mongoose');
 const moment = require('moment');
 
-const MONGODB_URI = 'mongodb+srv://bot:clefaz@friendlyfire.mqhih.gcp.mongodb.net/';
-
 mongoose.Promise = global.Promise;
 
-mongoose.connect(MONGODB_URI, { dbName: 'codabot', useNewUrlParser: true, useUnifiedTopology: true }, function (err) {
+mongoose.connect(process.env.MONGODB_URI, { dbName: 'codabot', useNewUrlParser: true, useUnifiedTopology: true }, function (err) {
 	if (err)
 		console.log('failed connecting to quote database: ' + err);
 	else
