@@ -269,12 +269,14 @@ function processCommand(message) {
 					var cmd = sortedCommands[i];
 					if (!permissionsDetails.hasPermission(message.author, cmd))
 						continue;
+
 					var info = '**' + configuration.commandPrefix + cmd + '**';
 					var usage = commands[cmd].usage;
 					if (usage) {
 						info += ' ' + usage;
 					}
-					var description = commands[cmd].description;
+
+					var description = '[*' + commands[cmd].module + '*] ' + commands[cmd].description;
 					if (description instanceof Function) {
 						description = description();
 					}
@@ -304,6 +306,7 @@ function processCommand(message) {
 			try {
 				command.process(bot, message, commandArgs);
 			} catch (e) {
+				console.log(e);
 				var ret = 'command ' + commandName + ' failed :(';
 				if (configuration.debug) {
 					ret += '\n' + e.stack;

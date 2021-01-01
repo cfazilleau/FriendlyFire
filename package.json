@@ -19,8 +19,9 @@
 	"dependencies": {
 		"discord.js": "^11.6.4",
 		"dotenv": "^8.2.0",
-		"moment": "^2.29.0",
-		"mongoose": "^5.10.7",
-		"npm": "^6.14.8"
+		"moment": "^2.29.1",
+		"mongoose": "^5.11.9",
+		"npm": "^6.14.10",
+		"rcon-client": "^4.2.3"
 	}
 }

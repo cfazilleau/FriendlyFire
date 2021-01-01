@@ -6,7 +6,8 @@
         "yn": true,
         "ynu": true,
         "poll": true,
-        "quote": true
+        "quote": true,
+        "mcw": false
     },
     "roles": {
         "Admin": {
@@ -16,7 +17,9 @@
             "testjoin": true,
             "delete": true,
             "say": true,
-            "typical": true
+            "typical": true,
+            "mc": true,
+            "mcw": true
         },
         "Original": {},
         "Habitués": {},
@@ -25,13 +28,15 @@
             "yn": false,
             "ynu": false,
             "poll": false,
-            "invite": false
+            "invite": false,
+            "mcw": false
         },
         "Invités": {
             "yn": false,
             "ynu": false,
             "poll": false,
-            "invite": false
+            "invite": false,
+            "mcw": false
         }
     },
     "users": {
