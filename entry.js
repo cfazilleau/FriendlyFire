@@ -129,6 +129,13 @@ const bot = new discord.Client();
 
 bot.on('ready', () => {
 	console.log('connected successfully. Serving in ' + bot.guilds.array().length + ' servers');
+	bot.user.setPresence({
+		status: "online",
+		game: {
+			name: "Bonne année 🎉",
+			type: "WATCHING"
+		}
+	});
 	pluginManager.init();
 });
 
@@ -337,4 +344,5 @@ function processEvent(name, arg1, arg2, arg3, arg4, arg5) {
 
 console.log('invite link: https://discordapp.com/oauth2/authorize?&client_id=' + process.env.FF_ID + '&scope=bot&permissions=470019135');
 console.log('logging in with token');
+
 bot.login(process.env.FF_TOKEN);
