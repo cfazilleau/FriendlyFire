@@ -7,7 +7,7 @@
         "ynu": true,
         "poll": true,
         "quote": true,
-        "mcw": false
+        "mcw": true
     },
     "roles": {
         "Admin": {
@@ -21,15 +21,9 @@
             "mc": true,
             "mcw": true
         },
-        "Original": {},
-        "Habitués": {},
-        "Membres": {},
-        "Aspirant": {
-            "yn": false,
-            "ynu": false,
-            "poll": false,
-            "invite": false,
-            "mcw": false
+        "Habitués": {
+        },
+        "Membres": {
         },
         "Invités": {
             "yn": false,
