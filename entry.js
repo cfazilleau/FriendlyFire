@@ -132,7 +132,7 @@ bot.on('ready', () => {
 	bot.user.setPresence({
 		status: "online",
 		game: {
-			name: "Bonne année 🎉",
+			name: "Ta gueule Allphaaz...",
 			type: "WATCHING"
 		}
 	});
