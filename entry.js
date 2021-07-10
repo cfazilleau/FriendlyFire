@@ -132,7 +132,7 @@ bot.on('ready', () => {
 	bot.user.setPresence({
 		status: "online",
 		game: {
-			name: "Ta gueule Allphaaz...",
+			name: "UwU",
 			type: "WATCHING"
 		}
 	});
