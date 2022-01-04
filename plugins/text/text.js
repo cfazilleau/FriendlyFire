@@ -53,8 +53,11 @@ exports['17'] = {
 	process: function (bot, msg, suffix) {
 
 		//if the message is not sent in the correct channel
-		if (msg.channel.name != 'doge_news')
+		if (msg.channel.name != 'news')
+		{
+			var m = msg.reply('!17 command is only working in #news').then(message => message.delete(5000));
 			return msg.delete();
+		}
 
 		var args = suffix.split('--');
 		if (args.length !== 3)

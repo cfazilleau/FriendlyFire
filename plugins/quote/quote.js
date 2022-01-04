@@ -2,15 +2,13 @@ const Discord = require('discord.js');
 const mongoose = require('mongoose');
 const moment = require('moment');
 
-const MONGODB_URI = 'mongodb://bot:clefaz@ds145220.mlab.com:45220/codabot';
-
 mongoose.Promise = global.Promise;
 
-mongoose.connect(MONGODB_URI, function (err) {
+mongoose.connect(process.env.MONGODB_URI, { dbName: 'codabot', useNewUrlParser: true, useUnifiedTopology: true }, function (err) {
 	if (err)
-		console.log('\033[31m[MONGOOSE] erreur de connection a la base de données\033[0m');
+		console.log('failed connecting to quote database: ' + err);
 	else
-		console.log('\033[32m[MONGOOSE] connecté a la base de données\033[0m');
+		console.log('connected to quote database');
 });
 
 QuoteSchema = new mongoose.Schema({
@@ -23,6 +21,10 @@ mongoose.model('quotes', QuoteSchema);
 
 exports.events = [
 	'message'
+]
+
+exports.commands = [
+	'quote'
 ]
 
 exports.message = {
@@ -44,26 +46,27 @@ exports.message = {
 		if (mongoose.connection.readyState === 0) {
 			embed.setAuthor('Erreur de sauvegarde !', 'http://i.imgur.com/jkdLeKt.png');
 			embed.setColor('#ff522c');
-			embed.setDescription('Problème de Database \n-> go appeler Clefaz');
+			embed.setDescription('Problème de Database \n-> go appeler Coda');
 			embed.setFooter('noticed by ' + message.author.username, message.author.avatarURL);
 			message.channel.sendEmbed(embed);
 			return;
 		}
 
 		var auteur = quote[2].split('-');
-		mongoose.models.quotes.count({}, function (err, result) {
+		mongoose.models.quotes.countDocuments({}, function (err, result) {
 			if (!err) {
 				var tmp = new mongoose.models.quotes();
 				tmp.author = auteur[auteur.length - 1];//
 				tmp.submitted_by = message.author.username;
 				tmp.quote = quote[1];
+				// dayjs better
 				tmp.time = moment.utc(message.createdAt).add(1, 'hour').format('DD/MM/YY HH:mm');
 				tmp.save(function (err) {
 					if (err) {
 						console.log('\033[31m[QUOTE] error saving quote\033[0m');
 						embed.setColor('#ff522c');
 						embed.setAuthor('Erreur de sauvegarde !', 'http://i.imgur.com/jkdLeKt.png');
-						embed.setDescription('Problème de tmp.save \n-> go appeler Clefaz');
+						embed.setDescription('Problème de tmp.save \n-> go appeler Coda');
 						embed.setFooter('noticed by ' + message.author.username, message.author.avatarURL);
 						message.channel.sendEmbed(embed);
 					}
@@ -74,7 +77,7 @@ exports.message = {
 						embed.setColor('#2ea42a');
 						embed.setDescription(tmp.quote);
 						message.channel.fetchMessages({ limit: 50 }).then(function (messages) {
-							message.channel.sendEmbed(embed).then(msg => {
+							message.channel.send(embed).then(msg => {
 								messages.forEach(function (mssg) {
 									if (mssg.author.id === msg.author.id) {
 										mssg.delete();
@@ -82,8 +85,29 @@ exports.message = {
 								});
 							});
 						});
-						
+
 					}
+				});
+			}
+		});
+	}
+}
+
+exports.quote = {
+	usage: '',
+	description: 'get a random quote from the database',
+	process: function (bot, msg, suffix) {
+		mongoose.models.quotes.countDocuments().exec(function (err, count) {
+		if (!err)
+		{
+			var random = Math.floor(Math.random() * count);
+			mongoose.models.quotes.findOne().skip(random).exec(
+				function (err, result) {
+					var embed = new Discord.RichEmbed();
+					embed.setColor('#30c8fc');
+					embed.setDescription('"' + result.quote + '"');
+					embed.setFooter(result.author);
+					msg.channel.send(embed);
 				});
 			}
 		});

@@ -2,6 +2,6 @@
 	"main": "quote.js",
 	"dependencies": {
 		"moment": "^2.18.1",
-		"mongoose": "^4.9.3"
+		"mongoose": "^5.10.7"
 	}
 }

@@ -1,4 +1,5 @@
-const AUTHDETAILS_PATH = './config/auth.json';
+require('dotenv').config();
+
 const PERMISSIONSDETAILS_PATH = './config/permissions.json';
 const CONFIGURATION_PATH = './config/config.json';
 const ALIASES_PATH = './config/alias.json';
@@ -14,19 +15,48 @@ process.on('unhandledRejejection', (reason) => {
 	process.exit(1);
 });
 
-// AUTHENTICATION
-var authDetails = {};
+// LOAD PERMISSIONS
+
+var permissionsDetails = {};
 try {
-	authDetails = require(AUTHDETAILS_PATH);
+	permissionsDetails = require(PERMISSIONSDETAILS_PATH);
 } catch (e) {
-	console.error('can\'t find a valid auth file, generating a new one as ' + AUTHDETAILS_PATH);
-	authDetails.client_id = 'YOUR_CLIENT_ID_GOES_HERE';
-	authDetails.bot_token = 'YOUR_BOT_TOKEN_GOES_HERE';
-	fs.writeFile(AUTHDETAILS_PATH, JSON.stringify(authDetails, null, 4));
-	return 1;
+	console.error('can\'t find a valid permissions file file, generating a new one as ' + PERMISSIONSDETAILS_PATH);
+	permissionsDetails.global = {};
+	permissionsDetails.roles = {};
+	permissionsDetails.users = {};
 }
+fs.writeFile(PERMISSIONSDETAILS_PATH, JSON.stringify(permissionsDetails, null, 4), (e) => {
+	if (e) throw e;
+});
 
+//TODO CLEAN
+permissionsDetails.hasPermission = function (user, permission) {
+	var allowed = false;
 
+	//global
+	if (permissionsDetails.global.hasOwnProperty(permission)) {
+		allowed = permissionsDetails.global[permission] === true;
+	}
+
+	//roles
+	var roles = bot.guilds.values().next().value.roles
+	roles.forEach( (role) => {
+		if (role.members.find(u => u.id == user.id)) {
+			if (permissionsDetails.roles.hasOwnProperty(role.name) &&
+				permissionsDetails.roles[role.name].hasOwnProperty(permission)) {
+				allowed = permissionsDetails.roles[role.name][permission] === true;
+			}
+		}
+	});
+
+	//users
+	if (permissionsDetails.users.hasOwnProperty(user.id) &&
+		permissionsDetails.users[user.id].hasOwnProperty(permission)) {
+		allowed = permissionsDetails.users[user.id][permission] === true;
+	}
+	return allowed;
+}
 
 // LOAD CONFIGURATION
 
@@ -38,7 +68,9 @@ try {
 	configuration.debug = false;
 	configuration.commandPrefix = '!';
 }
-fs.writeFile(CONFIGURATION_PATH, JSON.stringify(configuration, null, 4));
+fs.writeFile(CONFIGURATION_PATH, JSON.stringify(configuration, null, 4), (e) => {
+	if (e) throw e;
+});
 
 // ALIASES
 
@@ -48,7 +80,9 @@ try {
 } catch (e) {
 	console.error('can\'t find a valid alias file, generating a new one as ' + ALIASES_PATH);
 }
-fs.writeFile(ALIASES_PATH, JSON.stringify(aliases, null, 4));
+fs.writeFile(ALIASES_PATH, JSON.stringify(aliases, null, 4), (e) => {
+	if (e) throw e;
+});
 
 // COMMANDS
 
@@ -95,6 +129,13 @@ const bot = new discord.Client();
 
 bot.on('ready', () => {
 	console.log('connected successfully. Serving in ' + bot.guilds.array().length + ' servers');
+	bot.user.setPresence({
+		status: "online",
+		game: {
+			name: "UwU",
+			type: "WATCHING"
+		}
+	});
 	pluginManager.init();
 });
 
@@ -122,6 +163,14 @@ bot.on('messageUpdate', (oldMessage, newMessage) => {
 	processCommand(newMessage);
 	processEvent('message', newMessage);
 });
+
+bot.on('messageReactionAdd', (messageReaction, user) => {
+	processEvent('messageReactionAdd', messageReaction, user);
+})
+
+bot.on('messageReactionRemove', (messageReaction, user) => {
+	processEvent('messageReactionRemove', messageReaction, user);
+})
 
 bot.on('guildMemberAdd', (member) => {
 	processEvent('guildMemberAdd', member);
@@ -235,12 +284,14 @@ function processCommand(message) {
 					var cmd = sortedCommands[i];
 					if (!permissionsDetails.hasPermission(message.author, cmd))
 						continue;
+
 					var info = '**' + configuration.commandPrefix + cmd + '**';
 					var usage = commands[cmd].usage;
 					if (usage) {
 						info += ' ' + usage;
 					}
-					var description = commands[cmd].description;
+
+					var description = '[*' + commands[cmd].module + '*] ' + commands[cmd].description;
 					if (description instanceof Function) {
 						description = description();
 					}
@@ -270,6 +321,7 @@ function processCommand(message) {
 			try {
 				command.process(bot, message, commandArgs);
 			} catch (e) {
+				console.log(e);
 				var ret = 'command ' + commandName + ' failed :(';
 				if (configuration.debug) {
 					ret += '\n' + e.stack;
@@ -298,12 +350,7 @@ function processEvent(name, arg1, arg2, arg3, arg4, arg5) {
 
 // AUTH
 
-if (authDetails.hasOwnProperty('client_id')) {
-	console.log('invite link: https://discordapp.com/oauth2/authorize?&client_id=' + authDetails.client_id + '&scope=bot&permissions=470019135');
-}
-if (authDetails.bot_token) {
-	console.log('logging in with token');
-	bot.login(authDetails.bot_token);
-} else {
-	console.error('you need a token in order to log in -> ./auth.json');
-}
+console.log('invite link: https://discordapp.com/oauth2/authorize?&client_id=' + process.env.FF_ID + '&scope=bot&permissions=470019135');
+console.log('logging in with token');
+
+bot.login(process.env.FF_TOKEN);

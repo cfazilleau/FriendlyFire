@@ -5,16 +5,9 @@ Phoenix Bot
 
 in order to log in, the bot uses the env vars:
 
->FF_ID as the client ID.
->FF_TOKEN as the auth token.
-
-*for debug purposes*, you can create a envloader.js file to load your keys as env vars.
-Everytime the bot starts, it will try to execute the Load() function of the 'envloader.js' file.
-so you can do something like:
-
-    exports.Load = () => {
-        process.env.FF_TOKEN = 'AUTH_TOKEN';
-        process.env.FF_ID = 'CLIENT_ID';
+    {
+    	"client_id" : "YOUR_CLIENT_ID",
+    	"bot_token" : "YOUR_BOT_TOKEN"
     }
 
 install all the required modules with a 

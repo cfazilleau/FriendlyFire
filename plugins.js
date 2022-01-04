@@ -62,9 +62,9 @@ function preload_plugins() {
 
 function load_plugins() {
 	var dbot = require(ENTRYPOINT_PATH);
-	var commandCount = 0;
-	var eventsCount = 0;
 	for (var i = 0; i < plugin_folders.length; i++) {
+		var commandCount = 0;
+		var eventsCount = 0;
 		var plugin;
 		try {
 			plugin = require(PLUGINDIR_PATH + plugin_folders[i])
@@ -75,6 +75,7 @@ function load_plugins() {
 			if ('commands' in plugin) {
 				for (var j = 0; j < plugin.commands.length; j++) {
 					if (plugin.commands[j] in plugin) {
+						plugin[plugin.commands[j]].module = plugin_folders[i];
 						dbot.addCommand(plugin.commands[j], plugin[plugin.commands[j]])
 						commandCount++;
 					}
@@ -92,6 +93,7 @@ function load_plugins() {
 					}
 				}
 			}
+			console.log('Loaded plugin ' + plugin_folders[i] + " {" + commandCount + " commands, " + eventsCount + " events.}")
 		}
 	}
 
