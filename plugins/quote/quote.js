@@ -59,6 +59,7 @@ exports.message = {
 				tmp.author = auteur[auteur.length - 1];//
 				tmp.submitted_by = message.author.username;
 				tmp.quote = quote[1];
+				// dayjs better
 				tmp.time = moment.utc(message.createdAt).add(1, 'hour').format('DD/MM/YY HH:mm');
 				tmp.save(function (err) {
 					if (err) {

@@ -164,6 +164,14 @@ bot.on('messageUpdate', (oldMessage, newMessage) => {
 	processEvent('message', newMessage);
 });
 
+bot.on('messageReactionAdd', (messageReaction, user) => {
+	processEvent('messageReactionAdd', messageReaction, user);
+})
+
+bot.on('messageReactionRemove', (messageReaction, user) => {
+	processEvent('messageReactionRemove', messageReaction, user);
+})
+
 bot.on('guildMemberAdd', (member) => {
 	processEvent('guildMemberAdd', member);
 });
