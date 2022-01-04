@@ -21,10 +21,8 @@
             "mc": true,
             "mcw": true
         },
-        "Habitués": {
-        },
-        "Membres": {
-        },
+        "Habitués": {},
+        "Membres": {},
         "Invités": {
             "yn": false,
             "ynu": false,

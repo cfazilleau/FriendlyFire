@@ -1,14 +1,15 @@
-require('dotenv').config();
-
 const PERMISSIONSDETAILS_PATH = './config/permissions.json';
 const CONFIGURATION_PATH = './config/config.json';
 const ALIASES_PATH = './config/alias.json';
 
 const HELPCOMMAND_TEXT = 'help';
 
-var fs = require('fs');
-var discord = require('discord.js');
-var pluginManager = require('./plugins.js');
+const dotenv = require('dotenv');
+const fs = require('fs');
+const discord = require('discord.js');
+const pluginManager = require('./plugins.js');
+
+console.log(dotenv.config({ path: '.env' }));
 
 process.on('unhandledRejejection', (reason) => {
 	console.error(reason);
@@ -32,6 +33,10 @@ fs.writeFile(PERMISSIONSDETAILS_PATH, JSON.stringify(permissionsDetails, null, 4
 
 //TODO CLEAN
 permissionsDetails.hasPermission = function (user, permission) {
+
+	if (process.env.BYPASS_PERMISSIONS == 'true')
+		return true;
+
 	var allowed = false;
 
 	//global
@@ -350,7 +355,7 @@ function processEvent(name, arg1, arg2, arg3, arg4, arg5) {
 
 // AUTH
 
-console.log('invite link: https://discordapp.com/oauth2/authorize?&client_id=' + process.env.FF_ID + '&scope=bot&permissions=470019135');
+console.log('invite link: https://discordapp.com/oauth2/authorize?&client_id=' + process.env.DISCORD_ID + '&scope=bot&permissions=470019135');
 console.log('logging in with token');
 
-bot.login(process.env.FF_TOKEN);
+bot.login(process.env.DISCORD_TOKEN);
