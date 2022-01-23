@@ -1,6 +1,12 @@
+# Node
 node_modules
-#config
+
+# VScode
 *.code-workspace
-package-lock.json
 .vscode
+
+# Typescript
+build/
+
+# Config
 .env

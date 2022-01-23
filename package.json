@@ -1,27 +1,29 @@
 {
-	"name": "phoenixbot",
-	"version": "1.0.0",
-	"description": "a Discord bot for the phoenix legacy community",
-	"main": "entry.js",
-	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://gitlab.com/codakairos/phoenixbot.git"
-	},
-	"author": "CodaKairos",
-	"license": "ISC",
-	"bugs": {
-		"url": "https://gitlab.com/codakairos/phoenixbot/issues"
-	},
-	"homepage": "https://gitlab.com/codakairos/phoenixbot#README",
-	"dependencies": {
-		"discord.js": "^11.6.4",
-		"dotenv": "^8.2.0",
-		"moment": "^2.29.1",
+  "name": "friendlyfire",
+  "version": "1.0.0",
+  "description": "A Typescript modular discord bot",
+  "main": "main.js",
+  "scripts": {
+    "clean": "rm -rf build",
+    "build": "rm -rf build && tsc",
+    "start": "rm -rf build && tsc && cp -r plugins/ build/plugins/ && node build/main.js"
+  },
+  "author": "faz.cle",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cfazilleau/friendlyfire.git"
+  },
+  "devDependencies": {
+    "@types/node": "^16.10.3",
+    "typescript": "^4.4.3"
+  },
+  "dependencies": {
+    "discord.js": "^13.2.0",
+    "dotenv": "^10.0.0",
+    "npm": "^8.0.0",
+    "moment": "^2.29.1",
 		"mongoose": "^5.11.9",
-		"npm": "^6.14.10",
 		"rcon-client": "^4.2.3"
-	}
+  }
 }

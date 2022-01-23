@@ -1,4 +1,5 @@
 {
-    "debug": false,
-    "commandPrefix": "!"
+    "debug": true,
+    "overridePermissions": true,
+    "prefix": "!"
 }

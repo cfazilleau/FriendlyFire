@@ -5,16 +5,25 @@ Phoenix Bot
 
 in order to log in, the bot uses the env vars:
 
-    {
-    	"client_id" : "YOUR_CLIENT_ID",
-    	"bot_token" : "YOUR_BOT_TOKEN"
-    }
+```
+# core
+BOT_TOKEN=
+BOT_ID=
 
-install all the required modules with a 
+# quote plugin
+MONGODB_URI=
+
+# minecraft plugin
+MC_IP=
+MC_PORT=
+MC_PASSWORD=
+```
+
+install all the required modules with a
 
 >npm install
 
-then you're good to go, the entry point is phoenixbot.js
+then you're good to go, the entry point is main.js (`npm start` to compile and run)
 
 you'll be able to find the link to invite the bot on your server in the logs of the bot.
-    
+

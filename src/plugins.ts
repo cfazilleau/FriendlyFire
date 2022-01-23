@@ -1,24 +1,21 @@
 const PLUGINDIR_PATH = './plugins/'
-const ENTRYPOINT_PATH = './entry.js'
+const ENTRYPOINT_PATH = './main.js'
 
-var fs = require('fs');
-var path = require('path');
+import * as fs from "fs";
+import * as path from "path";
 
-function getDirectories(srcpath) {
-	return fs.readdirSync(srcpath).filter(function (file) {
+function getDirectories(srcpath: string) {
+	return fs.readdirSync(srcpath).filter(function (file: string) {
 		return fs.statSync(path.join(srcpath, file)).isDirectory();
 	});
 }
 
 var plugin_folders = getDirectories(PLUGINDIR_PATH);
 
-exports.pluginPath = PLUGINDIR_PATH;
+export const pluginPath: string = PLUGINDIR_PATH;
+export const init: () => void = preload_plugins;
 
-exports.init = function () {
-	preload_plugins();
-};
-
-function createNpmDependenciesArray(packageFilePath) {
+function createNpmDependenciesArray(packageFilePath: string) {
 	var p = require(packageFilePath);
 	if (!p.dependencies) return [];
 	var deps = [];
@@ -30,7 +27,8 @@ function createNpmDependenciesArray(packageFilePath) {
 }
 
 function preload_plugins() {
-	var deps = [];
+/*
+	var deps: string[] = [];
 	var npm = require('npm');
 	for (var i = 0; i < plugin_folders.length; i++) {
 		try {
@@ -42,8 +40,8 @@ function preload_plugins() {
 	if (deps.length > 0) {
 		npm.load({
 			loaded: false
-		}, function (err) {
-			npm.commands.install(deps, function (er, data) {
+		}, function (err: any) {
+			npm.commands.install(deps, function (er: any, data: any) {
 				if (er) {
 					console.log(er);
 				}
@@ -55,7 +53,7 @@ function preload_plugins() {
 				console.log('preload_plugins: ' + err);
 			}
 		});
-	} else {
+	} else */ {
 		load_plugins()
 	}
 }
@@ -86,7 +84,7 @@ function load_plugins() {
 					if (plugin.events[j] in plugin) {
 						var obj = {
 							pluginName: plugin_folders[i],
-							process: plugin[plugin.events[j]]
+							process: plugin[plugin.events[j]].process
 						};
 						dbot.addEvent(plugin.events[j], obj )
 						eventsCount++;

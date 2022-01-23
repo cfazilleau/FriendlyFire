@@ -1,1 +1,1 @@
-bot: node .
+bot: npm start
