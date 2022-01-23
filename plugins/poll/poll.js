@@ -10,7 +10,7 @@ exports['yn'] = {
 	usage: '<question>',
 	description: 'send a poll with the 👎 and 👍 reacts',
 	process: function(bot, msg, suffix) {
-		var embed = new Discord.RichEmbed();
+		var embed = new Discord.MessageEmbed();
 		var text = suffix;
 		if (text === '')
 		{
@@ -32,7 +32,7 @@ exports['ynu'] = {
 	usage: '<question>',
 	description: 'send a poll with the 👎, 👍 and ✋ reacts',
 	process: function(bot, msg, suffix) {
-		var embed = new Discord.RichEmbed();
+		var embed = new Discord.MessageEmbed();
 		var text = suffix;
 		if (text === '')
 		{
@@ -55,7 +55,7 @@ exports['poll'] = {
 	usage: '<question> -- <reacts>',
 	description: 'send a poll with custom reacts',
 	process: function(bot, msg, suffix) {
-		var embed = new Discord.RichEmbed();
+		var embed = new Discord.MessageEmbed();
 		var text = suffix.split('--');
 		if (text[0] === '' || text[1] === '' || text.length !== 2)
 		{

@@ -3,6 +3,7 @@ const ENTRYPOINT_PATH = './main.js'
 
 import * as fs from "fs";
 import * as path from "path";
+import { bot } from "./main";
 
 function getDirectories(srcpath: string) {
 	return fs.readdirSync(srcpath).filter(function (file: string) {
@@ -59,7 +60,6 @@ function preload_plugins() {
 }
 
 function load_plugins() {
-	var dbot = require(ENTRYPOINT_PATH);
 	for (var i = 0; i < plugin_folders.length; i++) {
 		var commandCount = 0;
 		var eventsCount = 0;
@@ -74,7 +74,7 @@ function load_plugins() {
 				for (var j = 0; j < plugin.commands.length; j++) {
 					if (plugin.commands[j] in plugin) {
 						plugin[plugin.commands[j]].module = plugin_folders[i];
-						dbot.addCommand(plugin.commands[j], plugin[plugin.commands[j]])
+						bot.addCommand(plugin.commands[j], plugin[plugin.commands[j]])
 						commandCount++;
 					}
 				}
@@ -86,7 +86,7 @@ function load_plugins() {
 							pluginName: plugin_folders[i],
 							process: plugin[plugin.events[j]].process
 						};
-						dbot.addEvent(plugin.events[j], obj )
+						bot.addEvent(plugin.events[j], obj )
 						eventsCount++;
 					}
 				}
@@ -95,6 +95,6 @@ function load_plugins() {
 		}
 	}
 
-	console.log('Loaded ' + dbot.commandCount() + ' chat commands')
-	console.log('Loaded ' + dbot.eventsCount() + ' events')
+	console.log('Loaded ' + bot.commandCount() + ' chat commands')
+	console.log('Loaded ' + bot.eventsCount() + ' events')
 }

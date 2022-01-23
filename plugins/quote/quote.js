@@ -33,7 +33,7 @@ exports.message = {
 			!message.content.startsWith('\"'))
 			return;
 
-		var embed = new Discord.RichEmbed();
+		var embed = new Discord.MessageEmbed();
 		var quote = message.content.split('\"');
 		if (quote.length !== 3) {
 			embed.setAuthor('Erreur de syntaxe !', 'http://i.imgur.com/BCLvfAM.png');
@@ -77,7 +77,7 @@ exports.message = {
 						embed.setColor('#2ea42a');
 						embed.setDescription(tmp.quote);
 						message.channel.fetchMessages({ limit: 50 }).then(function (messages) {
-							message.channel.send(embed).then(msg => {
+							message.channel.send({ embeds: [embed] }).then(msg => {
 								messages.forEach(function (mssg) {
 									if (mssg.author.id === msg.author.id) {
 										mssg.delete();
@@ -103,11 +103,11 @@ exports.quote = {
 			var random = Math.floor(Math.random() * count);
 			mongoose.models.quotes.findOne().skip(random).exec(
 				function (err, result) {
-					var embed = new Discord.RichEmbed();
+					var embed = new Discord.MessageEmbed();
 					embed.setColor('#30c8fc');
 					embed.setDescription('"' + result.quote + '"');
 					embed.setFooter(result.author);
-					msg.channel.send(embed);
+					msg.channel.send({ embeds: [embed] });
 				});
 			}
 		});

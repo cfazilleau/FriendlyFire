@@ -21,14 +21,14 @@ exports.plug = {
 	usage: '',
 	description: 'send a link of the plug.dj room',
 	process: function (bot, msg, suffix) {
-		var embed = new Discord.RichEmbed();
-		embed.setAuthor('Plug.dj');
+		var embed = new Discord.MessageEmbed();
+		embed.addField('author', 'Plug.dj');
 		embed.setColor('#30c8fc');
 		embed.setDescription('salon plug.dj officiel de phoenix legacy\n https://plug.dj/phoenixteammusic');
 		embed.setThumbnail('http://i.imgur.com/AmccAtN.png');
 		embed.setFooter(msg.author.username, msg.author.avatarURL);
 		embed.setURL('https://plug.dj/phoenixteammusic');
-		msg.channel.send(embed);
+		msg.channel.send({ embeds: [embed] });
 	}
 }
 
@@ -36,13 +36,13 @@ exports.rules = {
 	usage: '',
 	description: 'send a link of the server rules',
 	process: function (bot, msg, suffix) {
-		var embed = new Discord.RichEmbed();
+		var embed = new Discord.MessageEmbed();
 		embed.setAuthor('Charte');
 		embed.setColor('#fc8172');
 		embed.setDescription('lien de la charte\n https://www.dropbox.com/s/nrqej42m1fp69gc/Be_Good_Have_Fun.pdf?raw=1');
 		embed.setFooter(msg.author.username, msg.author.avatarURL);
 		embed.setURL('https://www.dropbox.com/s/nrqej42m1fp69gc/Be_Good_Have_Fun.pdf?raw=1');
-		msg.channel.send(embed);
+		msg.channel.send({ embeds: [embed] });
 	}
 }
 
@@ -63,7 +63,7 @@ exports['17'] = {
 		if (args.length !== 3)
 			return msg.reply('pas assez d\'arguments pour un appel.');
 
-		var embed = new Discord.RichEmbed();
+		var embed = new Discord.MessageEmbed();
 		embed.setAuthor(args[0]);
 		var color;
 		switch (args[1].trim().toLowerCase()) {
@@ -87,7 +87,7 @@ exports['17'] = {
 		embed.setColor(color);
 		embed.setDescription(args[2]);
 		embed.setFooter(msg.author.username, msg.author.avatarURL);
-		msg.channel.send(embed);
+		msg.channel.send({ embeds: [embed] });
 		return msg.delete();
 	}
 }

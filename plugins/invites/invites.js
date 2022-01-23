@@ -38,7 +38,7 @@ var greetings = [
 //	fs.writeFile(GREETINGS_PATH, JSON.stringify({ 'greetings': [ 'welcome home!' ] }, null, 4));
 //}
 
-var welcomeMessage = 
+var welcomeMessage =
 	'**BIENVENUE SUR PHOENIX !!**\n' +
 	'Bienvenue a toi sur le discord de Phoenix Legacy.\n' +
 	'ici, on essaie au maximum de ne pas ressembler aux *X* autres serveurs discord que l\'on peut trouver.\n' +
