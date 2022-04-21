@@ -1,6 +1,0 @@
-{
-	"main": "minecraft.js",
-	"dependencies": {
-		"rcon-client": "^4.2.3"
-	}
-}

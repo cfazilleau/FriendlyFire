@@ -1,12 +1,8 @@
-# Node
+# node
 node_modules
 
-# VScode
-*.code-workspace
-.vscode
+# build files
+dist
 
-# Typescript
-build/
-
-# Config
+# config
 .env
