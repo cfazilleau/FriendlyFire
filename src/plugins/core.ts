@@ -37,6 +37,27 @@ class CorePlugin extends Plugin
 					await interaction.reply({ content: `Deleted ${deletedMessages.size} messages.`, ephemeral: true });
 				},
 		},
+		{
+			builder:
+				new SlashCommandBuilder()
+					.setName('say')
+					.setDescription('Makes the bot say something')
+					.setDescriptionLocalization('fr', 'Faire dire quelque chose au bot')
+					.addStringOption(option => option
+						.setName('text to say')
+						.setNameLocalization('fr', 'texte a dire'))
+					.toJSON(),
+			callback:
+				async (interaction) =>
+				{
+					const text : string | null = interaction.options.getString('text to say');
+
+					if (text != undefined)
+					{
+						interaction.channel?.send(text);
+					}
+				},
+		},
 	];
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
