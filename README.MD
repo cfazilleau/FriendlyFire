@@ -1,3 +1,8 @@
+"moment": "^2.29.1",
+"mongoose": "^5.11.9",
+"npm": "^8.0.0",
+"rcon-client": "^4.2.3"
+
 Phoenix Bot
 -------------
 

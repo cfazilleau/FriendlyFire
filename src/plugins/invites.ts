@@ -1,22 +1,20 @@
-import { writeFileSync, readFileSync } from 'node:fs';
-import { BaseGuildTextChannel, Client, Collection, CreateInviteOptions, Guild, GuildMember, Interaction, User } from 'discord.js';
+import { writeFileSync } from 'node:fs';
+import { Client, Collection, User } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v10';
 import { CommandCallback, Plugin, RegisterPlugin } from '../pluginloader';
-import { channel } from 'node:diagnostics_channel';
-import { callbackify } from 'node:util';
 
 class InvitesPlugin extends Plugin {
 	public name = 'Invites';
 
 	// Validity of the invite in minutes
-	const inviteMaxAge = 15;
-	const invitesPath = './config/invites.json';
+	private inviteMaxAge = 15;
+	private invitesPath = './config/invites.json';
 
-	const invites = new Collection();
+	private invites = new Collection<string, Map<string, string>>();
 
-	const basicRoleId : string = '207997903879405568';
-	const greetings: string[] = [
+	private basicRoleId : string = '207997903879405568';
+	private greetings: string[] = [
 		'Fait pas trop de betises ;)',
 		'Pas touche a minouche !',
 		'(Les autres, bizutez-le!)',
@@ -39,7 +37,7 @@ class InvitesPlugin extends Plugin {
 		'Vous connaissez ma femme ?',
 		'Est-ce que c\'est trop vous demander, de retirer vos putains de chaussures ?',
 	];
-	const welcomeMessage =
+	private welcomeMessage =
 		'**BIENVENUE SUR PHOENIX !!**\n' +
 		'Bienvenue a toi sur le discord de Phoenix Legacy.\n' +
 		'ici, on essaie au maximum de ne pas ressembler aux *X* autres serveurs discord que l\'on peut trouver.\n' +
@@ -72,7 +70,17 @@ class InvitesPlugin extends Plugin {
 
 						await interaction.reply(`here is your link: ${invite}\nIt will be valid for the next ${this.inviteMaxAge} minutes`);
 
-						this.invites.get(interaction.guild?.id).set(invite.code, author.id);
+						const guildId = interaction.guild?.id;
+
+						if (guildId && author.id)
+						{
+							const guild = this.invites.get(guildId) ?? this.invites.set(guildId, new Collection()).get(guildId);
+
+							if (guild)
+							{
+								guild.set(invite.code, author.id);
+							}
+						}
 
 						this.SaveGeneratedInvites();
 					}
@@ -164,24 +172,40 @@ class InvitesPlugin extends Plugin {
 		// Fetch all Guild Invites, set the key as Guild ID, and create a map which has the invite code, and the number of uses
 		client.guilds.cache.forEach(async (guild) => {
 			const firstInvites = await guild.invites.fetch();
-			this.invites.set(guild.id, new Collection(firstInvites.map((invite) => [invite.code, invite.uses])));
+			this.invites.set(guild.id, new Map(firstInvites.map(invite => [invite.code, invite.inviterId ?? ''])));
 		});
 
 		client.on("inviteDelete", (invite) => {
-			// Delete the Invite from Cache
-			this.invites.get(invite.guild?.id).delete(invite.code);
+
+			const guild = this.invites.get(invite.guild?.id ?? '');
+			if (guild) {
+				// Delete the Invite from Cache
+				guild.delete(invite.code);
+			}
 		});
 
 		client.on("inviteCreate", (invite) => {
+
+			const guildId = invite.guild?.id;
+			const authorId = invite.inviterId;
+
 			// Update cache on new invites
-			this.invites.get(invite.guild.id).set(invite.code, invite.uses);
+			if (guildId && authorId)
+			{
+				const guild = this.invites.get(guildId) ?? this.invites.set(guildId, new Map()).get(guildId);
+
+				if (guild)
+				{
+					guild.set(invite.code, authorId);
+				}
+			}
 		});
 
 		client.on("guildCreate", (guild) => {
 			// We've been added to a new Guild. Let's fetch all the invites, and save it to our cache
 			guild.invites.fetch().then(guildInvites => {
 				// This is the same as the ready event
-				this.invites.set(guild.id, new Map(guildInvites.map((invite) => [invite.code, invite.uses])));
+				this.invites.set(guild.id, new Map(guildInvites.map((invite) => [invite.code, invite.inviterId ?? ''])));
 			})
 		});
 
@@ -192,11 +216,34 @@ class InvitesPlugin extends Plugin {
 
 		client.on("guildMemberAdd", async (member) => {
 			// To compare, we need to load the current invite list.
-			const newInvites = await member.guild.invites.fetch()
+			const invites = await member.guild.invites.fetch()
 			// This is the *existing* invites for the guild.
-			const oldInvites = this.invites.get(member.guild.id);
-			// Look through the invites, find the one for which the uses went up.
-			const invite = newInvites.find(i => if (i == undefined) return; i.uses > oldInvites.get(i.code));
+			const generated = this.invites.get(member.guild.id) ?? this.invites.set(member.guild.id, new Map()).get(member.guild.id);
+
+			if (!invites || !generated) return;
+
+			for (const code in generated)
+			{
+				const invite = invites.get(code);
+				if (!invite?.expiresTimestamp) continue;
+
+				// purge expired invites
+				if (invite.expiresTimestamp < new Date().getTime())
+				{
+					generated.delete(code);
+					continue;
+				}
+
+				// find missing ones
+				const found = invites.find((element) => element.code == code);
+
+				if (!found) {
+					missing[count++] = oldInvites[code];
+					delete oldInvites[code];
+				}
+			}
+
+
 			// This is just to simplify the message being sent below (inviter doesn't have a tag property)
 			const inviter = await client.users.fetch(invite.inviter.id);
 			// Get the log channel (change to your liking)

@@ -15,17 +15,14 @@
     "url": "https://github.com/cfazilleau/friendlyfire.git"
   },
   "devDependencies": {
-    "@types/node": "^16.10.3",
-    "typescript": "^4.4.3"
+    "@types/node": "^17.0.29",
+    "typescript": "^4.6.3"
   },
   "dependencies": {
     "@discordjs/builders": "^0.13.0",
-    "discord-api-types": "^0.31.2",
-    "discord.js": "^13.2.0",
-    "dotenv": "^10.0.0",
-    "moment": "^2.29.1",
-    "mongoose": "^5.11.9",
-    "npm": "^8.0.0",
-    "rcon-client": "^4.2.3"
+    "@discordjs/rest": "^0.4.1",
+    "discord-api-types": "^0.32.0",
+    "discord.js": "^13.6.0",
+    "dotenv": "^16.0.0"
   }
 }
