@@ -3,6 +3,15 @@
 "npm": "^8.0.0",
 "rcon-client": "^4.2.3"
 
+    "eslint.format.enable": true,
+    "eslint.validate": ["typescript", "typescriptreact"],
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": true
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+    }
+
 Phoenix Bot
 -------------
 
