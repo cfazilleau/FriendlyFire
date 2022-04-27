@@ -17,38 +17,103 @@
 		"es6": true
 	},
 	"rules": {
-		"arrow-spacing": ["warn", { "before": true, "after": true }],
-		"brace-style": ["warn", "allman", { "allowSingleLine": true }],
-		"comma-dangle": ["warn", "always-multiline"],
+		"arrow-spacing": [
+			"warn",
+			{
+				"before": true,
+				"after": true
+			}
+		],
+		"brace-style": [
+			"warn",
+			"allman",
+			{
+				"allowSingleLine": true
+			}
+		],
+		"comma-dangle": [
+			"warn",
+			"always-multiline"
+		],
 		"comma-spacing": "warn",
 		"comma-style": "warn",
-		"curly": ["warn", "multi-line", "consistent"],
-		"dot-location": ["warn", "property"],
+		"curly": [
+			"warn",
+			"multi-line",
+			"consistent"
+		],
+		"dot-location": [
+			"warn",
+			"property"
+		],
 		"handle-callback-err": "off",
-		"indent": ["warn", "tab"],
+		"indent": [
+			"warn",
+			"tab"
+		],
 		"keyword-spacing": "warn",
-		"max-nested-callbacks": ["warn", { "max": 4 }],
-		"max-statements-per-line": ["warn", { "max": 2 }],
+		"max-nested-callbacks": [
+			"warn",
+			{
+				"max": 4
+			}
+		],
+		"max-statements-per-line": [
+			"warn",
+			{
+				"max": 2
+			}
+		],
 		"no-console": "off",
 		"no-empty-function": "warn",
 		"no-floating-decimal": "warn",
 		"no-inline-comments": "warn",
 		"no-lonely-if": "warn",
 		"no-multi-spaces": "warn",
-		"no-multiple-empty-lines": ["warn", { "max": 2, "maxEOF": 1, "maxBOF": 0 }],
-		"no-shadow": ["warn", { "allow": ["err", "resolve", "reject"] }],
-		"no-trailing-spaces": ["warn"],
+		"no-multiple-empty-lines": [
+			"warn",
+			{
+				"max": 2,
+				"maxEOF": 1,
+				"maxBOF": 0
+			}
+		],
+		"no-shadow": [
+			"warn",
+			{
+				"allow": [
+					"err",
+					"resolve",
+					"reject"
+				]
+			}
+		],
+		"no-trailing-spaces": [
+			"warn"
+		],
 		"no-var": "warn",
-		"object-curly-spacing": ["warn", "always"],
+		"object-curly-spacing": [
+			"warn",
+			"always"
+		],
 		"prefer-const": "warn",
-		"quotes": ["warn", "single"],
-		"semi": ["warn", "always"],
+		"quotes": [
+			"warn",
+			"single"
+		],
+		"semi": [
+			"warn",
+			"always"
+		],
 		"space-before-blocks": "warn",
-		"space-before-function-paren": ["warn", {
-			"anonymous": "never",
-			"named": "never",
-			"asyncArrow": "always"
-		}],
+		"space-before-function-paren": [
+			"warn",
+			{
+				"anonymous": "never",
+				"named": "never",
+				"asyncArrow": "always"
+			}
+		],
 		"space-in-parens": "warn",
 		"space-infix-ops": "warn",
 		"space-unary-ops": "warn",

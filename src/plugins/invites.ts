@@ -4,7 +4,8 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 import { RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v10';
 import { CommandCallback, Plugin, RegisterPlugin } from '../pluginloader';
 
-class InvitesPlugin extends Plugin {
+class InvitesPlugin extends Plugin
+{
 	public name = 'Invites';
 
 	// Validity of the invite in minutes
@@ -13,7 +14,7 @@ class InvitesPlugin extends Plugin {
 
 	private invites = new Collection<string, Map<string, string>>();
 
-	private basicRoleId : string = '207997903879405568';
+	private basicRoleId = '207997903879405568';
 	private greetings: string[] = [
 		'Fait pas trop de betises ;)',
 		'Pas touche a minouche !',
@@ -57,11 +58,13 @@ class InvitesPlugin extends Plugin {
 					.setDescriptionLocalization('fr', `Génère une invitation valide pour une durée de ${this.inviteMaxAge} minutes.`)
 					.toJSON(),
 			callback:
-				async (interaction) => {
+				async (interaction) =>
+				{
 					const author = interaction.member?.user as User;
 
-					if (author != undefined) {
-						const invite = await interaction.guild?.invites.create(interaction.channelId, { maxAge: this.inviteMaxAge * 60, maxUses: 1, unique: true })
+					if (author != undefined)
+					{
+						const invite = await interaction.guild?.invites.create(interaction.channelId, { maxAge: this.inviteMaxAge * 60, maxUses: 1, unique: true });
 
 						if (invite == undefined) throw 'couldn\'t create invite';
 
@@ -84,7 +87,7 @@ class InvitesPlugin extends Plugin {
 
 						this.SaveGeneratedInvites();
 					}
-				}
+				},
 		},
 		{
 			builder:
@@ -93,13 +96,15 @@ class InvitesPlugin extends Plugin {
 					.setDescription('trigger user joined event for the invite plugin')
 					.toJSON(),
 			callback:
-				async (interaction) => {
-
-				}
+				async (interaction) =>
+				{
+					console.log();
+				},
 		},
 	];
 
-	private GetRandomGreeting() {
+	private GetRandomGreeting()
+	{
 		return this.greetings[Math.floor(Math.random() * this.greetings.length)];
 	}
 
@@ -157,34 +162,43 @@ class InvitesPlugin extends Plugin {
 			user.send(welcomeMessage);
 	}
 	*/
-	private SaveGeneratedInvites() {
+	private SaveGeneratedInvites()
+	{
 		writeFileSync(this.invitesPath, JSON.stringify(this.invites, null, 4));
 	}
 
-	public Init(client: Client<boolean>): void {
-		try {
+	public Init(client: Client<boolean>): void
+	{
+		try
+		{
 			this.invites = require(this.invitesPath);
-		} catch (e) {
+		}
+		catch (e)
+		{
 			console.error('generating ' + this.invitesPath);
 			this.SaveGeneratedInvites();
 		}
 
 		// Fetch all Guild Invites, set the key as Guild ID, and create a map which has the invite code, and the number of uses
-		client.guilds.cache.forEach(async (guild) => {
+		client.guilds.cache.forEach(async (guild) =>
+		{
 			const firstInvites = await guild.invites.fetch();
 			this.invites.set(guild.id, new Map(firstInvites.map(invite => [invite.code, invite.inviterId ?? ''])));
 		});
 
-		client.on("inviteDelete", (invite) => {
+		client.on('inviteDelete', (invite) =>
+		{
 
 			const guild = this.invites.get(invite.guild?.id ?? '');
-			if (guild) {
+			if (guild)
+			{
 				// Delete the Invite from Cache
 				guild.delete(invite.code);
 			}
 		});
 
-		client.on("inviteCreate", (invite) => {
+		client.on('inviteCreate', (invite) =>
+		{
 
 			const guildId = invite.guild?.id;
 			const authorId = invite.inviterId;
@@ -201,22 +215,26 @@ class InvitesPlugin extends Plugin {
 			}
 		});
 
-		client.on("guildCreate", (guild) => {
+		client.on('guildCreate', (guild) =>
+		{
 			// We've been added to a new Guild. Let's fetch all the invites, and save it to our cache
-			guild.invites.fetch().then(guildInvites => {
+			guild.invites.fetch().then(guildInvites =>
+			{
 				// This is the same as the ready event
 				this.invites.set(guild.id, new Map(guildInvites.map((invite) => [invite.code, invite.inviterId ?? ''])));
-			})
+			});
 		});
 
-		client.on("guildDelete", (guild) => {
+		client.on('guildDelete', (guild) =>
+		{
 			// We've been removed from a Guild. Let's delete all their invites
 			this.invites.delete(guild.id);
 		});
 
-		client.on("guildMemberAdd", async (member) => {
+		client.on('guildMemberAdd', async (member) =>
+		{
 			// To compare, we need to load the current invite list.
-			const invites = await member.guild.invites.fetch()
+			const invites = await member.guild.invites.fetch();
 			// This is the *existing* invites for the guild.
 			const generated = this.invites.get(member.guild.id) ?? this.invites.set(member.guild.id, new Map()).get(member.guild.id);
 
@@ -234,24 +252,27 @@ class InvitesPlugin extends Plugin {
 					continue;
 				}
 
+				/*
 				// find missing ones
 				const found = invites.find((element) => element.code == code);
-
-				if (!found) {
+				if (!found)
+				{
 					missing[count++] = oldInvites[code];
 					delete oldInvites[code];
 				}
+				*/
 			}
 
-
+			/*
 			// This is just to simplify the message being sent below (inviter doesn't have a tag property)
 			const inviter = await client.users.fetch(invite.inviter.id);
 			// Get the log channel (change to your liking)
-			const logChannel = member.guild.channels.cache.find(channel => channel.name === "join-logs");
+			const logChannel = member.guild.channels.cache.find(channel => channel.name === 'join-logs');
 			// A real basic message with the information we need.
 			inviter
 				? logChannel.send(`${member.user.tag} joined using invite code ${invite.code} from ${inviter.tag}. Invite was used ${invite.uses} times since its creation.`)
 				: logChannel.send(`${member.user.tag} joined but I couldn't find through which invite.`);
+			*/
 		});
 	}
 }
