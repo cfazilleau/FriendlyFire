@@ -44,13 +44,14 @@ class CorePlugin extends Plugin
 					.setDescription('Makes the bot say something')
 					.setDescriptionLocalization('fr', 'Faire dire quelque chose au bot')
 					.addStringOption(option => option
-						.setName('text to say')
-						.setNameLocalization('fr', 'texte a dire'))
+						.setName('text')
+						.setDescription('text to say')
+						.setDescriptionLocalization('fr', 'texte a dire'))
 					.toJSON(),
 			callback:
 				async (interaction) =>
 				{
-					const text : string | null = interaction.options.getString('text to say');
+					const text : string | null = interaction.options.getString('text');
 
 					if (text != undefined)
 					{

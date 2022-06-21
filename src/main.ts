@@ -15,7 +15,7 @@ client.once('ready', () =>
 
 	client.guilds.cache.forEach((guild, id) =>
 	{
-		console.log('connected to guild: ' + id);
+		console.log(`Connected to guild ${id} (${guild.name})`);
 
 		// Delete already registered commands
 		guild.commands.set([]);

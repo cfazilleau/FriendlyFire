@@ -38,16 +38,18 @@ class InvitesPlugin extends Plugin
 		'Vous connaissez ma femme ?',
 		'Est-ce que c\'est trop vous demander, de retirer vos putains de chaussures ?',
 	];
-	private welcomeMessage =
-		'**BIENVENUE SUR PHOENIX !!**\n' +
-		'Bienvenue a toi sur le discord de Phoenix Legacy.\n' +
-		'ici, on essaie au maximum de ne pas ressembler aux *X* autres serveurs discord que l\'on peut trouver.\n' +
-		'c\'est pourquoi on tiens a connaitre tout le monde, alors n\'hesite pas a venir discuter avec des plus "haut gradés" :D\n' +
-		'Le grade invité que tu as actuellement te permets de rester temporairement et d\'avoir acces a tout le necessaire pour passer de bons moments\n' +
-		'si tu souhaite plus t\'impliquer dans l\'equipe et devenir membre, je t\'invite a te presenter sur le channel presentation!\n' +
-		'moi je te dis a plus dans le bus (I2C) et bon jeu !\n\n' +
-		'**En etant present sur ce serveur, vous vous engagez a respecter les "conditions d\'utilisation"\n' +
-		'vous pouvez y acceder via la commande !rules sur le discord**';
+	private welcomeMessage = `
+		**BIENVENUE SUR PHOENIX !!**
+		Bienvenue a toi sur le discord de Phoenix Legacy.
+		ici, on essaie au maximum de ne pas ressembler aux *X* autres serveurs discord que l'on peut trouver.
+		c'est pourquoi on tiens a connaitre tout le monde, alors n'hesite pas a venir discuter avec des plus "haut gradés" :D
+		Le grade invité que tu as actuellement te permets de rester temporairement et d'avoir acces a tout le necessaire pour passer de bons moments
+		si tu souhaite plus t'impliquer dans l'equipe et devenir membre, je t'invite a te presenter sur le channel presentation!
+		moi je te dis a plus dans le bus (I2C) et bon jeu !
+
+		**En etant present sur ce serveur, vous vous engagez a respecter les "conditions d'utilisation"
+		vous pouvez y acceder via la commande !rules sur le discord**
+		`;
 
 	public commands: { builder: RESTPostAPIApplicationCommandsJSONBody, callback: CommandCallback }[] = [
 		{
@@ -92,7 +94,7 @@ class InvitesPlugin extends Plugin
 		{
 			builder:
 				new SlashCommandBuilder()
-					.setName('testJoin')
+					.setName('testjoin')
 					.setDescription('trigger user joined event for the invite plugin')
 					.toJSON(),
 			callback:
@@ -175,7 +177,7 @@ class InvitesPlugin extends Plugin
 		}
 		catch (e)
 		{
-			console.error('generating ' + this.invitesPath);
+			console.error(`generating ${this.invitesPath}`);
 			this.SaveGeneratedInvites();
 		}
 
