@@ -1,9 +1,10 @@
 import 'dotenv/config';
+import './config';
 
 import { Client, Intents } from 'discord.js';
 import { REST } from '@discordjs/rest';
-import { Routes } from 'discord-api-types/v10';
-import { commands, HandleCommand, LoadPlugins } from './pluginloader';
+import { HandleCommand, LoadPlugins, RegisterCommands } from './pluginloader';
+import { Log } from './utils';
 
 // Create a new client instance
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
@@ -11,26 +12,19 @@ const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 // When the client is ready, run this code (only once)
 client.once('ready', () =>
 {
+	Log('Ready!');
+
+	// Load Plugins
 	LoadPlugins(client);
 
-	client.guilds.cache.forEach((guild, id) =>
+	// Register commands for all plugins and all guilds
+	client.guilds.cache.forEach(async (guild, id) =>
 	{
-		console.log(`Connected to guild ${id} (${guild.name})`);
+		Log(`Connected to guild ${id}. (${guild.name})`);
 
-		// Delete already registered commands
-		guild.commands.set([]);
-
-		// Check for valid clientId
-		if (process.env.FF_ClientId == undefined)
-		{
-			throw 'Environment variable \'FF_ClientId\' not set.';
-		}
-
-		// Register commands from all loaded plugins
-		rest.put(Routes.applicationGuildCommands(process.env.FF_ClientId, guild.id), { body: commands });
+		RegisterCommands(guild, id)
+			.catch(e => Log(e));
 	});
-
-	console.log('Ready!');
 });
 
 // When the client receives an interaction, execute command
@@ -49,7 +43,7 @@ if (process.env.FF_Token == undefined)
 }
 
 // Login to REST API
-const rest = new REST({ version: '10' }).setToken(process.env.FF_Token);
+export const rest = new REST({ version: '10' }).setToken(process.env.FF_Token);
 
 // Login to Discord with your client's token
 client.login(process.env.FF_Token);

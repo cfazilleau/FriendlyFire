@@ -1,27 +1,26 @@
 import { BaseGuildTextChannel, Client } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v10';
 import { CommandCallback, Plugin, RegisterPlugin } from '../pluginloader';
 
 class CorePlugin extends Plugin
 {
 	public name = 'Core';
 
-	public commands: { builder: RESTPostAPIApplicationCommandsJSONBody, callback: CommandCallback }[] = [
+	public commands: { builder: SlashCommandBuilder, callback: CommandCallback }[] = [
 		{
 			builder:
 				new SlashCommandBuilder()
 					.setName('delete')
-					.setDescription('Delete the last # messages of this channel. Can\'t delete messages older than 15 days.')
 					.setDescriptionLocalization('fr', 'Supprime les # derniers messages de ce channel. Les messages de plus de 15 jours seront ignorés.')
+					.setDescription('Delete the last # messages of this channel. Can\'t delete messages older than 15 days.')
+					.setDefaultPermission(false)
 					.addIntegerOption(option => option
 						.setName('amount')
 						.setDescription('amount of messages to delete.')
 						.setNameLocalization('fr', 'quantité')
 						.setDescriptionLocalization('fr', 'quantité de messages a supprimer.')
 						.setMinValue(1)
-						.setRequired(true))
-					.toJSON(),
+						.setRequired(true)) as SlashCommandBuilder,
 			callback:
 				async (interaction) =>
 				{
@@ -46,8 +45,7 @@ class CorePlugin extends Plugin
 					.addStringOption(option => option
 						.setName('text')
 						.setDescription('text to say')
-						.setDescriptionLocalization('fr', 'texte a dire'))
-					.toJSON(),
+						.setDescriptionLocalization('fr', 'texte a dire')) as SlashCommandBuilder,
 			callback:
 				async (interaction) =>
 				{
@@ -55,6 +53,7 @@ class CorePlugin extends Plugin
 
 					if (text != undefined)
 					{
+						interaction.reply({content: 'Done.', ephemeral: true });
 						interaction.channel?.send(text);
 					}
 				},

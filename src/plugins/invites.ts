@@ -1,8 +1,8 @@
 import { writeFileSync } from 'node:fs';
 import { Client, Collection, User } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v10';
 import { CommandCallback, Plugin, RegisterPlugin } from '../pluginloader';
+import { Log } from '../utils';
 
 class InvitesPlugin extends Plugin
 {
@@ -51,14 +51,13 @@ class InvitesPlugin extends Plugin
 		vous pouvez y acceder via la commande !rules sur le discord**
 		`;
 
-	public commands: { builder: RESTPostAPIApplicationCommandsJSONBody, callback: CommandCallback }[] = [
+	public commands: { builder: SlashCommandBuilder, callback: CommandCallback }[] = [
 		{
 			builder:
 				new SlashCommandBuilder()
 					.setName('invite')
 					.setDescription('Generates an invite valid for 15 minutes.')
-					.setDescriptionLocalization('fr', `Génère une invitation valide pour une durée de ${this.inviteMaxAge} minutes.`)
-					.toJSON(),
+					.setDescriptionLocalization('fr', `Génère une invitation valide pour une durée de ${this.inviteMaxAge} minutes.`),
 			callback:
 				async (interaction) =>
 				{
@@ -95,12 +94,12 @@ class InvitesPlugin extends Plugin
 			builder:
 				new SlashCommandBuilder()
 					.setName('testjoin')
-					.setDescription('trigger user joined event for the invite plugin')
-					.toJSON(),
+					.setDescription('trigger user joined event for the invite plugin'),
 			callback:
 				async (interaction) =>
 				{
-					console.log();
+					Log(interaction);
+					console.log()
 				},
 		},
 	];
@@ -177,7 +176,7 @@ class InvitesPlugin extends Plugin
 		}
 		catch (e)
 		{
-			console.error(`generating ${this.invitesPath}`);
+			Log(`generating ${this.invitesPath}`);
 			this.SaveGeneratedInvites();
 		}
 

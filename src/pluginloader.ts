@@ -1,13 +1,16 @@
-import { RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v10';
-import { CacheType, Client, CommandInteraction } from 'discord.js';
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { RESTPostAPIApplicationCommandsJSONBody, Routes } from 'discord-api-types/v10';
+import { CacheType, Client, CommandInteraction, Guild } from 'discord.js';
 import { readdirSync } from 'node:fs';
+import { rest } from './main';
+import { Log } from './utils';
 
 export type CommandCallback = (interaction: CommandInteraction<CacheType>) => Promise<void>;
 
 export abstract class Plugin
 {
 	public abstract name : string;
-	public abstract commands : { builder: RESTPostAPIApplicationCommandsJSONBody, callback: CommandCallback }[];
+	public abstract commands : { builder: SlashCommandBuilder, callback: CommandCallback }[];
 	public abstract Init(client : Client<boolean>) : void;
 }
 
@@ -22,14 +25,30 @@ let pluginsLoaded = false;
 
 export async function HandleCommand(command : CommandInteraction)
 {
-	console.log(`Executing command '${command.toString()}'`);
+	Log(`Executing command '${command.toString()}'`);
 
 	await callbacks.get(command.commandName)?.(command)
 		.catch(error =>
 		{
-			console.log(`Error executing '${command.toString()}': '${error}'`);
+			Log(`Error executing '${command.toString()}': '${error}'`);
 			command.reply(`Error executing \`${command.toString()}\`:\n\`\`\`${error}\`\`\``);
 		});
+}
+
+export async function RegisterCommands(guild : Guild, id : string) : Promise<void>
+{
+	// Check for valid clientId
+	if (process.env.FF_ClientId == undefined)
+	{
+		throw 'Environment variable \'FF_ClientId\' not set.';
+	}
+
+	Log(`Registering commands... (${guild.name})`);
+
+	// Register commands from all loaded plugins
+	await rest.put(Routes.applicationGuildCommands(process.env.FF_ClientId, guild.id), { body: commands }).catch(Log);
+
+	Log(`Registered ${commands.length} commands. (${guild.name})`);
 }
 
 export function LoadPlugins(client : Client<boolean>)
@@ -42,13 +61,14 @@ export function LoadPlugins(client : Client<boolean>)
 	for (const file of commandFiles)
 	{
 		require(`${pluginsDir}/${file}`);
+		Log(`Loading ${commandFiles.length} plugins...`);
 	}
 
 	// Init plugins
 	plugins.forEach(plugin =>
 	{
 		plugin.Init(client);
-		console.log(`Loaded plugin ${plugin.name}`);
+		Log(`Loaded plugin ${plugin.name}`);
 	});
 
 	// Import commands from plugins
@@ -56,7 +76,7 @@ export function LoadPlugins(client : Client<boolean>)
 	{
 		plugin.commands.forEach(command =>
 		{
-			commands.push(command.builder);
+			commands.push(command.builder.toJSON());
 			callbacks.set(command.builder.name, command.callback);
 		});
 	});

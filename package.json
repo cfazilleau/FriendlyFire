@@ -4,7 +4,6 @@
 	"description": "A Typescript modular discord bot",
 	"main": "main.js",
 	"scripts": {
-		"clean": "rm -rf build",
 		"build": "tsc",
 		"start": "node dist/main.js",
 		"postinstall": "npm run build"
