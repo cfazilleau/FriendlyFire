@@ -34,20 +34,24 @@ function GetLabel(fileName: string) : string
 
 function GetColor(fileName: string) : ColorDelegate
 {
-	// special case for files under the 'plugins' folder
-	if (fileName.match(/^plugins[/\\]/))
-	{
-		return color.cyan;
-	}
-
 	// handle filename cases
 	switch (fileName)
 	{
-	case 'main.js': 		return color.green;
-	case 'config.js': 		return color.yellow;
-	case 'pluginloader.js': return color.blue;
+	// special case for files under the 'plugins' folder
+	case fileName.match(/^plugins[/\\]/)?.input:
+		return color.cyan;
 
-	default: return (s) => s;
+	case 'main.js':
+		return color.green;
+
+	case 'config.js':
+		return color.yellow;
+
+	case 'pluginloader.js':
+		return color.blue;
+
+	default:
+		return (s) => s;
 	}
 }
 
