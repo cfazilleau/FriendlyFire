@@ -57,11 +57,12 @@ export function LoadPlugins(client : Client<boolean>)
 	const pluginsDir = './plugins';
 	const commandFiles = readdirSync(`./dist/${pluginsDir}`).filter(file => file.endsWith('.js'));
 
+	Log(`Loading ${commandFiles.length} plugins...`);
+
 	// Require plugins so they can all register themselves
 	for (const file of commandFiles)
 	{
 		require(`${pluginsDir}/${file}`);
-		Log(`Loading ${commandFiles.length} plugins...`);
 	}
 
 	// Init plugins

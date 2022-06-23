@@ -1,3 +1,7 @@
+import color from '@heroku-cli/color';
+
+type ColorDelegate = (input: string) => string;
+
 function GetFileName(err : Error) : string
 {
 	// Split captured stack to cature correct line
@@ -22,25 +26,28 @@ function GetLabel(fileName: string) : string
 {
 	// Regex to get last part of path and trim file extension
 	const matches : RegExpMatchArray = fileName.match(/(.+[\\/])*(.+).[jt]s/i) ?? [];
-	return matches.at(-1) ?? 'global';
+	const label : string = matches.at(-1) ?? 'global';
+	const colorDelegate = GetColor(fileName);
+
+	return colorDelegate(`[${label}]`);
 }
 
-function GetColor(fileName: string) : string
+function GetColor(fileName: string) : ColorDelegate
 {
 	// special case for files under the 'plugins' folder
 	if (fileName.match(/^plugins[/\\]/))
 	{
-		return '36';
+		return color.cyan;
 	}
 
 	// handle filename cases
 	switch (fileName)
 	{
-	case 'main.js': return '32';
-	case 'config.js': return '33';
-	case 'pluginloader.js': return '34';
+	case 'main.js': 		return color.green;
+	case 'config.js': 		return color.yellow;
+	case 'pluginloader.js': return color.blue;
 
-	default: return '0';
+	default: return (s) => s;
 	}
 }
 
@@ -48,7 +55,6 @@ export function Log(text : any) : void
 {
 	const fileName = GetFileName(new Error());
 	const label = GetLabel(fileName);
-	const color = GetColor(fileName);
 
-	console.log(`\x1b[${color}m[${label}]\x1b[0m ${text}`);
+	console.log(`${label} ${text}`);
 }
