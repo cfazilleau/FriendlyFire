@@ -1,3 +1,0 @@
-[submodule "Packages/dev.cfaz.offaxiscamera"]
-	path = Packages/dev.cfaz.offaxiscamera
-	url = git@github.com:cfazilleau/OffAxisCamera.git
