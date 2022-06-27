@@ -5,13 +5,18 @@ import { readdirSync } from 'node:fs';
 import { rest } from './main';
 import { Log } from './utils';
 
-export type CommandCallback = (interaction: CommandInteraction<CacheType>) => Promise<void>;
+type CommandCallback = (interaction: CommandInteraction<CacheType>) => Promise<void>;
 
 export abstract class Plugin
 {
 	public abstract name : string;
-	public abstract commands : { builder: SlashCommandBuilder, callback: CommandCallback }[];
+	public abstract commands : PluginCommand[];
 	public abstract Init(client : Client<boolean>) : void;
+}
+
+export interface PluginCommand {
+	builder: SlashCommandBuilder;
+	callback: CommandCallback;
 }
 
 // Referenced plugins
@@ -35,7 +40,7 @@ export async function HandleCommand(command : CommandInteraction)
 		});
 }
 
-export async function RegisterCommands(guild : Guild, id : string) : Promise<void>
+export async function RegisterCommands(guild : Guild) : Promise<void>
 {
 	// Check for valid clientId
 	if (process.env.FF_ClientId == undefined)

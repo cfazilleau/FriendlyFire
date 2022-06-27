@@ -1,7 +1,7 @@
 import { writeFileSync } from 'node:fs';
 import { Client, Collection, Guild, User } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { CommandCallback, Plugin, RegisterPlugin } from '../pluginloader';
+import { Plugin, PluginCommand, RegisterPlugin } from '../pluginloader';
 import { Log } from '../utils';
 import { GetProperty, SetProperty } from '../config';
 
@@ -21,7 +21,7 @@ class InvitesPlugin extends Plugin
 
 	private invites = new Collection<string, Map<string, string>>();
 
-	public commands: { builder: SlashCommandBuilder, callback: CommandCallback }[] = [
+	public commands: PluginCommand[] = [
 		{
 			builder:
 				new SlashCommandBuilder()

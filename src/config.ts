@@ -4,24 +4,16 @@ import * as fs from 'node:fs';
 import { Plugin } from './pluginloader';
 import { Log } from './utils';
 
-class ConfigFile {
-	global: Config = {};
-	guilds: { [id: string] : Config } = {};
+class ConfigFile
+{
+	global: ConfigData = {};
+	guilds: { [id: string] : ConfigData } = {};
 }
 
-interface Config {
-	[key:string] : any;
+interface ConfigData
+{
+	[key:string] : unknown;
 }
-
-//	{
-//		"global": {},
-//		"guilds": {
-//			"${guild.id}": {
-//				"name": "${guild.name}",
-//				"plugin.setting": string | number | bool,
-//			}
-//		}
-//	}
 
 const configPath = '.ffconfig';
 let config : ConfigFile;
@@ -73,7 +65,7 @@ function GetPropertyInternal<Type>(key: string, defaultValue: Type, guild? : dis
 {
 	if (guild)
 	{
-		const guildConfig : Config = config.guilds[guild.id];
+		const guildConfig : ConfigData = config.guilds[guild.id];
 		return guildConfig ? guildConfig[key] as Type : defaultValue;
 	}
 	else
@@ -86,7 +78,7 @@ function SetPropertyInternal<Type>(key: string, value: Type, guild? : discord.Gu
 {
 	if (guild)
 	{
-		const guildConfig : Config = config.guilds[guild.id] ?? {};
+		const guildConfig : ConfigData = config.guilds[guild.id] ?? {};
 		guildConfig[key] = value;
 		config.guilds[guild.id] = guildConfig;
 	}

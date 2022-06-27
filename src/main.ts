@@ -26,7 +26,7 @@ client.once('ready', () =>
 		// Create Config
 		CreateGuildConfig(guild);
 
-		RegisterCommands(guild, id)
+		RegisterCommands(guild)
 			.catch(e => Log(e));
 	});
 });

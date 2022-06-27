@@ -27,12 +27,12 @@ function GetLabel(fileName: string) : string
 	// Regex to get last part of path and trim file extension
 	const matches : RegExpMatchArray = fileName.match(/(.+[\\/])*(.+).[jt]s/i) ?? [];
 	const label : string = matches.at(-1) ?? 'global';
-	const colorDelegate = GetColor(fileName);
+	const colorDelegate = GetColorDelegate(fileName);
 
 	return colorDelegate(`[${label}]`);
 }
 
-function GetColor(fileName: string) : ColorDelegate
+function GetColorDelegate(fileName: string) : ColorDelegate
 {
 	// handle filename cases
 	switch (fileName)
@@ -55,6 +55,7 @@ function GetColor(fileName: string) : ColorDelegate
 	}
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function Log(text : any) : void
 {
 	const fileName = GetFileName(new Error());

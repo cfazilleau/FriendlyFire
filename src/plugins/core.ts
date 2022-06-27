@@ -1,12 +1,12 @@
 import { BaseGuildTextChannel, Client } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { CommandCallback, Plugin, RegisterPlugin } from '../pluginloader';
+import { Plugin, PluginCommand, RegisterPlugin } from '../pluginloader';
 
 class CorePlugin extends Plugin
 {
 	public name = 'Core';
 
-	public commands: { builder: SlashCommandBuilder, callback: CommandCallback }[] = [
+	public commands: PluginCommand[] = [
 		{
 			builder:
 				new SlashCommandBuilder()
@@ -55,7 +55,7 @@ class CorePlugin extends Plugin
 
 					if (text != undefined)
 					{
-						interaction.reply({content: 'Done.', ephemeral: true });
+						interaction.reply({ content: 'Done.', ephemeral: true });
 						interaction.channel?.send(text);
 					}
 				},
