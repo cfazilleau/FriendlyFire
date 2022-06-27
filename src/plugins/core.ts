@@ -46,7 +46,8 @@ class CorePlugin extends Plugin
 					.addStringOption(option => option
 						.setName('text')
 						.setDescription('text to say')
-						.setDescriptionLocalization('fr', 'texte a dire')) as SlashCommandBuilder,
+						.setDescriptionLocalization('fr', 'texte a dire')
+						.setRequired(true)) as SlashCommandBuilder,
 			callback:
 				async (interaction) =>
 				{
