@@ -42,6 +42,7 @@ class CorePlugin extends Plugin
 					.setName('say')
 					.setDescription('Makes the bot say something')
 					.setDescriptionLocalization('fr', 'Faire dire quelque chose au bot')
+					.setDefaultPermission(false)
 					.addStringOption(option => option
 						.setName('text')
 						.setDescription('text to say')
