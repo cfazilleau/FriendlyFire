@@ -1,10 +1,11 @@
 import 'dotenv/config';
 import './config';
 
-import { Client, Intents } from 'discord.js';
+import { Client, Guild, Intents } from 'discord.js';
 import { REST } from '@discordjs/rest';
 import { HandleCommand, LoadPlugins, RegisterCommands } from './pluginloader';
 import { Log } from './utils';
+import { CreateGuildConfig } from './config';
 
 // Create a new client instance
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
@@ -18,9 +19,12 @@ client.once('ready', () =>
 	LoadPlugins(client);
 
 	// Register commands for all plugins and all guilds
-	client.guilds.cache.forEach(async (guild, id) =>
+	client.guilds.cache.forEach(async (guild : Guild, id : string) =>
 	{
 		Log(`Connected to guild ${id}. (${guild.name})`);
+
+		// Create Config
+		CreateGuildConfig(guild);
 
 		RegisterCommands(guild, id)
 			.catch(e => Log(e));

@@ -1,8 +1,15 @@
 import { writeFileSync } from 'node:fs';
-import { Client, Collection, User } from 'discord.js';
+import { Client, Collection, Guild, User } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { CommandCallback, Plugin, RegisterPlugin } from '../pluginloader';
 import { Log } from '../utils';
+import { GetProperty, SetProperty } from '../config';
+
+const welcomeMessageKey = 'welcomeMessage';
+const greetingsKey = 'greetings';
+
+const defaultGreetings = [ 'Welcome!' ];
+const defaultWelcomeMessage = 'Welcome to the server';
 
 class InvitesPlugin extends Plugin
 {
@@ -14,50 +21,14 @@ class InvitesPlugin extends Plugin
 
 	private invites = new Collection<string, Map<string, string>>();
 
-	private basicRoleId = '207997903879405568';
-	private greetings: string[] = [
-		'Fait pas trop de betises ;)',
-		'Pas touche a minouche !',
-		'(Les autres, bizutez-le!)',
-		'Premiere conso offerte par elie',
-		'Les toilettes sont au fond à droite !',
-		'Faites comme chez vous ! (enfin dans la limite du raisonable)',
-		'Noté #3eme endroit le plus "pas mal" par le guide des explorateurs',
-		'Faites pas attention au gros là bas',
-		'*ferme son livre* Je vous avais pas vu entrer...',
-		'Hé ! Tout le monde ! Voila de la viande fraiche.',
-		'Bienvenue a PhoenixLegacy Town, Population : Un de plus qu\'avant',
-		'Bonjour ! Hello ! Guten Tag ! Inserez le langage de votre choix',
-		'Le meilleur zelda c\'est Ocarina Of Time, comme ça vous saurez !',
-		'Random Fact 74 : Le briquet a été inventé avant les allumettes',
-		'Du sucre, Des épices et des Tas de bonnes choses. C\'est le genre de trucs qu\'on trouve dans le coin',
-		'La tenue correcte n\'exige pas de pantalon',
-		'Un nouveau starbucks en 2023',
-		'Vous seul êtes responsable de votre interaction avec les autres utilisateurs du Service et les autres parties que vous contactez via le Service. La Compagnie réfute par la présente toute responsabilité envers vous ou toute tierce partie concernant votre utilisation du Service. La Compagnie se réserve le droit mais n\'a aucune obligation de gérer les conflits entre vous et d\'autres utilisateurs du Service.',
-		'Votez Coda',
-		'Vous connaissez ma femme ?',
-		'Est-ce que c\'est trop vous demander, de retirer vos putains de chaussures ?',
-	];
-	private welcomeMessage = `
-		**BIENVENUE SUR PHOENIX !!**
-		Bienvenue a toi sur le discord de Phoenix Legacy.
-		ici, on essaie au maximum de ne pas ressembler aux *X* autres serveurs discord que l'on peut trouver.
-		c'est pourquoi on tiens a connaitre tout le monde, alors n'hesite pas a venir discuter avec des plus "haut gradés" :D
-		Le grade invité que tu as actuellement te permets de rester temporairement et d'avoir acces a tout le necessaire pour passer de bons moments
-		si tu souhaite plus t'impliquer dans l'equipe et devenir membre, je t'invite a te presenter sur le channel presentation!
-		moi je te dis a plus dans le bus (I2C) et bon jeu !
-
-		**En etant present sur ce serveur, vous vous engagez a respecter les "conditions d'utilisation"
-		vous pouvez y acceder via la commande !rules sur le discord**
-		`;
-
 	public commands: { builder: SlashCommandBuilder, callback: CommandCallback }[] = [
 		{
 			builder:
 				new SlashCommandBuilder()
 					.setName('invite')
 					.setDescription('Generates an invite valid for 15 minutes.')
-					.setDescriptionLocalization('fr', `Génère une invitation valide pour une durée de ${this.inviteMaxAge} minutes.`),
+					.setDescriptionLocalization('fr', `Génère une invitation valide pour une durée de ${this.inviteMaxAge} minutes.`)
+					.setDefaultPermission(false),
 			callback:
 				async (interaction) =>
 				{
@@ -94,19 +65,25 @@ class InvitesPlugin extends Plugin
 			builder:
 				new SlashCommandBuilder()
 					.setName('testjoin')
-					.setDescription('trigger user joined event for the invite plugin'),
+					.setDescription('trigger user joined event for the invite plugin')
+					.setDefaultPermission(false),
 			callback:
 				async (interaction) =>
 				{
-					Log(interaction);
-					console.log()
+					const welcomeMessage : string = GetProperty<string>(this, welcomeMessageKey, defaultWelcomeMessage, interaction.guild as Guild);
+					SetProperty<string>(this, welcomeMessageKey, welcomeMessage, interaction.guild as Guild);
+
+					interaction.reply(welcomeMessage);
 				},
 		},
 	];
 
-	private GetRandomGreeting()
+	private GetRandomGreeting(guild : Guild)
 	{
-		return this.greetings[Math.floor(Math.random() * this.greetings.length)];
+		const greetings : string[] = GetProperty<string[]>(this, greetingsKey, defaultGreetings, guild);
+		SetProperty<string[]>(this, greetingsKey, greetings, guild);
+
+		return greetings[Math.floor(Math.random() * greetings.length)];
 	}
 
 	/*
