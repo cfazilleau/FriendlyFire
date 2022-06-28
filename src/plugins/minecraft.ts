@@ -93,6 +93,7 @@ class MinecraftPlugin extends Plugin
 			await rcon.connect();
 
 			response = await rcon.send(command);
+			response = this.CleanMinecraftTags(response);
 			await rcon.end();
 		}
 		catch (error)
@@ -123,6 +124,11 @@ class MinecraftPlugin extends Plugin
 		const rcon = new Rcon({ host: host, port: port, password: pass });
 		this.guildRcons.set(guild.id, rcon);
 		return rcon;
+	}
+
+	private CleanMinecraftTags(text: string): string
+	{
+		return text.replace(/§./g, '');
 	}
 }
 
