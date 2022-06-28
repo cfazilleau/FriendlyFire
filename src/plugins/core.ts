@@ -12,8 +12,8 @@ class CorePlugin extends Plugin
 			builder:
 				new SlashCommandBuilder()
 					.setName('delete')
-					.setDescriptionLocalization('fr', 'Supprime les # derniers messages de ce channel. Les messages de plus de 15 jours seront ignorés.')
 					.setDescription('Delete the last # messages of this channel. Can\'t delete messages older than 15 days.')
+					.setDescriptionLocalization('fr', 'Supprime les # derniers messages de ce channel. Les messages de plus de 15 jours seront ignorés.')
 					.setDefaultPermission(false)
 					.addIntegerOption(option => option
 						.setName('amount')

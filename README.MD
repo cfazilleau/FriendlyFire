@@ -3,14 +3,14 @@
 "npm": "^8.0.0",
 "rcon-client": "^4.2.3"
 
-    "eslint.format.enable": true,
-    "eslint.validate": ["typescript", "typescriptreact"],
-    "editor.codeActionsOnSave": {
-        "source.fixAll.eslint": true
-    },
-    "[typescript]": {
-        "editor.defaultFormatter": "dbaeumer.vscode-eslint"
-    }
+	"eslint.format.enable": true,
+	"eslint.validate": ["typescript", "typescriptreact"],
+	"editor.codeActionsOnSave": {
+		"source.fixAll.eslint": true
+	},
+	"[typescript]": {
+		"editor.defaultFormatter": "dbaeumer.vscode-eslint"
+	}
 
 Phoenix Bot
 -------------
@@ -41,3 +41,47 @@ then you're good to go, the entry point is main.js (`npm start` to compile and r
 
 you'll be able to find the link to invite the bot on your server in the logs of the bot.
 
+# Plugin Template
+
+```ts
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { CacheType, Client, CommandInteraction } from 'discord.js';
+
+import { Plugin, PluginCommand, RegisterPlugin } from '../pluginloader';
+import { Log } from '../utils';
+
+// Create a class extending the Plugin class
+class CustomPlugin extends Plugin
+{
+	// The plugin name, will be used in logs and in config files
+	public name = 'Custom';
+
+	// The Commands associated with this plugin
+	public commands: PluginCommand[] = [
+		{
+			// The builder is a slash command descriptor that is registered as a guild command when loading plugin.
+			builder:
+				new SlashCommandBuilder()
+					.setName('name')
+					.setDescription('description')
+					.setDefaultPermission(false) as SlashCommandBuilder,
+			// The Callback is an async method called when someone runs the command
+			callback:
+				async (interaction: CommandInteraction<CacheType>) =>
+				{
+					// The log function from ../utils doas automatic formatting for logs consistency
+					Log(interaction);
+				},
+		},
+	];
+
+	// The Init method is called by the bot when loading the plugin
+	public Init(client: Client<boolean>): void
+	{
+
+	}
+}
+
+// Register the plugin to the bot
+RegisterPlugin(new CustomPlugin());
+```

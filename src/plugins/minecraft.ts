@@ -120,7 +120,7 @@ class MinecraftPlugin extends Plugin
 			throw `config not set for guild '${guild.name}'`;
 		}
 
-		Log(`Creating new Rcon for guild ${guild.id} (${guild.name})`);
+		Log(`Creating new Rcon for guild ${guild.id}. (${guild.name})`);
 		const rcon = new Rcon({ host: host, port: port, password: pass });
 		this.guildRcons.set(guild.id, rcon);
 		return rcon;
