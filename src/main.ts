@@ -1,14 +1,15 @@
 import 'dotenv/config';
 import './config';
 
-import { Client, Guild, Intents } from 'discord.js';
-import { REST } from '@discordjs/rest';
+import * as discord from 'discord.js';
+import * as rest from '@discordjs/rest';
+
 import { HandleCommand, LoadPlugins, RegisterCommands } from './pluginloader';
 import { Log } from './utils';
 import { CreateGuildConfig } from './config';
 
 // Create a new client instance
-const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
+const client = new discord.Client({ intents: [discord.Intents.FLAGS.GUILDS] });
 
 // When the client is ready, run this code (only once)
 client.once('ready', () =>
@@ -19,7 +20,7 @@ client.once('ready', () =>
 	LoadPlugins(client);
 
 	// Register commands for all plugins and all guilds
-	client.guilds.cache.forEach(async (guild : Guild, id : string) =>
+	client.guilds.cache.forEach(async (guild : discord.Guild, id : string) =>
 	{
 		Log(`Connected to guild ${id}. (${guild.name})`);
 
@@ -47,7 +48,7 @@ if (process.env.FF_Token == undefined)
 }
 
 // Login to REST API
-export const rest = new REST({ version: '10' }).setToken(process.env.FF_Token);
+export const restAPI = new rest.REST({ version: '10' }).setToken(process.env.FF_Token);
 
 // Login to Discord with your client's token
 client.login(process.env.FF_Token);

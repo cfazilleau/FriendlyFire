@@ -1,34 +1,46 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
-import { RESTPostAPIApplicationCommandsJSONBody, Routes } from 'discord-api-types/v10';
-import { CacheType, Client, CommandInteraction, Guild } from 'discord.js';
-import { readdirSync } from 'node:fs';
-import { rest } from './main';
-import { Log } from './utils';
+import * as builders from '@discordjs/builders';
+import * as types from 'discord-api-types/v10';
+import * as discord from 'discord.js';
+import * as fs from 'node:fs';
 
-type CommandCallback = (interaction: CommandInteraction<CacheType>) => Promise<void>;
+import { restAPI } from './main';
+import { Log } from './utils';
+import { GetProperty, SetProperty } from './config';
+
+type CommandCallback = (interaction: discord.CommandInteraction<discord.CacheType>) => Promise<void>;
 
 export abstract class Plugin
 {
 	public abstract name : string;
 	public abstract commands : PluginCommand[];
-	public abstract Init(client : Client<boolean>) : void;
+	public abstract Init(client : discord.Client<boolean>) : void;
+
+	protected GetProperty<Type>(key: string, defaultValue: Type, guild? : discord.Guild) : Type
+	{
+		return GetProperty<Type>(this, key, defaultValue, guild);
+	}
+
+	protected SetProperty<Type>(key: string, value: Type, guild? : discord.Guild) : void
+	{
+		SetProperty<Type>(this, key, value, guild);
+	}
 }
 
 export interface PluginCommand {
-	builder: SlashCommandBuilder;
+	builder: builders.SlashCommandBuilder;
 	callback: CommandCallback;
 }
 
 // Referenced plugins
 const plugins : Map<string, Plugin> = new Map;
 // CommandBuilders
-export const commands : RESTPostAPIApplicationCommandsJSONBody[] = [];
+export const commands : types.RESTPostAPIApplicationCommandsJSONBody[] = [];
 // Callbacks by command names
 const callbacks : Map<string, CommandCallback> = new Map();
 // Are plugins loaded
 let pluginsLoaded = false;
 
-export async function HandleCommand(command : CommandInteraction)
+export async function HandleCommand(command : discord.CommandInteraction)
 {
 	Log(`Executing command '${command.toString()}'`);
 
@@ -36,11 +48,11 @@ export async function HandleCommand(command : CommandInteraction)
 		.catch(error =>
 		{
 			Log(`Error executing '${command.toString()}': '${error}'`);
-			command.reply(`Error executing \`${command.toString()}\`:\n\`\`\`${error}\`\`\``);
+			command.channel?.send(`Error executing ${builders.quote(command.toString())}:\n${builders.blockQuote(error)}`);
 		});
 }
 
-export async function RegisterCommands(guild : Guild) : Promise<void>
+export async function RegisterCommands(guild : discord.Guild) : Promise<void>
 {
 	// Check for valid clientId
 	if (process.env.FF_ClientId == undefined)
@@ -51,16 +63,17 @@ export async function RegisterCommands(guild : Guild) : Promise<void>
 	Log(`Registering commands... (${guild.name})`);
 
 	// Register commands from all loaded plugins
-	await rest.put(Routes.applicationGuildCommands(process.env.FF_ClientId, guild.id), { body: commands }).catch(Log);
+	await restAPI.put(types.Routes.applicationGuildCommands(process.env.FF_ClientId, guild.id), { body: commands })
+		.catch(e => Log(e));
 
 	Log(`Registered ${commands.length} commands. (${guild.name})`);
 }
 
-export function LoadPlugins(client : Client<boolean>)
+export function LoadPlugins(client : discord.Client<boolean>)
 {
 	// TODO: find a better way and clean that
 	const pluginsDir = './plugins';
-	const commandFiles = readdirSync(`./dist/${pluginsDir}`).filter(file => file.endsWith('.js'));
+	const commandFiles = fs.readdirSync(`./dist/${pluginsDir}`).filter(file => file.endsWith('.js'));
 
 	Log(`Loading ${commandFiles.length} plugins...`);
 

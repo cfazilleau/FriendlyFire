@@ -1,4 +1,4 @@
-import color from '@heroku-cli/color';
+import * as color from '@heroku-cli/color';
 
 type ColorDelegate = (input: string) => string;
 
@@ -39,16 +39,16 @@ function GetColorDelegate(fileName: string) : ColorDelegate
 	{
 	// special case for files under the 'plugins' folder
 	case fileName.match(/^plugins[/\\]/)?.input:
-		return color.cyan;
+		return color.color.cyan;
 
 	case 'main.js':
-		return color.green;
+		return color.color.green;
 
 	case 'config.js':
-		return color.yellow;
+		return color.color.yellow;
 
 	case 'pluginloader.js':
-		return color.blue;
+		return color.color.blue;
 
 	default:
 		return (s) => s;

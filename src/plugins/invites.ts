@@ -1,9 +1,9 @@
 import { writeFileSync } from 'node:fs';
 import { Client, Collection, Guild, User } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
+
 import { Plugin, PluginCommand, RegisterPlugin } from '../pluginloader';
 import { Log } from '../utils';
-import { GetProperty, SetProperty } from '../config';
 
 const welcomeMessageKey = 'welcomeMessage';
 const greetingsKey = 'greetings';
@@ -70,8 +70,8 @@ class InvitesPlugin extends Plugin
 			callback:
 				async (interaction) =>
 				{
-					const welcomeMessage : string = GetProperty<string>(this, welcomeMessageKey, defaultWelcomeMessage, interaction.guild as Guild);
-					SetProperty<string>(this, welcomeMessageKey, welcomeMessage, interaction.guild as Guild);
+					const welcomeMessage : string = this.GetProperty<string>(welcomeMessageKey, defaultWelcomeMessage, interaction.guild as Guild);
+					this.SetProperty<string>(welcomeMessageKey, welcomeMessage, interaction.guild as Guild);
 
 					interaction.reply(welcomeMessage);
 				},
@@ -80,8 +80,8 @@ class InvitesPlugin extends Plugin
 
 	private GetRandomGreeting(guild : Guild)
 	{
-		const greetings : string[] = GetProperty<string[]>(this, greetingsKey, defaultGreetings, guild);
-		SetProperty<string[]>(this, greetingsKey, greetings, guild);
+		const greetings : string[] = this.GetProperty<string[]>(greetingsKey, defaultGreetings, guild);
+		this.SetProperty<string[]>(greetingsKey, greetings, guild);
 
 		return greetings[Math.floor(Math.random() * greetings.length)];
 	}

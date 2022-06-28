@@ -1,5 +1,6 @@
 import { BaseGuildTextChannel, Client } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
+
 import { Plugin, PluginCommand, RegisterPlugin } from '../pluginloader';
 
 class CorePlugin extends Plugin
