@@ -74,13 +74,15 @@ class MinecraftPlugin extends Plugin
 		},
 	];
 
+	private guildRcons: Map<string, Rcon> = new Map;
+
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	public Init(client: Client<boolean>): void
 	{
 		Log('Minecraft');
 	}
 
-	async HandleCommand(command: string, interaction: CommandInteraction<CacheType>)
+	private async HandleCommand(command: string, interaction: CommandInteraction<CacheType>)
 	{
 		await interaction.deferReply();
 
@@ -101,8 +103,13 @@ class MinecraftPlugin extends Plugin
 		interaction.editReply(response);
 	}
 
-	GetGuildRcon(guild: Guild) : Rcon
+	private GetGuildRcon(guild: Guild) : Rcon
 	{
+		if (this.guildRcons.has(guild.id))
+		{
+			return this.guildRcons.get(guild.id) as Rcon;
+		}
+
 		const port = this.GetProperty<number>('port', 25575, guild);
 		const host = this.GetProperty<string | undefined>('ip', undefined, guild);
 		const pass = this.GetProperty<string | undefined>('password', undefined, guild);
@@ -112,7 +119,10 @@ class MinecraftPlugin extends Plugin
 			throw `config not set for guild '${guild.name}'`;
 		}
 
-		return new Rcon({ host: host, port: port, password: pass });
+		Log(`Creating new Rcon for guild ${guild.id} (${guild.name})`);
+		const rcon = new Rcon({ host: host, port: port, password: pass });
+		this.guildRcons.set(guild.id, rcon);
+		return rcon;
 	}
 }
 
