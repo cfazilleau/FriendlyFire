@@ -1,8 +1,20 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { ButtonInteraction, CacheType, Client, CommandInteraction, MessageActionRow, MessageButton } from 'discord.js';
+import { ButtonInteraction, CacheType, Client, CommandInteraction, MessageActionRow, MessageButton, TextChannel } from 'discord.js';
 import QuickChart from 'quickchart-js';
 
 import { Plugin, PluginCommand, RegisterPlugin } from '../pluginloader';
+import { Log } from '../utils';
+
+interface MessageVotes
+{
+	[guild: string]: {
+		[channel: string]: {
+			[messageId: string]: {
+				[userId: string]: string;
+			}
+		}
+	}
+}
 
 class PollsPlugin extends Plugin
 {
@@ -23,18 +35,9 @@ class PollsPlugin extends Plugin
 					const text = interaction.options.getString('poll');
 
 					const actionRow = new MessageActionRow();
-
 					actionRow.addComponents([
-						new MessageButton()
-							.setCustomId('yes')
-							.setLabel('Yes')
-							.setStyle('SUCCESS')
-							.setEmoji('👍'),
-						new MessageButton()
-							.setCustomId('no')
-							.setLabel('No')
-							.setStyle('DANGER')
-							.setEmoji('👎'),
+						this.yesButton,
+						this.noButton,
 					]);
 
 					interaction.reply({ content: text, components: [ actionRow ], fetchReply: true });
@@ -55,23 +58,10 @@ class PollsPlugin extends Plugin
 					const text = interaction.options.getString('poll');
 
 					const actionRow = new MessageActionRow();
-
 					actionRow.addComponents([
-						new MessageButton()
-							.setCustomId('yes')
-							.setLabel('Yes')
-							.setStyle('SUCCESS')
-							.setEmoji('👍'),
-						new MessageButton()
-							.setCustomId('no')
-							.setLabel('No')
-							.setStyle('DANGER')
-							.setEmoji('👎'),
-						new MessageButton()
-							.setCustomId('maybe')
-							.setLabel('Maybe')
-							.setStyle('PRIMARY')
-							.setEmoji('✋'),
+						this.yesButton,
+						this.noButton,
+						this.maybeButton,
 					]);
 
 					interaction.reply({ content: text, components: [ actionRow ], fetchReply: true });
@@ -79,36 +69,161 @@ class PollsPlugin extends Plugin
 		},
 	];
 
+	private yesButton = new MessageButton()
+		.setCustomId(this.CustomId('yes'))
+		.setLabel('Yes')
+		.setStyle('SUCCESS')
+		.setEmoji('👍');
+
+	private noButton = new MessageButton()
+		.setCustomId(this.CustomId('no'))
+		.setLabel('No')
+		.setStyle('DANGER')
+		.setEmoji('👎');
+
+	private maybeButton = new MessageButton()
+		.setCustomId(this.CustomId('maybe'))
+		.setLabel('Maybe')
+		.setStyle('PRIMARY')
+		.setEmoji('✋');
+
 	public Init(client: Client<boolean>): void
 	{
 		client.on('interactionCreate', interaction =>
 		{
-			if (interaction.isButton())
+			if (interaction.isButton() && this.CheckCustomId(interaction.customId))
 			{
+				const customId = this.GetShortCustomId(interaction.customId);
+				Log(`Handling interaction ${customId}`);
+
 				this.HandleButtonInteraction(interaction);
 			}
 		});
+
+		this.ClearOldVoteMessages(client);
 	}
 
-	private userVotes: Map<string, Map<string, string>> = new Map;
+	private CustomId(id: string): string
+	{
+		Log(this.name);
+		return `${this.name}.${id}`;
+	}
+
+	private CheckCustomId(id: string): boolean
+	{
+		return id.startsWith(`${this.name}.`);
+	}
+
+	private GetShortCustomId(id: string): string
+	{
+		return id.replace(`${this.name}.`, '');
+	}
+
+	private GetMessageVotes(guild: string, channel: string, message: string): {[userId: string]: string}
+	{
+		const messageVotes: MessageVotes = this.GetProperty('userVotes', {});
+		const guildData = messageVotes[guild] ?? {};
+		const chanData = guildData[channel] ?? {};
+		return chanData[message] ?? {};
+	}
+
+	private SetMessageVotes(guild: string, channel: string, message: string, data: {[userId: string]: string})
+	{
+		// Get Data
+		const messageVotes: MessageVotes = this.GetProperty('userVotes', {});
+		const guildData = messageVotes[guild] ?? {};
+		const chanData = guildData[channel] ?? {};
+
+		// Set Data
+		chanData[message] = data;
+		guildData[channel] = chanData;
+		messageVotes[guild] = guildData;
+		this.SetProperty('userVotes', messageVotes);
+	}
+
+	private async ClearOldVoteMessages(client: Client<boolean>)
+	{
+		// Check guilds
+		const guilds: MessageVotes = this.GetProperty('userVotes', {});
+		for (const guildId in guilds)
+		{
+			await client.guilds.fetch();
+			const guild = await client.guilds.cache.get(guildId);
+			Log(`${guild?.name}`);
+			if (guild == undefined)
+			{
+				delete guilds[guildId];
+				continue;
+			}
+
+			// Check channels
+			const channels = guilds[guildId];
+			for (const channelId in channels)
+			{
+				await guild.channels.fetch();
+				const channel = await guild.channels.cache.get(channelId) as TextChannel | undefined;
+				Log(`${channel?.name}`);
+				if (channel == undefined)
+				{
+					delete channels[channelId];
+					continue;
+				}
+
+				// Check messages
+				const messages = channels[channelId];
+				for (const messageId in messages)
+				{
+					await channel.messages.fetch();
+					const message = await channel.messages.cache.get(messageId);
+					Log(`${message?.content}`);
+					if (message == undefined)
+					{
+						delete messages[messageId];
+						continue;
+					}
+				}
+
+				if (Object.keys(messages).length == 0)
+				{
+					delete channels[channelId];
+				}
+			}
+
+			if (Object.keys(channels).length == 0)
+			{
+				delete guilds[guildId];
+			}
+		}
+
+		this.SetProperty('userVotes', guilds);
+	}
 
 	private async HandleButtonInteraction(interaction: ButtonInteraction)
 	{
 		try
 		{
+			const guildId = interaction.guildId as string;
+			const chanId = interaction.channelId;
 			const msgId = interaction.message.id;
 			const message = await interaction.channel?.messages.fetch(msgId);
 
-			const userVotes: Map<string, string> = this.userVotes.get(msgId) ?? new Map;
-			userVotes.set(interaction.user.id, interaction.customId);
-			this.userVotes.set(msgId, userVotes);
+			const userVotes: {[userId: string]: string} = this.GetMessageVotes(guildId, chanId, msgId);
+
+			userVotes[interaction.user.id] = this.GetShortCustomId(interaction.customId);
+
+			this.SetMessageVotes(guildId, chanId, msgId, userVotes);
 
 			const values = new Map<string, number>();
-			userVotes.forEach((value) =>
+			for (const value in userVotes)
 			{
-				const cur : number = values.get(value) ?? 0;
-				values.set(value, cur + 1);
-			});
+				const vote: string = userVotes[value];
+				const count: number = values.get(vote) ?? 0;
+				values.set(vote, count + 1);
+			}
+
+			const yesCount = values.get('yes');
+			const noCount = values.get('no');
+			const maybeCount = values.get('maybe');
 
 			const chart = new QuickChart();
 			chart.setWidth(1024);
@@ -120,9 +235,9 @@ class PollsPlugin extends Plugin
 					'data':
 					{
 						'datasets': [
-							{ 'data': [ values.get('yes') ?? 0 ], hidden: values.get('yes') == undefined, 'backgroundColor': '#43b581' },
-							{ 'data': [ values.get('no') ?? 0 ], hidden: values.get('no') == undefined, 'backgroundColor': '#f04747' },
-							{ 'data': [ values.get('maybe') ?? 0 ], hidden: values.get('maybe') == undefined, 'backgroundColor': '#5865f2' },
+							{ 'data': [ yesCount ?? 0 ], hidden: yesCount == undefined, 'backgroundColor': '#43b581' },
+							{ 'data': [ noCount ?? 0 ], hidden: noCount == undefined, 'backgroundColor': '#f04747' },
+							{ 'data': [ maybeCount ?? 0 ], hidden: maybeCount == undefined, 'backgroundColor': '#5865f2' },
 						],
 					},
 					'options':
@@ -150,6 +265,7 @@ class PollsPlugin extends Plugin
 		}
 		catch (error)
 		{
+			Log(`${error}`);
 			interaction.reply(`${error}`);
 		}
 	}
