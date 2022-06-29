@@ -71,8 +71,6 @@ class InvitesPlugin extends Plugin
 				async (interaction) =>
 				{
 					const welcomeMessage : string = this.GetProperty<string>(welcomeMessageKey, defaultWelcomeMessage, interaction.guild as Guild);
-					this.SetProperty<string>(welcomeMessageKey, welcomeMessage, interaction.guild as Guild);
-
 					interaction.reply(welcomeMessage);
 				},
 		},
@@ -81,8 +79,6 @@ class InvitesPlugin extends Plugin
 	private GetRandomGreeting(guild : Guild)
 	{
 		const greetings : string[] = this.GetProperty<string[]>(greetingsKey, defaultGreetings, guild);
-		this.SetProperty<string[]>(greetingsKey, greetings, guild);
-
 		return greetings[Math.floor(Math.random() * greetings.length)];
 	}
 

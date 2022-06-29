@@ -5,7 +5,7 @@ import * as fs from 'node:fs';
 
 import { restAPI } from './main';
 import { Log } from './utils';
-import { GetProperty, SetProperty } from './config';
+import { GetProperty } from './config';
 
 type CommandCallback = (interaction: discord.CommandInteraction<discord.CacheType>) => Promise<void>;
 
@@ -18,11 +18,6 @@ export abstract class Plugin
 	protected GetProperty<Type>(key: string, defaultValue: Type, guild? : discord.Guild) : Type
 	{
 		return GetProperty<Type>(this, key, defaultValue, guild);
-	}
-
-	protected SetProperty<Type>(key: string, value: Type, guild? : discord.Guild) : void
-	{
-		SetProperty<Type>(this, key, value, guild);
 	}
 }
 

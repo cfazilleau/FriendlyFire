@@ -16,6 +16,20 @@ interface MessageVotes
 	}
 }
 
+// TODO: find a way to store localData in a persistent database / filesystem (mongoose ?)
+let localData: MessageVotes = {};
+function LoadMessageVotesData(): MessageVotes
+{
+	return localData;
+	// return this.GetProperty('userVotes', {});
+}
+
+function SaveMessageVotesData(data: MessageVotes)
+{
+	localData = data;
+	// return this.SetProperty('userVotes', data);
+}
+
 class PollsPlugin extends Plugin
 {
 	public name = 'Polls';
@@ -94,7 +108,7 @@ class PollsPlugin extends Plugin
 			if (interaction.isButton() && this.CheckCustomId(interaction.customId))
 			{
 				const customId = this.GetShortCustomId(interaction.customId);
-				Log(`Handling interaction ${customId}`);
+				Log(`Handling interaction '${customId}' from '${interaction.user.username}'`);
 
 				this.HandleButtonInteraction(interaction);
 			}
@@ -127,10 +141,12 @@ class PollsPlugin extends Plugin
 		return chanData[message] ?? {};
 	}
 
+
+
 	private SetMessageVotes(guild: string, channel: string, message: string, data: {[userId: string]: string})
 	{
 		// Get Data
-		const messageVotes: MessageVotes = this.GetProperty('userVotes', {});
+		const messageVotes: MessageVotes = LoadMessageVotesData();
 		const guildData = messageVotes[guild] ?? {};
 		const chanData = guildData[channel] ?? {};
 
@@ -138,13 +154,13 @@ class PollsPlugin extends Plugin
 		chanData[message] = data;
 		guildData[channel] = chanData;
 		messageVotes[guild] = guildData;
-		this.SetProperty('userVotes', messageVotes);
+		SaveMessageVotesData(messageVotes);
 	}
 
 	private async ClearOldVoteMessages(client: Client<boolean>)
 	{
 		// Check guilds
-		const guilds: MessageVotes = this.GetProperty('userVotes', {});
+		const guilds: MessageVotes = LoadMessageVotesData();
 		for (const guildId in guilds)
 		{
 			await client.guilds.fetch();
@@ -195,7 +211,7 @@ class PollsPlugin extends Plugin
 			}
 		}
 
-		this.SetProperty('userVotes', guilds);
+		SaveMessageVotesData(guilds);
 	}
 
 	private async HandleButtonInteraction(interaction: ButtonInteraction)
