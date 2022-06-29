@@ -95,6 +95,7 @@ export function GetProperty<Type>(plugin: Plugin, key: string, defaultValue: Typ
 	return GetPropertyInternal(`${plugin.name}.${key}`, defaultValue, guild);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function SetProperty<Type>(plugin: Plugin, key: string, value: Type, guild? : discord.Guild) : void
 {
 	return SetPropertyInternal(`${plugin.name}.${key}`, value, guild);

@@ -141,8 +141,6 @@ class PollsPlugin extends Plugin
 		return chanData[message] ?? {};
 	}
 
-
-
 	private SetMessageVotes(guild: string, channel: string, message: string, data: {[userId: string]: string})
 	{
 		// Get Data
