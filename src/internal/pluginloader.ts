@@ -5,7 +5,7 @@ import * as fs from 'node:fs';
 
 import { Plugin, CommandCallback } from '../plugin';
 import { restAPI } from '../main';
-import { Log } from '../utils';
+import { Log } from './utils';
 
 // Referenced plugins
 const plugins : Map<string, Plugin> = new Map;
@@ -42,14 +42,13 @@ export async function RegisterCommands(guild : discord.Guild) : Promise<void>
 	await restAPI.put(types.Routes.applicationGuildCommands(process.env.FF_ClientId, guild.id), { body: commands })
 		.catch(e => Log(e));
 
-	Log(JSON.stringify(commands, null, 4));
 	Log(`Registered ${commands.length} commands. (${guild.name})`);
 }
 
 export function LoadPlugins(client : discord.Client<boolean>)
 {
 	// TODO: find a better way and clean that
-	const pluginsDir = './plugins';
+	const pluginsDir = 'plugins';
 	const commandFiles = fs.readdirSync(`./dist/${pluginsDir}`).filter(file => file.endsWith('.js'));
 
 	Log(`Loading ${commandFiles.length} plugins...`);
@@ -57,7 +56,7 @@ export function LoadPlugins(client : discord.Client<boolean>)
 	// Require plugins so they can all register themselves
 	for (const file of commandFiles)
 	{
-		require(`${pluginsDir}/${file}`);
+		require(`../${pluginsDir}/${file}`);
 	}
 
 	// Init plugins

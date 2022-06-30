@@ -2,8 +2,7 @@ import { writeFileSync } from 'node:fs';
 import { Client, Collection, Guild, User } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
 
-import { Plugin, PluginCommand } from '../plugin';
-import { Log } from '../utils';
+import { Log, Plugin, PluginCommand } from '../plugin';
 
 const welcomeMessageKey = 'welcomeMessage';
 const greetingsKey = 'greetings';
@@ -251,4 +250,4 @@ class InvitesPlugin extends Plugin
 	}
 }
 
-new InvitesPlugin();
+(new InvitesPlugin()).Register();

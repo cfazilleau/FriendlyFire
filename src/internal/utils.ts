@@ -44,10 +44,10 @@ function GetColorDelegate(fileName: string) : ColorDelegate
 	case 'main.js':
 		return color.color.green;
 
-	case 'config.js':
+	case fileName.match(/^internal[/\\]config\.js/)?.input:
 		return color.color.yellow;
 
-	case 'pluginloader.js':
+	case fileName.match(/^internal[/\\]pluginloader\.js/)?.input:
 		return color.color.blue;
 
 	default:

@@ -6,7 +6,7 @@ import * as rest from '@discordjs/rest';
 
 import { HandleCommand, LoadPlugins, RegisterCommands } from './internal/pluginloader';
 import { CreateGuildConfig } from './internal/config';
-import { Log } from './utils';
+import { Log } from './internal/utils';
 
 // Create a new client instance
 const client = new discord.Client({ intents: [discord.Intents.FLAGS.GUILDS] });

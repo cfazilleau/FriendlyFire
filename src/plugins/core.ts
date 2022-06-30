@@ -70,4 +70,4 @@ class CorePlugin extends Plugin
 	}
 }
 
-new CorePlugin();
+(new CorePlugin()).Register();

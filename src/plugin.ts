@@ -3,7 +3,8 @@ import * as builders from '@discordjs/builders';
 
 import { RegisterPlugin } from './internal/pluginloader';
 import { GetProperty } from './internal/config';
-import { Log } from './utils';
+
+export * from './internal/utils';
 
 export type CommandCallback = (interaction: discord.CommandInteraction<discord.CacheType>) => Promise<void>;
 
@@ -23,9 +24,8 @@ export abstract class Plugin
 		return GetProperty<Type>(this, key, defaultValue, guild);
 	}
 
-	public constructor()
+	public Register()
 	{
-		Log(this);
 		RegisterPlugin(this);
 	}
 }

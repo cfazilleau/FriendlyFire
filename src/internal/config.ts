@@ -2,7 +2,7 @@ import * as discord from 'discord.js';
 import * as fs from 'node:fs';
 
 import { Plugin } from '../plugin';
-import { Log } from '../utils';
+import { Log } from './utils';
 
 class ConfigFile
 {

@@ -2,8 +2,7 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 import { CacheType, Client, CommandInteraction, Guild } from 'discord.js';
 import { Rcon } from 'rcon-client/lib';
 
-import { Plugin, PluginCommand } from '../plugin';
-import { Log } from '../utils';
+import { Log, Plugin, PluginCommand } from '../plugin';
 
 class MinecraftPlugin extends Plugin
 {
@@ -132,4 +131,4 @@ class MinecraftPlugin extends Plugin
 	}
 }
 
-new MinecraftPlugin();
+(new MinecraftPlugin()).Register();
