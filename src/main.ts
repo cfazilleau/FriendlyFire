@@ -1,12 +1,12 @@
 import 'dotenv/config';
-import './config';
+import './internal/config';
 
 import * as discord from 'discord.js';
 import * as rest from '@discordjs/rest';
 
-import { HandleCommand, LoadPlugins, RegisterCommands } from './pluginloader';
+import { HandleCommand, LoadPlugins, RegisterCommands } from './internal/pluginloader';
+import { CreateGuildConfig } from './internal/config';
 import { Log } from './utils';
-import { CreateGuildConfig } from './config';
 
 // Create a new client instance
 const client = new discord.Client({ intents: [discord.Intents.FLAGS.GUILDS] });

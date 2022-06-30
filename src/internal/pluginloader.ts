@@ -3,28 +3,9 @@ import * as types from 'discord-api-types/v10';
 import * as discord from 'discord.js';
 import * as fs from 'node:fs';
 
-import { restAPI } from './main';
-import { Log } from './utils';
-import { GetProperty } from './config';
-
-type CommandCallback = (interaction: discord.CommandInteraction<discord.CacheType>) => Promise<void>;
-
-export abstract class Plugin
-{
-	public abstract name : string;
-	public abstract commands : PluginCommand[];
-	public abstract Init(client : discord.Client<boolean>) : void;
-
-	protected GetProperty<Type>(key: string, defaultValue: Type, guild? : discord.Guild) : Type
-	{
-		return GetProperty<Type>(this, key, defaultValue, guild);
-	}
-}
-
-export interface PluginCommand {
-	builder: builders.SlashCommandBuilder;
-	callback: CommandCallback;
-}
+import { Plugin, CommandCallback } from '../plugin';
+import { restAPI } from '../main';
+import { Log } from '../utils';
 
 // Referenced plugins
 const plugins : Map<string, Plugin> = new Map;
@@ -61,6 +42,7 @@ export async function RegisterCommands(guild : discord.Guild) : Promise<void>
 	await restAPI.put(types.Routes.applicationGuildCommands(process.env.FF_ClientId, guild.id), { body: commands })
 		.catch(e => Log(e));
 
+	Log(JSON.stringify(commands, null, 4));
 	Log(`Registered ${commands.length} commands. (${guild.name})`);
 }
 
@@ -107,4 +89,5 @@ export function RegisterPlugin(plugin : Plugin)
 	}
 
 	plugins.set(plugin.name, plugin);
+	Log(`Registered plugin '${plugin.name}'`);
 }

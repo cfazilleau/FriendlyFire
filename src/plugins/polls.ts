@@ -2,7 +2,7 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 import { ButtonInteraction, CacheType, Client, CommandInteraction, MessageActionRow, MessageButton, TextChannel } from 'discord.js';
 import QuickChart from 'quickchart-js';
 
-import { Plugin, PluginCommand, RegisterPlugin } from '../pluginloader';
+import { Plugin, PluginCommand } from '../plugin';
 import { Log } from '../utils';
 
 interface MessageVotes
@@ -285,4 +285,4 @@ class PollsPlugin extends Plugin
 	}
 }
 
-RegisterPlugin(new PollsPlugin());
+new PollsPlugin();

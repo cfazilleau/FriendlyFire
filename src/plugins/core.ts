@@ -1,7 +1,7 @@
 import { BaseGuildTextChannel, Client } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
 
-import { Plugin, PluginCommand, RegisterPlugin } from '../pluginloader';
+import { Plugin, PluginCommand } from '../plugin';
 
 class CorePlugin extends Plugin
 {
@@ -70,4 +70,4 @@ class CorePlugin extends Plugin
 	}
 }
 
-RegisterPlugin(new CorePlugin());
+new CorePlugin();

@@ -47,7 +47,7 @@ you'll be able to find the link to invite the bot on your server in the logs of 
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { CacheType, Client, CommandInteraction } from 'discord.js';
 
-import { Plugin, PluginCommand, RegisterPlugin } from '../pluginloader';
+import { Plugin, PluginCommand } from '../plugin';
 import { Log } from '../utils';
 
 // Create a class extending the Plugin class
