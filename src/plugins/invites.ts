@@ -56,7 +56,7 @@ class InvitesPlugin extends Plugin
 							}
 						}
 
-						this.SaveGeneratedInvites();
+						//this.SaveGeneratedInvites();
 					}
 				},
 		},
@@ -135,10 +135,10 @@ class InvitesPlugin extends Plugin
 			user.send(welcomeMessage);
 	}
 	*/
-	private SaveGeneratedInvites()
-	{
-		writeFileSync(this.invitesPath, JSON.stringify(this.invites, null, 4));
-	}
+	//private SaveGeneratedInvites()
+	//{
+	//	writeFileSync(this.invitesPath, JSON.stringify(this.invites, null, 4));
+	//}
 
 	public Init(client: Client<boolean>): void
 	{
@@ -149,7 +149,7 @@ class InvitesPlugin extends Plugin
 		catch (e)
 		{
 			Log(`generating ${this.invitesPath}`);
-			this.SaveGeneratedInvites();
+			//this.SaveGeneratedInvites();
 		}
 
 		// Fetch all Guild Invites, set the key as Guild ID, and create a map which has the invite code, and the number of uses

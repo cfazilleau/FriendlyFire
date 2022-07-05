@@ -50,6 +50,9 @@ function GetColorDelegate(fileName: string) : ColorDelegate
 	case fileName.match(/^internal[/\\]pluginloader\.js/)?.input:
 		return color.color.blue;
 
+	case fileName.match(/^internal[/\\]mongodb\.js/)?.input:
+		return color.color.greenBright;
+
 	default:
 		return (s) => s;
 	}

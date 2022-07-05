@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import './internal/config';
+import './internal/mongodb';
 
 import * as discord from 'discord.js';
 import * as rest from '@discordjs/rest';
@@ -7,13 +8,16 @@ import * as rest from '@discordjs/rest';
 import { HandleCommand, LoadPlugins, RegisterCommands } from './internal/pluginloader';
 import { CreateGuildConfig } from './internal/config';
 import { Log } from './internal/utils';
+import { ConnectToDatabase } from './internal/mongodb';
 
 // Create a new client instance
 const client = new discord.Client({ intents: [discord.Intents.FLAGS.GUILDS] });
 
 // When the client is ready, run this code (only once)
-client.once('ready', () =>
+client.once('ready', async () =>
 {
+	await ConnectToDatabase();
+
 	Log('Ready!');
 
 	// Load Plugins
