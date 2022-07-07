@@ -92,7 +92,14 @@ function SetPropertyInternal<Type>(key: string, value: Type, guild? : discord.Gu
 
 export function GetProperty<Type>(plugin: Plugin, key: string, defaultValue: Type, guild? : discord.Guild) : Type
 {
-	return GetPropertyInternal(`${plugin.name}.${key}`, defaultValue, guild);
+	const value = GetPropertyInternal(`${plugin.name}.${key}`, defaultValue, guild);
+
+	if (value == defaultValue)
+	{
+		SetPropertyInternal(`${plugin.name}.${key}`, value, guild);
+	}
+
+	return value;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
