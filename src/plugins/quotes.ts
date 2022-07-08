@@ -1,13 +1,15 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { CacheType, Client, CommandInteraction, Guild, Message, MessageEmbed } from 'discord.js';
-import { model, Schema } from 'mongoose';
+import { Schema } from 'mongoose';
 import moment from 'moment';
 import QuotesPhotosGenerator from 'quotes-photos-generator';
 
-import { Log, Plugin, PluginCommand } from '../plugin';
+import { Log, Plugin, PluginCommand, DatabaseModel } from '../plugin';
 
 const quoteChannelKey = 'channelId';
 const quoteRegex = /"(.+?)"(?:\s*-*(.*)$)/ms;
+
+const confirmationEmbedColor = '#2ea42a';
 
 // Quotes database
 interface IQuote
@@ -21,15 +23,13 @@ interface IQuote
 }
 
 const QuoteSchema = new Schema<IQuote>({
-	author: { type: String, required: true },
+	author: { type: String },
 	submitted_by: { type: String, required: true },
 	submitted_by_id: { type: String },
 	quote: { type: String, required: true },
 	time: { type: String, required: true },
 	timestamp: { type: String },
 });
-
-const Quote = model<IQuote>('quotes', QuoteSchema);
 
 // Quotes Image
 const quotesStyle = `
@@ -116,6 +116,8 @@ class QuotesPlugin extends Plugin
 				{
 					await interaction.deferReply();
 
+					const Quote = DatabaseModel('quotes', QuoteSchema, interaction.guild);
+
 					const count = await Quote.countDocuments() as number;
 					const random = Math.floor(Math.random() * count);
 					const quote = await Quote.findOne().skip(random) as IQuote;
@@ -164,6 +166,8 @@ class QuotesPlugin extends Plugin
 
 		if (matches?.length == 3)
 		{
+			const Quote = DatabaseModel('quotes', QuoteSchema, message.guild);
+
 			const quote = new Quote({
 				quote: matches[1],
 				author: matches[2],
@@ -176,13 +180,17 @@ class QuotesPlugin extends Plugin
 			Log('New quote saved');
 
 			const messages = await message.channel.messages.fetch();
-			const old = messages.find(msg => msg.deletable && msg.author.id == client.user?.id);
+
+			const old = messages.find(
+				msg => msg.deletable &&
+				msg.author.id == client.user?.id &&
+				msg.embeds?.at(0)?.hexColor == confirmationEmbedColor);
 			if (old) old.delete();
 
 			const embed = new MessageEmbed({
 				footer: { text: `Saved by ${quote.submitted_by} -- ${quote.time}`, iconURL: 'http://i.imgur.com/EeC5BAb.png' },
 				title: quote.author,
-				color: '#2ea42a',
+				color: confirmationEmbedColor,
 				description: quote.quote,
 			});
 

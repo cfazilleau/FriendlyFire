@@ -1,14 +1,28 @@
-import { writeFileSync } from 'node:fs';
-import { Client, Collection, Guild, User } from 'discord.js';
-import { SlashCommandBuilder } from '@discordjs/builders';
+import { Client, Guild, MessageEmbed, TextChannel, User } from 'discord.js';
+import { SlashCommandBuilder, userMention } from '@discordjs/builders';
 
-import { Log, Plugin, PluginCommand } from '../plugin';
+import { Log, Plugin, PluginCommand, DatabaseModel, CatchAndLog } from '../plugin';
+import { Schema } from 'mongoose';
 
 const welcomeMessageKey = 'welcomeMessage';
 const greetingsKey = 'greetings';
+const inviteChannelKey = 'invitesChannel';
 
 const defaultGreetings = [ 'Welcome!' ];
 const defaultWelcomeMessage = 'Welcome to the server';
+
+interface IInvite
+{
+	author: string,
+	code: string,
+	expiration: string,
+}
+
+const InviteSchema = new Schema<IInvite>({
+	author: { type: String, required: true },
+	code: { type: String, required: true },
+	expiration: { type: String, required: true },
+});
 
 class InvitesPlugin extends Plugin
 {
@@ -17,8 +31,6 @@ class InvitesPlugin extends Plugin
 	// Validity of the invite in minutes
 	private inviteMaxAge = 15;
 	private invitesPath = './config/invites.json';
-
-	private invites = new Collection<string, Map<string, string>>();
 
 	public commands: PluginCommand[] = [
 		{
@@ -33,30 +45,22 @@ class InvitesPlugin extends Plugin
 				{
 					const author = interaction.member?.user as User;
 
-					if (author != undefined)
+					if (author != undefined && interaction.guild != undefined)
 					{
-						const invite = await interaction.guild?.invites.create(interaction.channelId, { maxAge: this.inviteMaxAge * 60, maxUses: 1, unique: true });
+						const invite = await interaction.guild.invites.create(interaction.channelId, { maxAge: this.inviteMaxAge * 60, maxUses: 1, unique: true });
+						const Invite = DatabaseModel('invites', InviteSchema, interaction.guild);
 
-						if (invite == undefined) throw 'couldn\'t create invite';
+						const inviteData = new Invite({
+							author: author.id,
+							code: invite.code,
+							expiration: invite.expiresTimestamp,
+						});
+						inviteData.save();
 
-						invite.inviterId = author.id;
-						invite.inviter = author;
-
-						await interaction.reply(`here is your link: ${invite}\nIt will be valid for the next ${this.inviteMaxAge} minutes`);
-
-						const guildId = interaction.guild?.id;
-
-						if (guildId && author.id)
-						{
-							const guild = this.invites.get(guildId) ?? this.invites.set(guildId, new Collection()).get(guildId);
-
-							if (guild)
-							{
-								guild.set(invite.code, author.id);
-							}
-						}
-
-						//this.SaveGeneratedInvites();
+						await interaction.reply({
+							content: `here is your link: ${invite}\nIt will be valid for the next ${this.inviteMaxAge} minutes`,
+							ephemeral: true,
+						});
 					}
 				},
 		},
@@ -75,9 +79,9 @@ class InvitesPlugin extends Plugin
 		},
 	];
 
-	private GetRandomGreeting(guild : Guild)
+	private GetRandomGreeting(guild: Guild)
 	{
-		const greetings : string[] = this.GetProperty<string[]>(greetingsKey, defaultGreetings, guild);
+		const greetings: string[] = this.GetProperty<string[]>(greetingsKey, defaultGreetings, guild);
 		return greetings[Math.floor(Math.random() * greetings.length)];
 	}
 
@@ -135,33 +139,21 @@ class InvitesPlugin extends Plugin
 			user.send(welcomeMessage);
 	}
 	*/
-	//private SaveGeneratedInvites()
-	//{
-	//	writeFileSync(this.invitesPath, JSON.stringify(this.invites, null, 4));
-	//}
 
 	public Init(client: Client<boolean>): void
 	{
-		try
-		{
-			this.invites = require(this.invitesPath);
-		}
-		catch (e)
-		{
-			Log(`generating ${this.invitesPath}`);
-			//this.SaveGeneratedInvites();
-		}
-
+		/*
 		// Fetch all Guild Invites, set the key as Guild ID, and create a map which has the invite code, and the number of uses
 		client.guilds.cache.forEach(async (guild) =>
 		{
+			// Update database based on the available guild invites
+
 			const firstInvites = await guild.invites.fetch();
 			this.invites.set(guild.id, new Map(firstInvites.map(invite => [invite.code, invite.inviterId ?? ''])));
 		});
 
 		client.on('inviteDelete', (invite) =>
 		{
-
 			const guild = this.invites.get(invite.guild?.id ?? '');
 			if (guild)
 			{
@@ -172,7 +164,6 @@ class InvitesPlugin extends Plugin
 
 		client.on('inviteCreate', (invite) =>
 		{
-
 			const guildId = invite.guild?.id;
 			const authorId = invite.inviterId;
 
@@ -187,65 +178,48 @@ class InvitesPlugin extends Plugin
 				}
 			}
 		});
-
-		client.on('guildCreate', (guild) =>
-		{
-			// We've been added to a new Guild. Let's fetch all the invites, and save it to our cache
-			guild.invites.fetch().then(guildInvites =>
-			{
-				// This is the same as the ready event
-				this.invites.set(guild.id, new Map(guildInvites.map((invite) => [invite.code, invite.inviterId ?? ''])));
-			});
-		});
-
-		client.on('guildDelete', (guild) =>
-		{
-			// We've been removed from a Guild. Let's delete all their invites
-			this.invites.delete(guild.id);
-		});
+		//*/
 
 		client.on('guildMemberAdd', async (member) =>
 		{
-			// To compare, we need to load the current invite list.
-			const invites = await member.guild.invites.fetch();
-			// This is the *existing* invites for the guild.
-			const generated = this.invites.get(member.guild.id) ?? this.invites.set(member.guild.id, new Map()).get(member.guild.id);
-
-			if (!invites || !generated) return;
-
-			for (const code in generated)
+			CatchAndLog(async () =>
 			{
-				const invite = invites.get(code);
-				if (!invite?.expiresTimestamp) continue;
+				const guild = member.guild;
 
-				// purge expired invites
-				if (invite.expiresTimestamp < new Date().getTime())
+				Log(`New guild member: ${member.displayName}`);
+				const Invite = DatabaseModel('invites', InviteSchema, guild);
+
+				// To compare, we need to load the current invite list.
+				const invites = await guild.invites.fetch();
+				const recordedInvites = await Invite.find({});
+
+				Log(`${invites.size} invites server-side, ${recordedInvites.length} bot-side.`);
+
+				recordedInvites.forEach(async inv =>
 				{
-					generated.delete(code);
-					continue;
-				}
+					if (!invites.has(inv.code))
+					{
+						const inviter = await guild.members.fetch(inv.author);
+						const mainChannelId = this.GetProperty(inviteChannelKey, undefined, guild);
+						const mainChannel = (mainChannelId ? await guild.channels.fetch(mainChannelId) : guild.systemChannel) as TextChannel;
 
-				/*
-				// find missing ones
-				const found = invites.find((element) => element.code == code);
-				if (!found)
-				{
-					missing[count++] = oldInvites[code];
-					delete oldInvites[code];
-				}
-				*/
-			}
+						Log(`${member.displayName} joined using invite code ${inv.code} from ${inviter.displayName}.`);
 
-			/*
-			// This is just to simplify the message being sent below (inviter doesn't have a tag property)
-			const inviter = await client.users.fetch(invite.inviter.id);
-			// Get the log channel (change to your liking)
-			const logChannel = member.guild.channels.cache.find(channel => channel.name === 'join-logs');
-			// A real basic message with the information we need.
-			inviter
-				? logChannel.send(`${member.user.tag} joined using invite code ${invite.code} from ${inviter.tag}. Invite was used ${invite.uses} times since its creation.`)
-				: logChannel.send(`${member.user.tag} joined but I couldn't find through which invite.`);
-			*/
+						const embed = new MessageEmbed({
+							title: 'Bienvenue!',
+							thumbnail: { url: member.avatarURL({ format: 'png', size: 1024, dynamic: true }) as string },
+							description: `Bienvenue a ${userMention(member.id)}, invité.e par ${userMention(inv.author)}, sur le discord de Phoenix Legacy!\n${this.GetRandomGreeting(guild)}`,
+							color: member.user.accentColor as number,
+						});
+
+						mainChannel.send({ embeds: [ embed ] });
+
+						inv.delete();
+					}
+				});
+
+				// Clear expired invites
+			});
 		});
 	}
 }

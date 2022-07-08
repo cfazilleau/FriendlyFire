@@ -3,8 +3,10 @@ import * as builders from '@discordjs/builders';
 
 import { RegisterPlugin } from './internal/pluginloader';
 import { GetProperty } from './internal/config';
+import { Log } from './internal/utils';
 
 export * from './internal/utils';
+export { DatabaseModel } from './internal/mongodb';
 
 export type CommandCallback = (interaction: discord.CommandInteraction<discord.CacheType>) => Promise<void>;
 
@@ -30,3 +32,14 @@ export abstract class Plugin
 	}
 }
 
+export async function CatchAndLog<Type>(listener: () => Type)
+{
+	try
+	{
+		return await listener();
+	}
+	catch (error)
+	{
+		Log(error);
+	}
+}

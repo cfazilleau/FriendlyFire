@@ -24,7 +24,21 @@ export async function HandleCommand(command : discord.CommandInteraction)
 		.catch(error =>
 		{
 			Log(`Error executing '${command.toString()}': '${error}'`);
-			command.channel?.send(`Error executing ${builders.quote(command.toString())}:\n${builders.blockQuote(error)}`);
+
+			const embed = new discord.MessageEmbed({
+				title: 'Oops',
+				description: `Error executing ${builders.inlineCode(command.toString())}:\n${builders.codeBlock(error)}`,
+				color: '#ff0000',
+			});
+
+			if (command.replied)
+			{
+				command.channel?.send({ embeds: [embed] });
+			}
+			else
+			{
+				command.reply({ embeds: [embed] });
+			}
 		});
 }
 
