@@ -1,33 +1,20 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { ButtonInteraction, CacheType, Client, CommandInteraction, MessageActionRow, MessageButton, TextChannel } from 'discord.js';
+import { ButtonInteraction, CacheType, Client, CommandInteraction, Guild, MessageActionRow, MessageButton, TextChannel } from 'discord.js';
+import { Schema } from 'mongoose';
 import QuickChart from 'quickchart-js';
 
-import { Log, Plugin, PluginCommand } from '../plugin';
+import { Log, Plugin, PluginCommand, DatabaseModel } from '../plugin';
 
-interface MessageVotes
+interface IMessageVotes
 {
-	[guild: string]: {
-		[channel: string]: {
-			[messageId: string]: {
-				[userId: string]: string;
-			}
-		}
-	}
+	id: string,
+	votes: { [userId: string]: string },
 }
 
-// TODO: find a way to store localData in a persistent database / filesystem (mongoose ?)
-let localData: MessageVotes = {};
-function LoadMessageVotesData(): MessageVotes
-{
-	return localData;
-	// return this.GetProperty('userVotes', {});
-}
-
-function SaveMessageVotesData(data: MessageVotes)
-{
-	localData = data;
-	// return this.SetProperty('userVotes', data);
-}
+const MessageVotesSchema = new Schema<IMessageVotes>({
+	id: { type: String },
+	votes: { type: Object, 'default': {} },
+});
 
 class PollsPlugin extends Plugin
 {
@@ -47,13 +34,12 @@ class PollsPlugin extends Plugin
 				{
 					const text = interaction.options.getString('poll');
 
-					const actionRow = new MessageActionRow();
-					actionRow.addComponents([
+					if (text == undefined) throw 'poll text can not be empty';
+
+					this.SendPoll(interaction, text, [
 						this.yesButton,
 						this.noButton,
 					]);
-
-					interaction.reply({ content: text, components: [ actionRow ], fetchReply: true });
 				},
 		},
 		{
@@ -70,35 +56,91 @@ class PollsPlugin extends Plugin
 				{
 					const text = interaction.options.getString('poll');
 
-					const actionRow = new MessageActionRow();
-					actionRow.addComponents([
+					if (text == undefined) throw 'poll text can not be empty';
+
+					this.SendPoll(interaction, text, [
 						this.yesButton,
 						this.noButton,
 						this.maybeButton,
 					]);
+				},
+		},
+		{
+			builder:
+				new SlashCommandBuilder()
+					.setName('poll')
+					.setDescription('send a poll with up to 5 custom answers')
+					.addStringOption(option => option
+						.setName('poll')
+						.setDescription('poll question')
+						.setRequired(true))
+					.addStringOption(option => option
+						.setName('option_1')
+						.setDescription('option 1')
+						.setRequired(true))
+					.addStringOption(option => option
+						.setName('option_2')
+						.setDescription('option 2')
+						.setRequired(true))
+					.addStringOption(option => option
+						.setName('option_3')
+						.setDescription('option 3'))
+					.addStringOption(option => option
+						.setName('option_4')
+						.setDescription('option 4'))
+					.addStringOption(option => option
+						.setName('option_5')
+						.setDescription('option 5')) as SlashCommandBuilder,
+			callback:
+				async (interaction: CommandInteraction<CacheType>) =>
+				{
+					const text = interaction.options.getString('poll');
+					if (text == undefined) throw 'poll text can not be empty';
 
-					interaction.reply({ content: text, components: [ actionRow ], fetchReply: true });
+					const emojis = ['🟢', '🔵', '🟣', '🔴', '🟠', '🟡'];
+
+					const buttons: MessageButton[] = [];
+					for (let i = 1; i <= 5; i++)
+					{
+						const id = `option_${i}`;
+						const name = interaction.options.getString(id);
+
+						if (name == undefined) break;
+
+						buttons.push(new MessageButton({
+							customId: this.CustomId(id),
+							label: name,
+							style: 'SECONDARY',
+							emoji: emojis[i - 1],
+						}));
+					}
+					if (buttons.length < 2) throw 'custom polls must have at least 2 options';
+
+					this.SendPoll(interaction, text, buttons);
 				},
 		},
 	];
 
-	private yesButton = new MessageButton()
-		.setCustomId(this.CustomId('yes'))
-		.setLabel('Yes')
-		.setStyle('SUCCESS')
-		.setEmoji('👍');
+	private yesButton = new MessageButton({
+		customId: this.CustomId('yes'),
+		label: 'Yes',
+		style: 'SUCCESS',
+		emoji: '👍',
+	});
 
-	private noButton = new MessageButton()
-		.setCustomId(this.CustomId('no'))
-		.setLabel('No')
-		.setStyle('DANGER')
-		.setEmoji('👎');
+	private noButton = new MessageButton({
+		customId: this.CustomId('no'),
+		label: 'No',
+		style: 'DANGER',
+		emoji: '👎',
+	});
 
-	private maybeButton = new MessageButton()
-		.setCustomId(this.CustomId('maybe'))
-		.setLabel('Maybe')
-		.setStyle('PRIMARY')
-		.setEmoji('✋');
+	private maybeButton = new MessageButton({
+		customId: this.CustomId('maybe'),
+		label: 'Maybe',
+		style: 'PRIMARY',
+		emoji: '✋',
+	});
 
 	public Init(client: Client<boolean>): void
 	{
@@ -131,99 +173,85 @@ class PollsPlugin extends Plugin
 		return id.replace(`${this.name}.`, '');
 	}
 
-	private GetMessageVotes(guild: string, channel: string, message: string): {[userId: string]: string}
+	private async GetMessageVotes(guild: Guild, channelId: string, messageId: string): Promise<{ [userId: string]: string }>
 	{
-		const messageVotes: MessageVotes = this.GetProperty('userVotes', {});
-		const guildData = messageVotes[guild] ?? {};
-		const chanData = guildData[channel] ?? {};
-		return chanData[message] ?? {};
+		const MessageVotes = DatabaseModel('messagevotes', MessageVotesSchema, guild);
+		const id = `${channelId}.${messageId}`;
+
+		const messageVotes = await MessageVotes.findOne({ id: id });
+		return (messageVotes as unknown as IMessageVotes)?.votes ?? {};
 	}
 
-	private SetMessageVotes(guild: string, channel: string, message: string, data: {[userId: string]: string})
+	private async SetMessageVotes(guild: Guild, channelId: string, messageId: string, data: {[userId: string]: string})
 	{
-		// Get Data
-		const messageVotes: MessageVotes = LoadMessageVotesData();
-		const guildData = messageVotes[guild] ?? {};
-		const chanData = guildData[channel] ?? {};
+		const MessageVotes = DatabaseModel('messagevotes', MessageVotesSchema, guild);
+		const id = `${channelId}.${messageId}`;
 
-		// Set Data
-		chanData[message] = data;
-		guildData[channel] = chanData;
-		messageVotes[guild] = guildData;
-		SaveMessageVotesData(messageVotes);
+		await MessageVotes.findOneAndUpdate({ id: id }, { votes: data }, { upsert: true });
 	}
 
 	private async ClearOldVoteMessages(client: Client<boolean>)
 	{
-		// Check guilds
-		const guilds: MessageVotes = LoadMessageVotesData();
-		for (const guildId in guilds)
+		await client.guilds.fetch();
+		client.guilds.cache.forEach(async guild =>
 		{
-			await client.guilds.fetch();
-			const guild = await client.guilds.cache.get(guildId);
 			Log(`${guild?.name}`);
-			if (guild == undefined)
-			{
-				delete guilds[guildId];
-				continue;
-			}
+			const MessageVotes = DatabaseModel('messagevotes', MessageVotesSchema, guild);
+			const messages = await MessageVotes.find();
 
-			// Check channels
-			const channels = guilds[guildId];
-			for (const channelId in channels)
+			messages.forEach(async msg =>
 			{
-				await guild.channels.fetch();
-				const channel = await guild.channels.cache.get(channelId) as TextChannel | undefined;
-				Log(`${channel?.name}`);
+				// check correct id
+				const id = msg.id.split('.');
+				if (id.length != 2)
+				{
+					msg.delete();
+					return;
+				}
+
+				const channelId = id[0];
+				const messageId = id[1];
+
+				// check correct channel
+				const channel = await guild.channels.fetch(channelId) as TextChannel;
 				if (channel == undefined)
 				{
-					delete channels[channelId];
-					continue;
+					msg.delete();
+					return;
 				}
 
-				// Check messages
-				const messages = channels[channelId];
-				for (const messageId in messages)
+				// check correct message
+				const message = await channel.messages.fetch(messageId);
+				if (message == undefined)
 				{
-					await channel.messages.fetch();
-					const message = await channel.messages.cache.get(messageId);
-					Log(`${message?.content}`);
-					if (message == undefined)
-					{
-						delete messages[messageId];
-						continue;
-					}
+					msg.delete();
+					return;
 				}
+			});
+		});
+	}
 
-				if (Object.keys(messages).length == 0)
-				{
-					delete channels[channelId];
-				}
-			}
-
-			if (Object.keys(channels).length == 0)
-			{
-				delete guilds[guildId];
-			}
-		}
-
-		SaveMessageVotesData(guilds);
+	private async SendPoll(interaction: CommandInteraction, poll: string, buttons: MessageButton[])
+	{
+		const actionRow = new MessageActionRow({ components: buttons });
+		interaction.reply({ content: poll, components: [ actionRow ] });
 	}
 
 	private async HandleButtonInteraction(interaction: ButtonInteraction)
 	{
 		try
 		{
-			const guildId = interaction.guildId as string;
+			const guild = interaction.guild as Guild;
 			const chanId = interaction.channelId;
 			const msgId = interaction.message.id;
 			const message = await interaction.channel?.messages.fetch(msgId);
 
-			const userVotes: {[userId: string]: string} = this.GetMessageVotes(guildId, chanId, msgId);
-
+			const userVotes: {[userId: string]: string} = await this.GetMessageVotes(guild, chanId, msgId);
+			Log('got message votes');
 			userVotes[interaction.user.id] = this.GetShortCustomId(interaction.customId);
 
-			this.SetMessageVotes(guildId, chanId, msgId, userVotes);
+			await this.SetMessageVotes(guild, chanId, msgId, userVotes);
+			Log('set message votes');
 
 			const values = new Map<string, number>();
 			for (const value in userVotes)
@@ -233,9 +261,12 @@ class PollsPlugin extends Plugin
 				values.set(vote, count + 1);
 			}
 
-			const yesCount = values.get('yes');
-			const noCount = values.get('no');
-			const maybeCount = values.get('maybe');
+			const count: number[] | undefined[] = [];
+
+			for (let i = 1; i <= 5; i++) { count[i - 1] = values.get(`option_${i}`); }
+			count[5] = values.get('yes');
+			count[6] = values.get('no');
+			count[7] = values.get('maybe');
 
 			const chart = new QuickChart();
 			chart.setWidth(1024);
@@ -247,9 +278,14 @@ class PollsPlugin extends Plugin
 					'data':
 					{
 						'datasets': [
-							{ 'data': [ yesCount ?? 0 ], hidden: yesCount == undefined, 'backgroundColor': '#43b581' },
-							{ 'data': [ noCount ?? 0 ], hidden: noCount == undefined, 'backgroundColor': '#f04747' },
-							{ 'data': [ maybeCount ?? 0 ], hidden: maybeCount == undefined, 'backgroundColor': '#5865f2' },
+							{ 'data': [ count[0] ?? 0 ], hidden: count[0] == undefined, 'backgroundColor': '#78b159' }, // option_1
+							{ 'data': [ count[1] ?? 0 ], hidden: count[1] == undefined, 'backgroundColor': '#55acee' }, // option_2
+							{ 'data': [ count[2] ?? 0 ], hidden: count[2] == undefined, 'backgroundColor': '#aa8ed6' }, // option_3
+							{ 'data': [ count[3] ?? 0 ], hidden: count[3] == undefined, 'backgroundColor': '#dd2e44' }, // option_4
+							{ 'data': [ count[4] ?? 0 ], hidden: count[4] == undefined, 'backgroundColor': '#f4900c' }, // option_5
+							{ 'data': [ count[5] ?? 0 ], hidden: count[5] == undefined, 'backgroundColor': '#43b581' }, // yes
+							{ 'data': [ count[6] ?? 0 ], hidden: count[6] == undefined, 'backgroundColor': '#f04747' }, // no
+							{ 'data': [ count[7] ?? 0 ], hidden: count[7] == undefined, 'backgroundColor': '#5865f2' }, // maybe
 						],
 					},
 					'options':
