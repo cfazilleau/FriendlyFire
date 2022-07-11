@@ -81,7 +81,7 @@ const quotesStyle = `
 
   .content span {
 	color: white;
-	font-family: 'caveat';
+	font-family: 'Caveat', cursive;
 	font-size: 42px;
 	font-weight: 300;
 	text-align: center;
@@ -89,7 +89,7 @@ const quotesStyle = `
 
   .content .author {
 	color: #ffffff;
-	font-family: 'caveat';
+	font-family: 'Caveat', cursive;
 	font-weight: 700;
 	font-size: 32px;
 	position: absolute;

@@ -1,4 +1,4 @@
-import { Client, Guild, MessageEmbed, TextChannel, User } from 'discord.js';
+import { Client, Guild, GuildMember, MessageEmbed, TextChannel, User } from 'discord.js';
 import { SlashCommandBuilder, userMention } from '@discordjs/builders';
 
 import { Log, Plugin, PluginCommand, DatabaseModel, CatchAndLog } from '../plugin';
@@ -7,6 +7,8 @@ import { Schema } from 'mongoose';
 const welcomeMessageKey = 'welcomeMessage';
 const greetingsKey = 'greetings';
 const inviteChannelKey = 'invitesChannel';
+const inviteMaxAgeKey = 'inviteMaxAge';
+const baseRoleKey = 'baseRoleId';
 
 const defaultGreetings = [ 'Welcome!' ];
 const defaultWelcomeMessage = 'Welcome to the server';
@@ -28,26 +30,23 @@ class InvitesPlugin extends Plugin
 {
 	public name = 'Invites';
 
-	// Validity of the invite in minutes
-	private inviteMaxAge = 15;
-	private invitesPath = './config/invites.json';
-
 	public commands: PluginCommand[] = [
 		{
 			builder:
 				new SlashCommandBuilder()
 					.setName('invite')
-					.setDescription('Generates an invite valid for 15 minutes.')
-					.setDescriptionLocalization('fr', `Génère une invitation valide pour une durée de ${this.inviteMaxAge} minutes.`)
+					.setDescription('Generates a temporary invite.')
+					.setDescriptionLocalization('fr', 'Génère une invitation temporaire.')
 					.setDefaultPermission(false),
 			callback:
 				async (interaction) =>
 				{
 					const author = interaction.member?.user as User;
+					const inviteMaxAge = this.GetProperty(inviteMaxAgeKey, 15, interaction.guild as Guild);
 
 					if (author != undefined && interaction.guild != undefined)
 					{
-						const invite = await interaction.guild.invites.create(interaction.channelId, { maxAge: this.inviteMaxAge * 60, maxUses: 1, unique: true });
+						const invite = await interaction.guild.invites.create(interaction.channelId, { maxAge: inviteMaxAge * 60, maxUses: 1, unique: true });
 						const Invite = DatabaseModel('invites', InviteSchema, interaction.guild);
 
 						const inviteData = new Invite({
@@ -58,7 +57,7 @@ class InvitesPlugin extends Plugin
 						inviteData.save();
 
 						await interaction.reply({
-							content: `here is your link: ${invite}\nIt will be valid for the next ${this.inviteMaxAge} minutes`,
+							content: `here is your link: ${invite}\nIt will be valid for the next ${inviteMaxAge} minutes`,
 							ephemeral: true,
 						});
 					}
@@ -69,12 +68,28 @@ class InvitesPlugin extends Plugin
 				new SlashCommandBuilder()
 					.setName('testjoin')
 					.setDescription('trigger user joined event for the invite plugin')
-					.setDefaultPermission(false),
+					.setDefaultPermission(false)
+					.addUserOption(user => user
+						.setName('user')
+						.setDescription('user to join')
+						.setRequired(false)) as SlashCommandBuilder,
 			callback:
 				async (interaction) =>
 				{
-					const welcomeMessage : string = this.GetProperty<string>(welcomeMessageKey, defaultWelcomeMessage, interaction.guild as Guild);
-					interaction.reply(welcomeMessage);
+					let member : GuildMember = interaction.member as GuildMember;
+
+					const user = interaction.options.getUser('user');
+					if (user != undefined)
+					{
+						const members = await interaction.guild?.members.fetch();
+						if (members != undefined)
+						{
+							member = await members.get(user.id) as GuildMember;
+						}
+					}
+
+					this.OnGuildMemberAdded(member);
+					interaction.reply({ content: 'done.', ephemeral: true });
 				},
 		},
 	];
@@ -85,140 +100,67 @@ class InvitesPlugin extends Plugin
 		return greetings[Math.floor(Math.random() * greetings.length)];
 	}
 
-	/*
-	private OnGuildMemberAdded(member : GuildMember, guild : Guild)
+	private async OnGuildMemberAdded(member: GuildMember)
 	{
-				const generated = JSON.parse(readFileSync(this.invitesPath, 'utf8'));
+		const guild = member.guild;
 
-				// add role
-				guild.roles.fetch(this.basicRoleId).then(role => {
-					if (role) member.roles.add(role);
-				})
+		Log(`New guild member: ${member.displayName}`);
 
-				// welcome message
-				guild.fetchInvites().then((invites) => {
-					const missing = {};
-					let count = 0;
+		// Add role
+		const roleId = this.GetProperty(baseRoleKey, undefined, guild);
+		if (roleId != undefined)
+		{
+			const role = await guild.roles.fetch(roleId);
+			if (role != undefined)
+			{
+				member.roles.add(role);
+			}
+		}
 
-					// eslint-disable-next-line no-var
-					for (var gen in generated) {
-						// purge expired invites
-						if (generated[gen].expiresTimestamp < moment.now()) {
-							generated[gen] == undefined;
-							continue;
-						}
+		// Check invite used
+		const Invite = DatabaseModel('invites', InviteSchema, guild);
 
-						//find missing ones
-						var found = invites.find((element) => {
-							if (element.code == gen)
-								return gen;
-						});
+		// To compare, we need to load the current invite list.
+		const invites = await guild.invites.fetch();
+		const recordedInvites = await Invite.find({});
 
-						if (!found) {
-							missing[count++] = generated[gen];
-							delete generated[gen];
-						}
-					}
+		Log(`${invites.size} invites server-side, ${recordedInvites.length} bot-side.`);
 
-					//find inviter
-					var inviter = '';
-					if (Object.keys(missing).length == 1) {
-						var invuser = guild.members.find('id', missing[0].userId);
-						if (invuser)
-							inviter = ', invite par ' + invuser;
-					}
+		let inviterMention = '';
+		recordedInvites.forEach(async inv =>
+		{
+			if (!invites.has(inv.code))
+			{
+				const inviter = await guild.members.fetch(inv.author);
 
-					fs.writeFile(GENERATED_PATH, JSON.stringify(generated, null, 2));
+				Log(`${member.displayName} joined using invite code ${inv.code} from ${inviter.displayName}.`);
+				inviterMention = userMention(inv.author);
+				inv.delete();
+			}
+		});
 
-					guild.channels.find('name', 'general').send(
-						'Bienvenue ' + user + inviter + ', sur le discord de Phoenix Legacy.\n' + getRandomGreeting();
-					);
-			});
+		const embed = new MessageEmbed({
+			title: 'Bienvenue!',
+			thumbnail: { url: member.user.avatarURL({ format: 'png', size: 1024, dynamic: true }) as string },
+			description: `Bienvenue a ${userMention(member.id)} ${inviterMention != '' ? `, invité.e par ${inviterMention}` : ''}, sur le discord de Phoenix Legacy!\n${this.GetRandomGreeting(guild)}`,
+			color: member.user.accentColor as number,
+		});
 
-			//dm message
-			user.send(welcomeMessage);
+		const mainChannelId = this.GetProperty(inviteChannelKey, undefined, guild);
+		const mainChannel = (mainChannelId ? await guild.channels.fetch(mainChannelId) : guild.systemChannel) as TextChannel;
+		mainChannel.send({ embeds: [ embed ] });
+		member.user.send(this.GetProperty<string>(welcomeMessageKey, defaultWelcomeMessage, guild));
 	}
-	*/
 
 	public Init(client: Client<boolean>): void
 	{
-		/*
-		// Fetch all Guild Invites, set the key as Guild ID, and create a map which has the invite code, and the number of uses
-		client.guilds.cache.forEach(async (guild) =>
-		{
-			// Update database based on the available guild invites
-
-			const firstInvites = await guild.invites.fetch();
-			this.invites.set(guild.id, new Map(firstInvites.map(invite => [invite.code, invite.inviterId ?? ''])));
-		});
-
-		client.on('inviteDelete', (invite) =>
-		{
-			const guild = this.invites.get(invite.guild?.id ?? '');
-			if (guild)
-			{
-				// Delete the Invite from Cache
-				guild.delete(invite.code);
-			}
-		});
-
-		client.on('inviteCreate', (invite) =>
-		{
-			const guildId = invite.guild?.id;
-			const authorId = invite.inviterId;
-
-			// Update cache on new invites
-			if (guildId && authorId)
-			{
-				const guild = this.invites.get(guildId) ?? this.invites.set(guildId, new Map()).get(guildId);
-
-				if (guild)
-				{
-					guild.set(invite.code, authorId);
-				}
-			}
-		});
-		//*/
-
 		client.on('guildMemberAdd', async (member) =>
 		{
 			CatchAndLog(async () =>
 			{
-				const guild = member.guild;
+				await this.OnGuildMemberAdded(member);
 
-				Log(`New guild member: ${member.displayName}`);
-				const Invite = DatabaseModel('invites', InviteSchema, guild);
-
-				// To compare, we need to load the current invite list.
-				const invites = await guild.invites.fetch();
-				const recordedInvites = await Invite.find({});
-
-				Log(`${invites.size} invites server-side, ${recordedInvites.length} bot-side.`);
-
-				recordedInvites.forEach(async inv =>
-				{
-					if (!invites.has(inv.code))
-					{
-						const inviter = await guild.members.fetch(inv.author);
-						const mainChannelId = this.GetProperty(inviteChannelKey, undefined, guild);
-						const mainChannel = (mainChannelId ? await guild.channels.fetch(mainChannelId) : guild.systemChannel) as TextChannel;
-
-						Log(`${member.displayName} joined using invite code ${inv.code} from ${inviter.displayName}.`);
-
-						const embed = new MessageEmbed({
-							title: 'Bienvenue!',
-							thumbnail: { url: member.avatarURL({ format: 'png', size: 1024, dynamic: true }) as string },
-							description: `Bienvenue a ${userMention(member.id)}, invité.e par ${userMention(inv.author)}, sur le discord de Phoenix Legacy!\n${this.GetRandomGreeting(guild)}`,
-							color: member.user.accentColor as number,
-						});
-
-						mainChannel.send({ embeds: [ embed ] });
-
-						inv.delete();
-					}
-				});
-
-				// Clear expired invites
+				// TODO: Clear expired invites
 			});
 		});
 	}

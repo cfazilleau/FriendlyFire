@@ -11,14 +11,14 @@ import { Log } from './internal/utils';
 import { ConnectToDatabase } from './internal/mongodb';
 
 // Create a new client instance
-const client = new discord.Client({ intents: [discord.Intents.FLAGS.GUILDS, discord.Intents.FLAGS.GUILD_MESSAGES, discord.Intents.FLAGS.GUILD_MEMBERS] });
+const client = new discord.Client({ intents: [discord.Intents.FLAGS.GUILDS, discord.Intents.FLAGS.GUILD_MESSAGES, discord.Intents.FLAGS.GUILD_MEMBERS ] });
 
 // When the client is ready, run this code (only once)
 client.once('ready', async () =>
 {
 	await ConnectToDatabase();
 
-	Log('Ready!');
+	Log(`Ready! Join any server with this link: https://discord.com/oauth2/authorize?client_id=${process.env.FF_ClientId}&scope=bot&permissions=8`);
 
 	// Load Plugins
 	LoadPlugins(client);

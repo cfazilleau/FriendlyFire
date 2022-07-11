@@ -45,7 +45,7 @@ class MinecraftPlugin extends Plugin
 						command += ' ' + interaction.options.getString('username');
 					}
 
-					this.HandleCommand(command, interaction);
+					await this.HandleCommand(command, interaction);
 				},
 		},
 		{
@@ -68,7 +68,7 @@ class MinecraftPlugin extends Plugin
 						throw 'no command specified.';
 					}
 
-					this.HandleCommand(command, interaction);
+					await this.HandleCommand(command, interaction);
 				},
 		},
 	];
@@ -78,28 +78,19 @@ class MinecraftPlugin extends Plugin
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	public Init(client: Client<boolean>): void
 	{
-		Log('Minecraft');
+		// eslint-disable-next-line no-empty-function
 	}
 
 	private async HandleCommand(command: string, interaction: CommandInteraction<CacheType>)
 	{
 		await interaction.deferReply();
 
-		let response: string;
-		try
-		{
-			const rcon = this.GetGuildRcon(interaction.guild as Guild);
-			await rcon.connect();
+		const rcon = this.GetGuildRcon(interaction.guild as Guild);
+		await rcon.connect();
 
-			response = await rcon.send(command);
-			response = this.CleanMinecraftTags(response);
-			await rcon.end();
-		}
-		catch (error)
-		{
-			response = `${error}`;
-		}
-
+		let response = await rcon.send(command);
+		response = this.CleanMinecraftTags(response);
+		await rcon.end();
 		interaction.editReply(response);
 	}
 

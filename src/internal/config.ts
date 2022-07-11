@@ -66,7 +66,7 @@ function GetPropertyInternal<Type>(key: string, defaultValue: Type, guild? : dis
 	if (guild)
 	{
 		const guildConfig : ConfigData = config.guilds[guild.id];
-		return guildConfig ? guildConfig[key] as Type : defaultValue;
+		return guildConfig ? (guildConfig[key] ?? config.global[key]) as Type : defaultValue;
 	}
 	else
 	{

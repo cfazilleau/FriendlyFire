@@ -47,6 +47,7 @@ function GetColorDelegate(fileName: string) : ColorDelegate
 	case fileName.match(/^internal[/\\]config\.js/)?.input:
 		return color.color.yellow;
 
+	case 'plugin.js':
 	case fileName.match(/^internal[/\\]pluginloader\.js/)?.input:
 		return color.color.blue;
 

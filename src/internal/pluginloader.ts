@@ -31,7 +31,11 @@ export async function HandleCommand(command : discord.CommandInteraction)
 				color: '#ff0000',
 			});
 
-			if (command.replied)
+			if (command.deferred)
+			{
+				command.editReply({ embeds: [embed] });
+			}
+			else if (command.replied)
 			{
 				command.channel?.send({ embeds: [embed] });
 			}

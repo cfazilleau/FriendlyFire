@@ -32,7 +32,7 @@ export abstract class Plugin
 	}
 }
 
-export async function CatchAndLog<Type>(listener: () => Type)
+export async function CatchAndLog<Type>(listener: () => Type, interaction? : discord.Interaction)
 {
 	try
 	{
@@ -41,5 +41,16 @@ export async function CatchAndLog<Type>(listener: () => Type)
 	catch (error)
 	{
 		Log(error);
+
+		if (interaction && interaction.channel)
+		{
+			const embed = new discord.MessageEmbed({
+				title: 'Oops',
+				description: `Error during interaction:\n${builders.codeBlock(`${error}`)}`,
+				color: '#ff0000',
+			});
+
+			interaction.channel.send({ embeds: [ embed ] });
+		}
 	}
 }

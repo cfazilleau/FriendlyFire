@@ -3,7 +3,7 @@ import { ButtonInteraction, CacheType, Client, CommandInteraction, Guild, Messag
 import { Schema } from 'mongoose';
 import QuickChart from 'quickchart-js';
 
-import { Log, Plugin, PluginCommand, DatabaseModel } from '../plugin';
+import { Log, Plugin, PluginCommand, DatabaseModel, CatchAndLog } from '../plugin';
 
 interface IMessageVotes
 {
@@ -38,7 +38,7 @@ class PollsPlugin extends Plugin
 
 					if (text == undefined) throw 'poll text can not be empty';
 
-					this.SendPoll(interaction, text, [
+					await this.SendPoll(interaction, text, [
 						this.yesButton,
 						this.noButton,
 					]);
@@ -60,7 +60,7 @@ class PollsPlugin extends Plugin
 
 					if (text == undefined) throw 'poll text can not be empty';
 
-					this.SendPoll(interaction, text, [
+					await this.SendPoll(interaction, text, [
 						this.yesButton,
 						this.noButton,
 						this.maybeButton,
@@ -105,9 +105,9 @@ class PollsPlugin extends Plugin
 					for (let i = 1; i <= 5; i++)
 					{
 						const id = `option_${i}`;
-						const name = interaction.options.getString(id);
+						const name = interaction.options.getString(id)?.substring(0, 80); // clamp length to 80
 
-						if (name == undefined) break;
+						if (name == undefined) continue;
 
 						buttons.push(new MessageButton({
 							customId: this.CustomId(id),
@@ -118,7 +118,7 @@ class PollsPlugin extends Plugin
 					}
 					if (buttons.length < 2) throw 'custom polls must have at least 2 options';
 
-					this.SendPoll(interaction, text, buttons);
+					await this.SendPoll(interaction, text, buttons);
 				},
 		},
 	];
@@ -148,16 +148,24 @@ class PollsPlugin extends Plugin
 	{
 		client.on('interactionCreate', interaction =>
 		{
-			if (interaction.isButton() && this.CheckCustomId(interaction.customId))
+			CatchAndLog(async () =>
 			{
-				const customId = this.GetShortCustomId(interaction.customId);
-				Log(`Handling interaction '${customId}' from '${interaction.user.username}'`);
+				if (interaction.isButton() && this.CheckCustomId(interaction.customId))
+				{
+					await interaction.deferUpdate();
 
-				this.HandleButtonInteraction(interaction);
-			}
+					const customId = this.GetShortCustomId(interaction.customId);
+					Log(`Handling interaction '${customId}' from '${interaction.user.username}'`);
+
+					await this.HandleButtonInteraction(interaction);
+				}
+			}, interaction);
 		});
 
-		this.ClearOldVoteMessages(client);
+		CatchAndLog(async () =>
+		{
+			this.ClearOldVoteMessages(client);
+		});
 	}
 
 	private CustomId(id: string): string
@@ -197,10 +205,10 @@ class PollsPlugin extends Plugin
 		await client.guilds.fetch();
 		client.guilds.cache.forEach(async guild =>
 		{
-			Log(`${guild?.name}`);
+			Log(`Clearing old invites in ${guild?.name}...`);
 			const MessageVotes = DatabaseModel(collectionName, MessageVotesSchema, guild);
-			const messages = await MessageVotes.find();
 
+			const messages = await MessageVotes.find();
 			messages.forEach(async msg =>
 			{
 				// check correct id
@@ -214,17 +222,14 @@ class PollsPlugin extends Plugin
 				const channelId = id[0];
 				const messageId = id[1];
 
-				// check correct channel
-				const channel = await guild.channels.fetch(channelId) as TextChannel;
-				if (channel == undefined)
+				try
 				{
-					msg.delete();
-					return;
+					// check correct channel
+					const channel = await guild.channels.fetch(channelId) as TextChannel;
+					// check correct message
+					await channel.messages.fetch(messageId);
 				}
-
-				// check correct message
-				const message = await channel.messages.fetch(messageId);
-				if (message == undefined)
+				catch (_)
 				{
 					msg.delete();
 					return;
@@ -236,88 +241,76 @@ class PollsPlugin extends Plugin
 	private async SendPoll(interaction: CommandInteraction, poll: string, buttons: MessageButton[])
 	{
 		const actionRow = new MessageActionRow({ components: buttons });
-		interaction.reply({ content: poll, components: [ actionRow ] });
+		await interaction.reply({ content: poll, components: [ actionRow ] });
 	}
 
 	private async HandleButtonInteraction(interaction: ButtonInteraction)
 	{
-		try
+		const guild = interaction.guild as Guild;
+		const chanId = interaction.channelId;
+		const msgId = interaction.message.id;
+		const message = await interaction.channel?.messages.fetch(msgId);
+
+		const userVotes: {[userId: string]: string} = await this.GetMessageVotes(guild, chanId, msgId);
+		userVotes[interaction.user.id] = this.GetShortCustomId(interaction.customId);
+
+		await this.SetMessageVotes(guild, chanId, msgId, userVotes);
+
+		const values = new Map<string, number>();
+		for (const value in userVotes)
 		{
-			const guild = interaction.guild as Guild;
-			const chanId = interaction.channelId;
-			const msgId = interaction.message.id;
-			const message = await interaction.channel?.messages.fetch(msgId);
+			const vote: string = userVotes[value];
+			const count: number = values.get(vote) ?? 0;
+			values.set(vote, count + 1);
+		}
 
-			const userVotes: {[userId: string]: string} = await this.GetMessageVotes(guild, chanId, msgId);
-			Log('got message votes');
-			userVotes[interaction.user.id] = this.GetShortCustomId(interaction.customId);
+		const count: number[] | undefined[] = [];
 
-			await this.SetMessageVotes(guild, chanId, msgId, userVotes);
-			Log('set message votes');
+		for (let i = 1; i <= 5; i++) { count[i - 1] = values.get(`option_${i}`); }
+		count[5] = values.get('yes');
+		count[6] = values.get('no');
+		count[7] = values.get('maybe');
 
-			const values = new Map<string, number>();
-			for (const value in userVotes)
+		const chart = new QuickChart();
+		chart.setWidth(1024);
+		chart.setHeight(128);
+		chart.setBackgroundColor('#00000000');
+		chart.setConfig({
+			'type': 'horizontalBar',
+			'data':
 			{
-				const vote: string = userVotes[value];
-				const count: number = values.get(vote) ?? 0;
-				values.set(vote, count + 1);
-			}
-
-			const count: number[] | undefined[] = [];
-
-			for (let i = 1; i <= 5; i++) { count[i - 1] = values.get(`option_${i}`); }
-			count[5] = values.get('yes');
-			count[6] = values.get('no');
-			count[7] = values.get('maybe');
-
-			const chart = new QuickChart();
-			chart.setWidth(1024);
-			chart.setHeight(128);
-			chart.setBackgroundColor('#00000000');
-			chart.setConfig(
+				'datasets': [
+					{ 'data': [ count[0] ?? 0 ], hidden: count[0] == undefined, 'backgroundColor': '#78b159' }, // option_1
+					{ 'data': [ count[1] ?? 0 ], hidden: count[1] == undefined, 'backgroundColor': '#55acee' }, // option_2
+					{ 'data': [ count[2] ?? 0 ], hidden: count[2] == undefined, 'backgroundColor': '#aa8ed6' }, // option_3
+					{ 'data': [ count[3] ?? 0 ], hidden: count[3] == undefined, 'backgroundColor': '#dd2e44' }, // option_4
+					{ 'data': [ count[4] ?? 0 ], hidden: count[4] == undefined, 'backgroundColor': '#f4900c' }, // option_5
+					{ 'data': [ count[5] ?? 0 ], hidden: count[5] == undefined, 'backgroundColor': '#43b581' }, // yes
+					{ 'data': [ count[6] ?? 0 ], hidden: count[6] == undefined, 'backgroundColor': '#f04747' }, // no
+					{ 'data': [ count[7] ?? 0 ], hidden: count[7] == undefined, 'backgroundColor': '#5865f2' }, // maybe
+				],
+			},
+			'options':
+			{
+				'legend': { 'display': false },
+				'scales': {
+					'xAxes': [{ 'display': false, 'stacked': true }],
+					'yAxes': [{ 'display': false, 'stacked': true }],
+				},
+				'plugins':
 				{
-					'type': 'horizontalBar',
-					'data':
-					{
-						'datasets': [
-							{ 'data': [ count[0] ?? 0 ], hidden: count[0] == undefined, 'backgroundColor': '#78b159' }, // option_1
-							{ 'data': [ count[1] ?? 0 ], hidden: count[1] == undefined, 'backgroundColor': '#55acee' }, // option_2
-							{ 'data': [ count[2] ?? 0 ], hidden: count[2] == undefined, 'backgroundColor': '#aa8ed6' }, // option_3
-							{ 'data': [ count[3] ?? 0 ], hidden: count[3] == undefined, 'backgroundColor': '#dd2e44' }, // option_4
-							{ 'data': [ count[4] ?? 0 ], hidden: count[4] == undefined, 'backgroundColor': '#f4900c' }, // option_5
-							{ 'data': [ count[5] ?? 0 ], hidden: count[5] == undefined, 'backgroundColor': '#43b581' }, // yes
-							{ 'data': [ count[6] ?? 0 ], hidden: count[6] == undefined, 'backgroundColor': '#f04747' }, // no
-							{ 'data': [ count[7] ?? 0 ], hidden: count[7] == undefined, 'backgroundColor': '#5865f2' }, // maybe
-						],
-					},
-					'options':
-					{
-						'legend': { 'display': false },
-						'scales': {
-							'xAxes': [{ 'display': false, 'stacked': true }],
-							'yAxes': [{ 'display': false, 'stacked': true }],
-						},
-						'plugins':
-						{
-							'datalabels': {
-								'color': '#ffffff',
-								'font': {
-									'family': 'roboto',
-									'size': 50,
-								},
-							},
+					'datalabels': {
+						'color': '#ffffff',
+						'font': {
+							'family': 'roboto',
+							'size': 50,
 						},
 					},
-				});
+				},
+			},
+		});
 
-			await message?.edit({ files: [{ attachment: await chart.toBinary(), name: 'chart.png' }] });
-			await interaction.update({});
-		}
-		catch (error)
-		{
-			Log(`${error}`);
-			interaction.reply(`${error}`);
-		}
+		await message?.edit({ files: [{ attachment: await chart.toBinary(), name: 'chart.png' }] });
 	}
 }
 
