@@ -16,6 +16,8 @@ const MessageVotesSchema = new Schema<IMessageVotes>({
 	votes: { type: Object, 'default': {} },
 });
 
+const collectionName = 'polls';
+
 class PollsPlugin extends Plugin
 {
 	public name = 'Polls';
@@ -175,7 +177,7 @@ class PollsPlugin extends Plugin
 
 	private async GetMessageVotes(guild: Guild, channelId: string, messageId: string): Promise<{ [userId: string]: string }>
 	{
-		const MessageVotes = DatabaseModel('messagevotes', MessageVotesSchema, guild);
+		const MessageVotes = DatabaseModel(collectionName, MessageVotesSchema, guild);
 		const id = `${channelId}.${messageId}`;
 
 		const messageVotes = await MessageVotes.findOne({ id: id });
@@ -184,7 +186,7 @@ class PollsPlugin extends Plugin
 
 	private async SetMessageVotes(guild: Guild, channelId: string, messageId: string, data: {[userId: string]: string})
 	{
-		const MessageVotes = DatabaseModel('messagevotes', MessageVotesSchema, guild);
+		const MessageVotes = DatabaseModel(collectionName, MessageVotesSchema, guild);
 		const id = `${channelId}.${messageId}`;
 
 		await MessageVotes.findOneAndUpdate({ id: id }, { votes: data }, { upsert: true });
@@ -196,7 +198,7 @@ class PollsPlugin extends Plugin
 		client.guilds.cache.forEach(async guild =>
 		{
 			Log(`${guild?.name}`);
-			const MessageVotes = DatabaseModel('messagevotes', MessageVotesSchema, guild);
+			const MessageVotes = DatabaseModel(collectionName, MessageVotesSchema, guild);
 			const messages = await MessageVotes.find();
 
 			messages.forEach(async msg =>
