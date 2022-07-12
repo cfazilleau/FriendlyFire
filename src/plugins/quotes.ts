@@ -2,7 +2,7 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 import { CacheType, Client, CommandInteraction, Guild, Message, MessageEmbed } from 'discord.js';
 import { Schema } from 'mongoose';
 import moment from 'moment';
-import QuotesPhotosGenerator from 'quotes-photos-generator';
+import fetch from 'node-fetch';
 
 import { Log, Plugin, PluginCommand, DatabaseModel } from '../plugin';
 
@@ -31,77 +31,6 @@ const QuoteSchema = new Schema<IQuote>({
 	timestamp: { type: String },
 });
 
-// Quotes Image
-const quotesStyle = `
-  html {
-	height: 100%;
-  }
-
-  body, .image {
-	width: 100%;
-	height: 100%;
-	margin: 0;
-  }
-
-  .image {
-	background-image: url(https://source.unsplash.com/random/?inspirational);
-	background-size: cover;
-	background-position: center;
-  }
-
-  .colorShadow, .darkShadow {
-	width: 100%;
-	height: 100%;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-  }
-
-  .colorShadow {
-	background-color: #ffffff20;
-	position: absolute;
-	top: 0;
-  }
-
-  .darkShadow {
-	background-color: #00000090;
-  }
-
-  .content {
-	padding: 12px;
-	margin: 16px;
-	border: 4px solid white;
-	width: calc(100% - 68px);
-	height: calc(100% - 68px);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	position: relative;
-  }
-
-  .content span {
-	color: white;
-	font-family: 'Caveat', cursive;
-	font-size: 42px;
-	font-weight: 300;
-	text-align: center;
-  }
-
-  .content .author {
-	color: #ffffff;
-	font-family: 'Caveat', cursive;
-	font-weight: 700;
-	font-size: 32px;
-	position: absolute;
-	bottom: 8px;
-	width: 100%;
-	text-align: center;
-  }`;
-
-const generator = new QuotesPhotosGenerator();
-generator.style = quotesStyle;
-
-// -----
 class QuotesPlugin extends Plugin
 {
 	public name = 'Quotes';
@@ -121,19 +50,12 @@ class QuotesPlugin extends Plugin
 					const count = await Quote.countDocuments() as number;
 					const random = Math.floor(Math.random() * count);
 					const quote = await Quote.findOne().skip(random) as IQuote;
-					const imgSize = 512;
 
-					Log('Generating new quote image...');
-					const binary = await generator.getImageBuffer({
-						quote: quote.quote.split('\n').join('<br>'),
-						author: quote.author,
-						specialWords: [],
-						width: imgSize,
-						height: imgSize,
-					});
-					Log('Done generating quote image.');
+					// Fetch image from the API and return it
+					const image = await fetch(`https://codaapi.herokuapp.com/quote/${encodeURI(quote.quote)}/${encodeURI(quote.author)}`);
+					const buffer = Buffer.from(await image.arrayBuffer());
 
-					interaction.editReply({ content: `Sent by ${quote.submitted_by} the ${quote.time}`, files: [{ attachment: binary, name: 'image.png' }] });
+					interaction.editReply({ content: `Sent by ${quote.submitted_by} the ${quote.time}`, files: [{ attachment: buffer, name: `quote_${random}.png` }] });
 				},
 		},
 	];

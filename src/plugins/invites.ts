@@ -152,6 +152,11 @@ class InvitesPlugin extends Plugin
 		member.user.send(this.GetProperty<string>(welcomeMessageKey, defaultWelcomeMessage, guild));
 	}
 
+	private ClearExpiredInvites()
+	{
+		// TODO: Clear old invites
+	}
+
 	public Init(client: Client<boolean>): void
 	{
 		client.on('guildMemberAdd', async (member) =>
@@ -159,9 +164,12 @@ class InvitesPlugin extends Plugin
 			CatchAndLog(async () =>
 			{
 				await this.OnGuildMemberAdded(member);
-
-				// TODO: Clear expired invites
 			});
+		});
+
+		CatchAndLog(async () =>
+		{
+			await this.ClearExpiredInvites();
 		});
 	}
 }
