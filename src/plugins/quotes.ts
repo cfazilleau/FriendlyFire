@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
+import { SlashCommandBuilder, time, userMention } from '@discordjs/builders';
 import { CacheType, Client, CommandInteraction, Guild, Message, MessageEmbed } from 'discord.js';
 import { Schema } from 'mongoose';
 import moment from 'moment';
@@ -19,16 +19,16 @@ interface IQuote
 	submitted_by_id: string,
 	quote: string,
 	time: string,
-	timestamp: string,
+	timestamp: number,
 }
 
 const QuoteSchema = new Schema<IQuote>({
 	author: { type: String },
 	submitted_by: { type: String, required: true },
-	submitted_by_id: { type: String },
+	submitted_by_id: { type: String, default: '' },
 	quote: { type: String, required: true },
 	time: { type: String, required: true },
-	timestamp: { type: String },
+	timestamp: { type: Number, default: 0 },
 });
 
 class QuotesPlugin extends Plugin
@@ -39,12 +39,14 @@ class QuotesPlugin extends Plugin
 			builder:
 				new SlashCommandBuilder()
 					.setName('quote')
-					.setDescription('Cite a quote from the database.') as SlashCommandBuilder,
+					.setDescription('Send a quote from the database.')
+					.setDescriptionLocalization('fr', 'Envoie une citation de la base de données') as SlashCommandBuilder,
 			callback:
 				async (interaction: CommandInteraction<CacheType>) =>
 				{
 					await interaction.deferReply();
 
+					// Get quote from the database
 					const Quote = DatabaseModel('quotes', QuoteSchema, interaction.guild);
 
 					const count = await Quote.countDocuments() as number;
@@ -53,9 +55,24 @@ class QuotesPlugin extends Plugin
 
 					// Fetch image from the API and return it
 					const image = await fetch(`https://codaapi.herokuapp.com/quote/${encodeURI(quote.quote)}/${encodeURI(quote.author)}`);
+					if (!image.ok) throw `CodaAPI request failed: ${image.status} ${image.statusText}`;
+
+					// Create and send image buffer
 					const buffer = Buffer.from(await image.arrayBuffer());
 
-					interaction.editReply({ content: `Sent by ${quote.submitted_by} the ${quote.time}`, files: [{ attachment: buffer, name: `quote_${random}.png` }] });
+					switch (interaction.locale)
+					{
+					case 'fr':
+						interaction.editReply({
+							content: `> Envoyé par ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${quote.timestamp == 0 ? ' le ' + quote.time : time(new Date(quote.timestamp), 'R')}`,
+							files: [{ attachment: buffer, name: `quote_${random}.png` }] });
+						break;
+					default:
+						interaction.editReply({
+							content: `> Submitted by ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${quote.timestamp == 0 ? ' the ' + quote.time : time(new Date(quote.timestamp), 'R')}`,
+							files: [{ attachment: buffer, name: `quote_${random}.png` }] });
+						break;
+					}
 				},
 		},
 	];
@@ -110,7 +127,7 @@ class QuotesPlugin extends Plugin
 			if (old) old.delete();
 
 			const embed = new MessageEmbed({
-				footer: { text: `Saved by ${quote.submitted_by} -- ${quote.time}`, iconURL: 'http://i.imgur.com/EeC5BAb.png' },
+				footer: { text: `Sauvegardé par ${quote.submitted_by}`, iconURL: 'http://i.imgur.com/EeC5BAb.png' },
 				title: quote.author,
 				color: confirmationEmbedColor,
 				description: quote.quote,

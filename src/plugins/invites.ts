@@ -1,5 +1,5 @@
 import { Client, Guild, GuildMember, MessageEmbed, TextChannel, User } from 'discord.js';
-import { SlashCommandBuilder, userMention } from '@discordjs/builders';
+import { SlashCommandBuilder, time, userMention } from '@discordjs/builders';
 
 import { Log, Plugin, PluginCommand, DatabaseModel, CatchAndLog } from '../plugin';
 import { Schema } from 'mongoose';
@@ -56,10 +56,22 @@ class InvitesPlugin extends Plugin
 						});
 						inviteData.save();
 
-						await interaction.reply({
-							content: `here is your link: ${invite}\nIt will be valid for the next ${inviteMaxAge} minutes`,
-							ephemeral: true,
-						});
+
+						switch (interaction.locale)
+						{
+						case 'fr':
+							await interaction.reply({
+								content: `Voila ton lien: ${invite}\nIl sera valide jusqu'au ${time(new Date(invite.expiresTimestamp as number))}`,
+								ephemeral: true,
+							});
+							break;
+						default:
+							await interaction.reply({
+								content: `Here is your link: ${invite}\nIt will be valid until the ${time(new Date(invite.expiresTimestamp as number))}`,
+								ephemeral: true,
+							});
+							break;
+						}
 					}
 				},
 		},
@@ -67,11 +79,13 @@ class InvitesPlugin extends Plugin
 			builder:
 				new SlashCommandBuilder()
 					.setName('testjoin')
-					.setDescription('trigger user joined event for the invite plugin')
+					.setDescription('Triggers user joined event for the "Invite" plugin')
+					.setDescriptionLocalization('fr', 'Simule l\'evenement d\'arrivée d\'un nouvel utilisateur pour le plugin "Invite"')
 					.setDefaultPermission(false)
 					.addUserOption(user => user
 						.setName('user')
-						.setDescription('user to join')
+						.setDescription('User to join')
+						.setDescriptionLocalization('fr', 'Utilisateur a faire rejoindre')
 						.setRequired(false)) as SlashCommandBuilder,
 			callback:
 				async (interaction) =>
@@ -89,7 +103,16 @@ class InvitesPlugin extends Plugin
 					}
 
 					this.OnGuildMemberAdded(member);
-					interaction.reply({ content: 'done.', ephemeral: true });
+
+					switch (interaction.locale)
+					{
+					case 'fr':
+						interaction.reply({ content: 'Voila!', ephemeral: true });
+						break;
+					default:
+						interaction.reply({ content: 'Done!', ephemeral: true });
+						break;
+					}
 				},
 		},
 	];
@@ -103,6 +126,7 @@ class InvitesPlugin extends Plugin
 	private async OnGuildMemberAdded(member: GuildMember)
 	{
 		const guild = member.guild;
+		const user = await member.user.fetch(true);
 
 		Log(`New guild member: ${member.displayName}`);
 
@@ -141,15 +165,15 @@ class InvitesPlugin extends Plugin
 
 		const embed = new MessageEmbed({
 			title: 'Bienvenue!',
-			thumbnail: { url: member.user.avatarURL({ format: 'png', size: 1024, dynamic: true }) as string },
+			thumbnail: { url: user.avatarURL({ size: 1024 }) as string },
 			description: `Bienvenue a ${userMention(member.id)} ${inviterMention != '' ? `, invité.e par ${inviterMention}` : ''}, sur le discord de Phoenix Legacy!\n${this.GetRandomGreeting(guild)}`,
-			color: member.user.accentColor as number,
+			color: user.accentColor as number,
 		});
 
 		const mainChannelId = this.GetProperty(inviteChannelKey, undefined, guild);
 		const mainChannel = (mainChannelId ? await guild.channels.fetch(mainChannelId) : guild.systemChannel) as TextChannel;
 		mainChannel.send({ embeds: [ embed ] });
-		member.user.send(this.GetProperty<string>(welcomeMessageKey, defaultWelcomeMessage, guild));
+		user.send(this.GetProperty<string>(welcomeMessageKey, defaultWelcomeMessage, guild));
 	}
 
 	private ClearExpiredInvites()

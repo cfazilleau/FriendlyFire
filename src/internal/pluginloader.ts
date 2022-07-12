@@ -74,14 +74,28 @@ export function LoadPlugins(client : discord.Client<boolean>)
 	// Require plugins so they can all register themselves
 	for (const file of commandFiles)
 	{
-		require(`../${pluginsDir}/${file}`);
+		try
+		{
+			require(`../${pluginsDir}/${file}`);
+		}
+		catch (error)
+		{
+			Log(`Error loading ${file}: ${error}`);
+		}
 	}
 
 	// Init plugins
 	plugins.forEach(plugin =>
 	{
-		plugin.Init(client);
-		Log(`Loaded plugin ${plugin.name}`);
+		try
+		{
+			plugin.Init(client);
+			Log(`Loaded plugin ${plugin.name}`);
+		}
+		catch (error)
+		{
+			Log(`Error initializing plugin ${plugin.name}: ${error}`);
+		}
 	});
 
 	// Import commands from plugins

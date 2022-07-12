@@ -32,7 +32,7 @@ export abstract class Plugin
 	}
 }
 
-export async function CatchAndLog<Type>(listener: () => Type, interaction? : discord.Interaction)
+export async function CatchAndLog<Type>(listener: () => Type, channel? : discord.TextBasedChannel | undefined | null)
 {
 	try
 	{
@@ -42,7 +42,7 @@ export async function CatchAndLog<Type>(listener: () => Type, interaction? : dis
 	{
 		Log(error);
 
-		if (interaction && interaction.channel)
+		if (channel)
 		{
 			const embed = new discord.MessageEmbed({
 				title: 'Oops',
@@ -50,7 +50,7 @@ export async function CatchAndLog<Type>(listener: () => Type, interaction? : dis
 				color: '#ff0000',
 			});
 
-			interaction.channel.send({ embeds: [ embed ] });
+			channel.send({ embeds: [ embed ] });
 		}
 	}
 }

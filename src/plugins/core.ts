@@ -34,7 +34,16 @@ class CorePlugin extends Plugin
 
 					// delete messages
 					const deletedMessages = await channel.bulkDelete(number, true);
-					await interaction.reply({ content: `Deleted ${deletedMessages.size} messages.`, ephemeral: true });
+
+					switch (interaction.locale)
+					{
+					case 'fr':
+						await interaction.reply({ content: `${deletedMessages.size} messages supprimés.`, ephemeral: true });
+						break;
+					default:
+						await interaction.reply({ content: `Deleted ${deletedMessages.size} messages.`, ephemeral: true });
+						break;
+					}
 				},
 		},
 		{
@@ -56,7 +65,17 @@ class CorePlugin extends Plugin
 
 					if (text != undefined)
 					{
-						interaction.reply({ content: 'Done.', ephemeral: true });
+
+						switch (interaction.locale)
+						{
+						case 'fr':
+							interaction.reply({ content: 'Voila!', ephemeral: true });
+							break;
+						default:
+							interaction.reply({ content: 'Done!', ephemeral: true });
+							break;
+						}
+
 						interaction.channel?.send(text);
 					}
 				},

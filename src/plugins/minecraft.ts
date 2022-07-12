@@ -12,28 +12,35 @@ class MinecraftPlugin extends Plugin
 			builder:
 				new SlashCommandBuilder()
 					.setName('mc-whitelist')
-					.setDescription('manage whitelist of the minecraft server')
+					.setDescription('Manage whitelist of the minecraft server')
+					.setDescriptionLocalization('fr', 'Gérer la whitelist du serveur minecraft')
 					.setDefaultPermission(false)
 					.addSubcommand(add => add
 						.setName('add')
-						.setDescription('add a player to the whitelist')
+						.setDescription('Add a player to the whitelist')
+						.setDescriptionLocalization('fr', 'Ajouter un joueur a la whitelist')
 						.addStringOption(option => option
 							.setName('username')
-							.setDescription('minecraft username to add to the whitelist')
+							.setDescription('Minecraft username to add to the whitelist')
+							.setDescriptionLocalization('fr', 'Pseudo Minecraft a ajouter a la whitelist')
 							.setRequired(true)))
 					.addSubcommand(remove => remove
 						.setName('remove')
-						.setDescription('remove a player from the whitelist')
+						.setDescription('Remove a player from the whitelist')
+						.setDescriptionLocalization('fr', 'Retirer un joueur de la whitelist')
 						.addStringOption(option => option
 							.setName('username')
-							.setDescription('minecraft username to remove from the whitelist')
+							.setDescription('Minecraft username to remove from the whitelist')
+							.setDescriptionLocalization('fr', 'Pseudo Minecraft a retirer de la whitelist')
 							.setRequired(true)))
 					.addSubcommand(list => list
 						.setName('list')
-						.setDescription('get a list of all whitelisted players'))
+						.setDescription('Get a list of all whitelisted players')
+						.setDescriptionLocalization('fr', 'Optenir une list de tous les joueurs de la whitelist'))
 					.addSubcommand(reload => reload
 						.setName('reload')
-						.setDescription('reload the whitelist')) as SlashCommandBuilder,
+						.setDescription('Reload the whitelist')
+						.setDescriptionLocalization('fr', 'Rafraichir la whitelist')) as SlashCommandBuilder,
 			callback:
 				async (interaction) =>
 				{
@@ -52,11 +59,13 @@ class MinecraftPlugin extends Plugin
 			builder:
 				new SlashCommandBuilder()
 					.setName('mc-command')
-					.setDescription('send a command to the minecraft server')
+					.setDescription('Send a command to the minecraft server')
+					.setDescriptionLocalization('fr', 'Envoyer une commande au serveur Minecraft')
 					.setDefaultPermission(false)
 					.addStringOption(option => option
 						.setName('command')
-						.setDescription('command to send to the server (with no \'/\' at the start)')
+						.setDescription('Command to send to the server (with no \'/\' at the start)')
+						.setDescriptionLocalization('fr', 'Commande a envoyer au serveur (sans le \'/\' au début)')
 						.setRequired(true)) as SlashCommandBuilder,
 			callback:
 				async (interaction) =>

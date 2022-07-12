@@ -4,6 +4,7 @@
 	"description": "A Typescript modular discord bot",
 	"main": "main.js",
 	"scripts": {
+		"lint": "eslint --fix src/**",
 		"build": "tsc",
 		"start": "node dist/main.js",
 		"postinstall": "npm run build"

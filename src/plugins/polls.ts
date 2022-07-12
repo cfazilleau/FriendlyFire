@@ -26,10 +26,12 @@ class PollsPlugin extends Plugin
 			builder:
 				new SlashCommandBuilder()
 					.setName('yn')
-					.setDescription('send a poll with yes and no answers')
+					.setDescription('Send a poll with the answers \'Yes\' and \'No\'')
+					.setDescriptionLocalization('fr', 'Envoyer un sondage avec les réponses \'Oui\' et \'Non\'')
 					.addStringOption(option => option
 						.setName('poll')
-						.setDescription('poll question')
+						.setDescription('Poll question')
+						.setDescriptionLocalization('fr', 'Question du sondage')
 						.setRequired(true)) as SlashCommandBuilder,
 			callback:
 				async (interaction: CommandInteraction<CacheType>) =>
@@ -39,8 +41,18 @@ class PollsPlugin extends Plugin
 					if (text == undefined) throw 'poll text can not be empty';
 
 					await this.SendPoll(interaction, text, [
-						this.yesButton,
-						this.noButton,
+						new MessageButton({
+							customId: this.CustomId('yes'),
+							label: interaction.locale == 'fr' ? 'Oui' : 'Yes',
+							style: 'SUCCESS',
+							emoji: '👍',
+						}),
+						new MessageButton({
+							customId: this.CustomId('no'),
+							label: interaction.locale == 'fr' ? 'Non' : 'No',
+							style: 'DANGER',
+							emoji: '👎',
+						}),
 					]);
 				},
 		},
@@ -48,10 +60,12 @@ class PollsPlugin extends Plugin
 			builder:
 				new SlashCommandBuilder()
 					.setName('ynu')
-					.setDescription('send a poll with yes, no, and maybe answers')
+					.setDescription('Send a poll with the answers \'Yes\', \'No\', and \'Maybe\'')
+					.setDescriptionLocalization('fr', 'Envoyer un sondage avec les réponses \'Oui\', \'Non\', et \'Peut-être\'')
 					.addStringOption(option => option
 						.setName('poll')
-						.setDescription('poll question')
+						.setDescription('Poll question')
+						.setDescriptionLocalization('fr', 'Question du sondage')
 						.setRequired(true)) as SlashCommandBuilder,
 			callback:
 				async (interaction: CommandInteraction<CacheType>) =>
@@ -61,9 +75,24 @@ class PollsPlugin extends Plugin
 					if (text == undefined) throw 'poll text can not be empty';
 
 					await this.SendPoll(interaction, text, [
-						this.yesButton,
-						this.noButton,
-						this.maybeButton,
+						new MessageButton({
+							customId: this.CustomId('yes'),
+							label: interaction.locale == 'fr' ? 'Oui' : 'Yes',
+							style: 'SUCCESS',
+							emoji: '👍',
+						}),
+						new MessageButton({
+							customId: this.CustomId('no'),
+							label: interaction.locale == 'fr' ? 'Non' : 'No',
+							style: 'DANGER',
+							emoji: '👎',
+						}),
+						new MessageButton({
+							customId: this.CustomId('maybe'),
+							label: interaction.locale == 'fr' ? 'Peut-être' : 'Maybe',
+							style: 'PRIMARY',
+							emoji: '✋',
+						}),
 					]);
 				},
 		},
@@ -71,28 +100,30 @@ class PollsPlugin extends Plugin
 			builder:
 				new SlashCommandBuilder()
 					.setName('poll')
-					.setDescription('send a poll with up to 5 custom answers')
+					.setDescription('Send a poll with up to 5 custom answers')
+					.setDescriptionLocalization('fr', 'Envoyer un sondage avec jusqu\'a 5 réponses personnalisées')
 					.addStringOption(option => option
 						.setName('poll')
-						.setDescription('poll question')
+						.setDescription('Poll question')
+						.setDescriptionLocalization('fr', 'Question du sondage')
 						.setRequired(true))
 					.addStringOption(option => option
 						.setName('option_1')
-						.setDescription('option 1')
+						.setDescription('Option 1')
 						.setRequired(true))
 					.addStringOption(option => option
 						.setName('option_2')
-						.setDescription('option 2')
+						.setDescription('Option 2')
 						.setRequired(true))
 					.addStringOption(option => option
 						.setName('option_3')
-						.setDescription('option 3'))
+						.setDescription('Option 3'))
 					.addStringOption(option => option
 						.setName('option_4')
-						.setDescription('option 4'))
+						.setDescription('Option 4'))
 					.addStringOption(option => option
 						.setName('option_5')
-						.setDescription('option 5')) as SlashCommandBuilder,
+						.setDescription('Option 5')) as SlashCommandBuilder,
 			callback:
 				async (interaction: CommandInteraction<CacheType>) =>
 				{
@@ -123,27 +154,6 @@ class PollsPlugin extends Plugin
 		},
 	];
 
-	private yesButton = new MessageButton({
-		customId: this.CustomId('yes'),
-		label: 'Yes',
-		style: 'SUCCESS',
-		emoji: '👍',
-	});
-
-	private noButton = new MessageButton({
-		customId: this.CustomId('no'),
-		label: 'No',
-		style: 'DANGER',
-		emoji: '👎',
-	});
-
-	private maybeButton = new MessageButton({
-		customId: this.CustomId('maybe'),
-		label: 'Maybe',
-		style: 'PRIMARY',
-		emoji: '✋',
-	});
-
 	public Init(client: Client<boolean>): void
 	{
 		client.on('interactionCreate', interaction =>
@@ -159,7 +169,7 @@ class PollsPlugin extends Plugin
 
 					await this.HandleButtonInteraction(interaction);
 				}
-			}, interaction);
+			}, interaction.channel);
 		});
 
 		CatchAndLog(async () =>
