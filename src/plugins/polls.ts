@@ -289,7 +289,7 @@ class PollsPlugin extends Plugin
 	private async SendPoll(interaction: CommandInteraction, poll: string, buttons: MessageButton[])
 	{
 		const actionRow = new MessageActionRow({ components: buttons });
-		const embed = new MessageEmbed({ title: poll });
+		const embed = new MessageEmbed({ description: poll });
 
 		const pollMessage = await interaction.reply({ embeds: [ embed ], components: [ actionRow ], fetchReply: true }) as Message;
 
