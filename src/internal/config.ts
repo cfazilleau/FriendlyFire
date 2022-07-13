@@ -65,8 +65,8 @@ function GetPropertyInternal<Type>(key: string, defaultValue: Type, guild? : dis
 {
 	if (guild)
 	{
-		const guildConfig : ConfigData = config.guilds[guild.id];
-		return guildConfig ? (guildConfig[key] ?? config.global[key]) as Type : defaultValue;
+		const guildConfig : ConfigData = config.guilds[guild.id] ?? {};
+		return (guildConfig[key] ?? config.global[key]) as Type ?? defaultValue;
 	}
 	else
 	{
@@ -92,11 +92,11 @@ function SetPropertyInternal<Type>(key: string, value: Type, guild? : discord.Gu
 
 export function GetProperty<Type>(plugin: Plugin, key: string, defaultValue: Type, guild? : discord.Guild) : Type
 {
-	const value = GetPropertyInternal(`${plugin.name}.${key}`, defaultValue, guild);
+	const value: Type = GetPropertyInternal<Type>(`${plugin.name}.${key}`, defaultValue, guild);
 
 	if (value == defaultValue)
 	{
-		SetPropertyInternal(`${plugin.name}.${key}`, value, guild);
+		SetPropertyInternal<Type>(`${plugin.name}.${key}`, value, guild);
 	}
 
 	return value;
@@ -105,7 +105,7 @@ export function GetProperty<Type>(plugin: Plugin, key: string, defaultValue: Typ
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function SetProperty<Type>(plugin: Plugin, key: string, value: Type, guild? : discord.Guild) : void
 {
-	return SetPropertyInternal(`${plugin.name}.${key}`, value, guild);
+	return SetPropertyInternal<Type>(`${plugin.name}.${key}`, value, guild);
 }
 
 export function CreateGuildConfig(guild : discord.Guild)

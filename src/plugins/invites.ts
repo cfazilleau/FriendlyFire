@@ -1,4 +1,4 @@
-import { Client, Guild, GuildMember, MessageEmbed, TextChannel, User } from 'discord.js';
+import { Client, CommandInteraction, Guild, GuildMember, MessageEmbed, TextChannel, User } from 'discord.js';
 import { SlashCommandBuilder, time, userMention } from '@discordjs/builders';
 
 import { Log, Plugin, PluginCommand, DatabaseModel, CatchAndLog } from '../plugin';
@@ -17,13 +17,13 @@ interface IInvite
 {
 	author: string,
 	code: string,
-	expiration: string,
+	expiration: number,
 }
 
 const InviteSchema = new Schema<IInvite>({
 	author: { type: String, required: true },
 	code: { type: String, required: true },
-	expiration: { type: String, required: true },
+	expiration: { type: Number, required: true },
 });
 
 class InvitesPlugin extends Plugin
@@ -39,14 +39,14 @@ class InvitesPlugin extends Plugin
 					.setDescriptionLocalization('fr', 'Génère une invitation temporaire.')
 					.setDefaultPermission(false),
 			callback:
-				async (interaction) =>
+				async (interaction: CommandInteraction) =>
 				{
 					const author = interaction.member?.user as User;
 					const inviteMaxAge = this.GetProperty(inviteMaxAgeKey, 15, interaction.guild as Guild);
 
 					if (author != undefined && interaction.guild != undefined)
 					{
-						const invite = await interaction.guild.invites.create(interaction.channelId, { maxAge: inviteMaxAge * 60, maxUses: 1, unique: true });
+						const invite = await interaction.guild.invites.create(interaction.channelId, { temporary: true, maxAge: inviteMaxAge * 60, maxUses: 1, unique: true });
 						const Invite = DatabaseModel('invites', InviteSchema, interaction.guild);
 
 						const inviteData = new Invite({
@@ -88,7 +88,7 @@ class InvitesPlugin extends Plugin
 						.setDescriptionLocalization('fr', 'Utilisateur a faire rejoindre')
 						.setRequired(false)) as SlashCommandBuilder,
 			callback:
-				async (interaction) =>
+				async (interaction: CommandInteraction) =>
 				{
 					let member : GuildMember = interaction.member as GuildMember;
 
@@ -176,9 +176,23 @@ class InvitesPlugin extends Plugin
 		user.send(this.GetProperty<string>(welcomeMessageKey, defaultWelcomeMessage, guild));
 	}
 
-	private ClearExpiredInvites()
+	private async ClearExpiredInvites(client: Client<boolean>)
 	{
-		// TODO: Clear old invites
+		await client.guilds.fetch();
+		client.guilds.cache.forEach(async guild =>
+		{
+			const Invite = DatabaseModel('invites', InviteSchema, guild);
+
+			const recordedInvites = await Invite.find({});
+			recordedInvites.forEach(invite =>
+			{
+				if (invite.expiration - Date.now() < 0)
+				{
+					Log(`Deleting expired invite: ${invite.code}`);
+					invite.delete();
+				}
+			});
+		});
 	}
 
 	public Init(client: Client<boolean>): void
@@ -193,7 +207,7 @@ class InvitesPlugin extends Plugin
 
 		CatchAndLog(async () =>
 		{
-			await this.ClearExpiredInvites();
+			await this.ClearExpiredInvites(client);
 		});
 	}
 }

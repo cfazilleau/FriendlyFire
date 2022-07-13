@@ -40,18 +40,24 @@ class QuotesPlugin extends Plugin
 				new SlashCommandBuilder()
 					.setName('quote')
 					.setDescription('Send a quote from the database.')
-					.setDescriptionLocalization('fr', 'Envoie une citation de la base de données') as SlashCommandBuilder,
+					.setDescriptionLocalization('fr', 'Envoie une citation de la base de données')
+					.addIntegerOption(option => option
+						.setName('id')
+						.setDescription('Id of the required quote')
+						.setDescriptionLocalization('fr', 'Id de la citation recherchée')
+						.setMinValue(1)) as SlashCommandBuilder,
 			callback:
 				async (interaction: CommandInteraction<CacheType>) =>
 				{
 					await interaction.deferReply();
 
-					// Get quote from the database
 					const Quote = DatabaseModel('quotes', QuoteSchema, interaction.guild);
 
 					const count = await Quote.countDocuments() as number;
-					const random = Math.floor(Math.random() * count);
-					const quote = await Quote.findOne().skip(random) as IQuote;
+					const id = interaction.options.getInteger('id') ?? Math.floor(Math.random() * count) + 1;
+
+					// Get quote from the database
+					const quote = await Quote.findOne().skip(id - 1) as IQuote;
 
 					// Fetch image from the API and return it
 					const image = await fetch(`https://codaapi.herokuapp.com/quote/${encodeURI(quote.quote)}/${encodeURI(quote.author)}`);
@@ -64,13 +70,13 @@ class QuotesPlugin extends Plugin
 					{
 					case 'fr':
 						interaction.editReply({
-							content: `> Envoyé par ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${quote.timestamp == 0 ? ' le ' + quote.time : time(new Date(quote.timestamp), 'R')}`,
-							files: [{ attachment: buffer, name: `quote_${random}.png` }] });
+							content: `> Citation #${id}/${count}, Envoyée par ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${quote.timestamp == 0 ? ' le ' + quote.time : time(new Date(quote.timestamp), 'R')}`,
+							files: [{ attachment: buffer, name: `quote_${id}.png` }] });
 						break;
 					default:
 						interaction.editReply({
-							content: `> Submitted by ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${quote.timestamp == 0 ? ' the ' + quote.time : time(new Date(quote.timestamp), 'R')}`,
-							files: [{ attachment: buffer, name: `quote_${random}.png` }] });
+							content: `> Quote #${id}/${count}, Submitted by ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${quote.timestamp == 0 ? ' the ' + quote.time : time(new Date(quote.timestamp), 'R')}`,
+							files: [{ attachment: buffer, name: `quote_${id}.png` }] });
 						break;
 					}
 				},

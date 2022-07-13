@@ -1,4 +1,4 @@
-import { BaseGuildTextChannel, Client } from 'discord.js';
+import { BaseGuildTextChannel, Client, CommandInteraction } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
 
 import { Plugin, PluginCommand } from '../plugin';
@@ -23,7 +23,7 @@ class CorePlugin extends Plugin
 						.setMinValue(1)
 						.setRequired(true)) as SlashCommandBuilder,
 			callback:
-				async (interaction) =>
+				async (interaction: CommandInteraction) =>
 				{
 					// Extract parameters
 					const number = interaction.options.getInteger('amount') ?? 0;
@@ -59,7 +59,7 @@ class CorePlugin extends Plugin
 						.setDescriptionLocalization('fr', 'texte a dire')
 						.setRequired(true)) as SlashCommandBuilder,
 			callback:
-				async (interaction) =>
+				async (interaction: CommandInteraction) =>
 				{
 					const text : string | null = interaction.options.getString('text');
 

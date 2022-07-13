@@ -3,7 +3,7 @@ import * as types from 'discord-api-types/v10';
 import * as discord from 'discord.js';
 import * as fs from 'node:fs';
 
-import { Plugin, CommandCallback } from '../plugin';
+import { Plugin, CommandCallback, ContextMenuCallback } from '../plugin';
 import { restAPI } from '../main';
 import { Log } from './utils';
 
@@ -12,38 +12,51 @@ const plugins : Map<string, Plugin> = new Map;
 // CommandBuilders
 export const commands : types.RESTPostAPIApplicationCommandsJSONBody[] = [];
 // Callbacks by command names
-const callbacks : Map<string, CommandCallback> = new Map();
+const callbacks : Map<string, CommandCallback | ContextMenuCallback> = new Map();
 // Are plugins loaded
 let pluginsLoaded = false;
 
-export async function HandleCommand(command : discord.CommandInteraction)
+export async function HandleCommand(command : discord.CommandInteraction<discord.CacheType> | discord.ContextMenuInteraction<discord.CacheType>)
 {
-	Log(`Executing command '${command.toString()}'`);
+	Log(`Executing command '${command.commandName}' from '${command.user.tag}'`);
 
-	await callbacks.get(command.commandName)?.(command)
-		.catch(error =>
+	const callback = callbacks.get(command.commandName);
+	if (callback == undefined) throw 'Undefined Callback';
+
+	try
+	{
+		if (command instanceof discord.CommandInteraction)
 		{
-			Log(`Error executing '${command.toString()}': '${error}'`);
+			await (callback as CommandCallback)(command);
+		}
+		else if (command instanceof discord.ContextMenuInteraction)
+		{
+			await (callback as ContextMenuCallback)(command);
+		}
+	}
+	catch (error)
+	{
+		Log(`Error executing '${command.commandName}': '${error}'`);
 
-			const embed = new discord.MessageEmbed({
-				title: 'Oops',
-				description: `Error executing ${builders.inlineCode(command.toString())}:\n${builders.codeBlock(error)}`,
-				color: '#ff0000',
-			});
-
-			if (command.deferred)
-			{
-				command.editReply({ embeds: [embed] });
-			}
-			else if (command.replied)
-			{
-				command.channel?.send({ embeds: [embed] });
-			}
-			else
-			{
-				command.reply({ embeds: [embed] });
-			}
+		const embed = new discord.MessageEmbed({
+			title: 'Oops',
+			description: `Error executing ${builders.inlineCode(command.toString())}:\n${builders.codeBlock(`${error}`)}`,
+			color: '#ff0000',
 		});
+
+		if (command.deferred)
+		{
+			command.editReply({ embeds: [embed] });
+		}
+		else if (command.replied)
+		{
+			command.channel?.send({ embeds: [embed] });
+		}
+		else
+		{
+			command.reply({ embeds: [embed] });
+		}
+	}
 }
 
 export async function RegisterCommands(guild : discord.Guild) : Promise<void>

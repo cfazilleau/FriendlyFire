@@ -42,7 +42,7 @@ class MinecraftPlugin extends Plugin
 						.setDescription('Reload the whitelist')
 						.setDescriptionLocalization('fr', 'Rafraichir la whitelist')) as SlashCommandBuilder,
 			callback:
-				async (interaction) =>
+				async (interaction: CommandInteraction) =>
 				{
 					const subcommand = interaction.options.getSubcommand();
 
@@ -68,7 +68,7 @@ class MinecraftPlugin extends Plugin
 						.setDescriptionLocalization('fr', 'Commande a envoyer au serveur (sans le \'/\' au début)')
 						.setRequired(true)) as SlashCommandBuilder,
 			callback:
-				async (interaction) =>
+				async (interaction: CommandInteraction) =>
 				{
 					const command = interaction.options.getString('command');
 

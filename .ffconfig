@@ -30,7 +30,8 @@
 			"Minecraft.ip": "141.94.181.60",
 			"Minecraft.port": 30170,
 			"Minecraft.password": "password",
-			"Quotes.channelId": "994671095108075641"
+			"Quotes.channelId": "994671095108075641",
+			"Invites.inviteMaxAge": 15
 		}
 	}
 }

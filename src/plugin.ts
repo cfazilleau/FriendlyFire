@@ -9,10 +9,14 @@ export * from './internal/utils';
 export { DatabaseModel } from './internal/mongodb';
 
 export type CommandCallback = (interaction: discord.CommandInteraction<discord.CacheType>) => Promise<void>;
+export type ContextMenuCallback = (interaction: discord.ContextMenuInteraction<discord.CacheType>) => Promise<void>;
 
-export interface PluginCommand {
+export type PluginCommand = {
 	builder: builders.SlashCommandBuilder;
 	callback: CommandCallback;
+} | {
+	builder: builders.ContextMenuCommandBuilder;
+	callback: ContextMenuCallback;
 }
 
 export abstract class Plugin

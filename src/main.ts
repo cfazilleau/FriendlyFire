@@ -39,7 +39,7 @@ client.once('ready', async () =>
 // When the client receives an interaction, execute command
 client.on('interactionCreate', async interaction =>
 {
-	if (interaction.isCommand())
+	if (interaction.isCommand() || interaction.isContextMenu())
 	{
 		HandleCommand(interaction);
 	}
