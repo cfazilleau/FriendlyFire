@@ -56,11 +56,26 @@ class QuotesPlugin extends Plugin
 					const count = await Quote.countDocuments() as number;
 					const id = interaction.options.getInteger('id') ?? Math.floor(Math.random() * count) + 1;
 
+					if (id > count)
+					{
+						switch (interaction.locale)
+						{
+						case 'fr':
+							interaction.editReply({ content: `La valeur maximale de 'id' est ${count}.` });
+							break;
+						default:
+							interaction.editReply({ content: `The maximum value of 'id' is ${count}.` });
+							break;
+						}
+
+						return;
+					}
+
 					// Get quote from the database
 					const quote = await Quote.findOne().skip(id - 1) as IQuote;
 
 					// Fetch image from the API and return it
-					const image = await fetch(`https://codaapi.herokuapp.com/quote/${encodeURI(quote.quote)}/${encodeURI(quote.author)}`);
+					const image = await fetch(`http://api.cfaz.dev/quote/${encodeURI(quote.quote)}/${encodeURI(quote.author)}`);
 					if (!image.ok) throw `CodaAPI request failed: ${image.status} ${image.statusText}`;
 
 					// Create and send image buffer
