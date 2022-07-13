@@ -311,34 +311,28 @@ class PollsPlugin extends Plugin
 		await this.UpdatePoll(message, userVotes);
 	}
 
-	private async UpdatePoll(message: Message<boolean>, userVotes: { [userId: string]: string }, locked?: boolean)
+	private async UpdatePoll(message: Message<boolean>, votes: { [userId: string]: string }, locked?: boolean)
 	{
-		await this.SetMessageVotes(message.guild as Guild, message.channelId, message.id, userVotes);
+		await this.SetMessageVotes(message.guild as Guild, message.channelId, message.id, votes);
 
-		const values = new Map<string, number>();
-		for (const value in userVotes)
+		const options = [ 'option_1', 'option_2', 'option_3', 'option_4', 'option_5', 'yes', 'no', 'maybe' ];
+		const colors = [ '#78b159', '#55acee', '#aa8ed6', '#dd2e44', '#f4900c', '#43b581', '#f04747', '#5865f2' ];
+
+		// Count votes and create chart
+		const count = new Array<number>(options.length);
+		for (const key in votes)
 		{
-			const vote: string = userVotes[value];
-			const count: number = values.get(vote) ?? 0;
-			values.set(vote, count + 1);
+			const index = options.indexOf(votes[key]);
+			if (index > 0 && index < count.length)
+			{
+				count[index]++;
+			}
 		}
 
-		const count: number[] = [];
-
-		for (let i = 1; i <= 5; i++) { count[i - 1] = values.get(`option_${i}`) ?? 0; }
-		count[5] = values.get('yes') ?? 0;
-		count[6] = values.get('no') ?? 0;
-		count[7] = values.get('maybe') ?? 0;
-
-		const colors = [ '#78b159', '#55acee', '#aa8ed6', '#dd2e44', '#f4900c', '#43b581', '#f04747', '#5865f2' ];
 		const chart = this.CreateChart(count, colors);
 
-		const embed = message.embeds.at(0) as MessageEmbed;
-		embed.setImage('attachment://chart.png');
-		embed.setFooter({ text: locked ? '🔒 Sondage verouillé' : '' });
-
-		const row = message.components?.at(0) as MessageActionRow;
 		// Lock / Unlock buttons
+		const row = message.components.at(0) as MessageActionRow;
 		row.components.forEach(button =>
 		{
 			if (button instanceof MessageButton)
@@ -347,6 +341,12 @@ class PollsPlugin extends Plugin
 			}
 		});
 
+		// Update Lock indicator
+		const embed = message.embeds.at(0) as MessageEmbed;
+		embed.setImage('attachment://chart.png');
+		embed.setFooter({ text: locked ? '🔒 Sondage verouillé' : '' });
+
+		// Update message
 		await message.edit({ embeds: [ embed ], components: [ row ], files: [{ attachment: await chart.toBinary(), name: 'chart.png' }] });
 	}
 
