@@ -319,11 +319,11 @@ class PollsPlugin extends Plugin
 		const colors = [ '#78b159', '#55acee', '#aa8ed6', '#dd2e44', '#f4900c', '#43b581', '#f04747', '#5865f2' ];
 
 		// Count votes and create chart
-		const count = new Array<number>(options.length);
+		const count = (new Array(options.length)).fill(0);
 		for (const key in votes)
 		{
 			const index = options.indexOf(votes[key]);
-			if (index > 0 && index < count.length)
+			if (index >= 0 && index < count.length)
 			{
 				count[index]++;
 			}
