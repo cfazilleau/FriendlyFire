@@ -1,6 +1,6 @@
 import { ContextMenuCommandBuilder, SlashCommandBuilder } from '@discordjs/builders';
 import { ApplicationCommandType } from 'discord-api-types/v10';
-import { ButtonInteraction, CacheType, Client, CommandInteraction, ContextMenuInteraction, Guild, Message, MessageActionRow, MessageButton, TextChannel } from 'discord.js';
+import { ButtonInteraction, CacheType, Client, CommandInteraction, ContextMenuInteraction, Guild, Message, MessageActionRow, MessageButton, MessageEmbed, TextChannel } from 'discord.js';
 import { Schema } from 'mongoose';
 import QuickChart from 'quickchart-js';
 
@@ -190,20 +190,17 @@ class PollsPlugin extends Plugin
 					const locked = !messageVotes.locked;
 					await messageVotes.updateOne({ locked: locked });
 
-					// Lock / Unlock buttons
-					const row = message.components?.at(0) as MessageActionRow;
-					row.components.forEach(button =>
+					await this.UpdatePoll(message, messageVotes.votes, locked);
+
+					switch (interaction.locale)
 					{
-						if (button instanceof MessageButton)
-						{
-							button.setDisabled(locked);
-						}
-					});
-
-					const text = locked ? '🔒' + message.content : message.content.substring(1, message.content.length);
-
-					await message.edit({ content: text, components: [ row ] });
-					await interaction.editReply({ content: `Message ${ locked ? 'Locked' : 'Unlocked' }` });
+					case 'fr':
+						await interaction.editReply({ content: `Sondage ${ locked ? 'Vérouillé' : 'Déverouillé' }` });
+						break;
+					default:
+						await interaction.editReply({ content: `Poll ${ locked ? 'Locked' : 'Unlocked' }` });
+						break;
+					}
 				},
 		},
 	];
@@ -292,7 +289,9 @@ class PollsPlugin extends Plugin
 	private async SendPoll(interaction: CommandInteraction, poll: string, buttons: MessageButton[])
 	{
 		const actionRow = new MessageActionRow({ components: buttons });
-		const pollMessage = await interaction.reply({ content: poll, components: [ actionRow ], fetchReply: true }) as Message;
+		const embed = new MessageEmbed({ title: poll });
+
+		const pollMessage = await interaction.reply({ embeds: [ embed ], components: [ actionRow ], fetchReply: true }) as Message;
 
 		await this.UpdatePoll(pollMessage, {});
 	}
@@ -312,7 +311,7 @@ class PollsPlugin extends Plugin
 		await this.UpdatePoll(message, userVotes);
 	}
 
-	private async UpdatePoll(message: Message<boolean>, userVotes: { [userId: string]: string })
+	private async UpdatePoll(message: Message<boolean>, userVotes: { [userId: string]: string }, locked?: boolean)
 	{
 		await this.SetMessageVotes(message.guild as Guild, message.channelId, message.id, userVotes);
 
@@ -332,10 +331,23 @@ class PollsPlugin extends Plugin
 		count[7] = values.get('maybe') ?? 0;
 
 		const colors = [ '#78b159', '#55acee', '#aa8ed6', '#dd2e44', '#f4900c', '#43b581', '#f04747', '#5865f2' ];
-
 		const chart = this.CreateChart(count, colors);
 
-		await message?.edit({ files: [{ attachment: await chart.toBinary(), name: 'chart.png' }] });
+		const embed = message.embeds.at(0) as MessageEmbed;
+		embed.setImage('attachment://chart.png');
+		embed.setFooter({ text: locked ? '🔒 Sondage verouillé' : '' });
+
+		const row = message.components?.at(0) as MessageActionRow;
+		// Lock / Unlock buttons
+		row.components.forEach(button =>
+		{
+			if (button instanceof MessageButton)
+			{
+				button.setDisabled(locked);
+			}
+		});
+
+		await message.edit({ embeds: [ embed ], components: [ row ], files: [{ attachment: await chart.toBinary(), name: 'chart.png' }] });
 	}
 
 	private CreateChart(voteCounts: number[], colors: string[])
