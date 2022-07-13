@@ -311,7 +311,7 @@ class PollsPlugin extends Plugin
 		await this.UpdatePoll(message, userVotes);
 	}
 
-	private async UpdatePoll(message: Message<boolean>, votes: { [userId: string]: string }, locked?: boolean)
+	private async UpdatePoll(message: Message<boolean>, votes: { [userId: string]: string }, locked = false)
 	{
 		await this.SetMessageVotes(message.guild as Guild, message.channelId, message.id, votes);
 
