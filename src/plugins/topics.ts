@@ -145,8 +145,18 @@ class TopicsPlugin extends Plugin
 
 			topicMessages.forEach(async msg =>
 			{
-				this.messages.push(await ((await guild.channels.fetch(msg.channelId)) as TextChannel)?.messages.fetch(msg.messageId));
+				const channel = await guild.channels.fetch(msg.channelId).catch(() => undefined);
+				if (channel != undefined && channel instanceof TextChannel)
+				{
+					const message = await channel.messages.fetch(msg.messageId).catch(() => undefined);
+					if (message != undefined)
+					{
+						this.messages.push(message);
+					}
+				}
 			});
+
+			Log(`Fetched ${this.messages.length} topic messages in guild ${guild.name}`);
 		});
 
 		client.on('messageReactionAdd', async (reaction, user) =>
