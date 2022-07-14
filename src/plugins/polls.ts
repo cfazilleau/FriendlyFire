@@ -227,21 +227,6 @@ class PollsPlugin extends Plugin
 		});
 	}
 
-	private CustomId(id: string): string
-	{
-		return `${this.name}.${id}`;
-	}
-
-	private CheckCustomId(id: string): boolean
-	{
-		return id.startsWith(`${this.name}.`);
-	}
-
-	private GetShortCustomId(id: string): string
-	{
-		return id.replace(`${this.name}.`, '');
-	}
-
 	private async GetMessageVotes(guild: Guild, channelId: string, messageId: string): Promise<{ [userId: string]: string }>
 	{
 		const MessageVotes = DatabaseModel(collectionName, MessageVotesSchema, guild);

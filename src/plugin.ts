@@ -34,6 +34,21 @@ export abstract class Plugin
 	{
 		RegisterPlugin(this);
 	}
+
+	protected CustomId(id: string): string
+	{
+		return `${this.name}.${id}`;
+	}
+
+	protected CheckCustomId(id: string): boolean
+	{
+		return id.startsWith(`${this.name}.`);
+	}
+
+	protected GetShortCustomId(id: string): string
+	{
+		return id.replace(`${this.name}.`, '');
+	}
 }
 
 export async function CatchAndLog<Type>(listener: () => Type, channel? : discord.TextBasedChannel | undefined | null)

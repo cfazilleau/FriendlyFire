@@ -11,7 +11,7 @@ import { Log } from './internal/utils';
 import { ConnectToDatabase } from './internal/mongodb';
 
 // Create a new client instance
-const client = new discord.Client({ intents: [discord.Intents.FLAGS.GUILDS, discord.Intents.FLAGS.GUILD_MESSAGES, discord.Intents.FLAGS.GUILD_MEMBERS ] });
+const client = new discord.Client({ intents: [discord.Intents.FLAGS.GUILDS, discord.Intents.FLAGS.GUILD_MEMBERS, discord.Intents.FLAGS.GUILD_MESSAGES, discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS ] });
 
 // When the client is ready, run this code (only once)
 client.once('ready', async () =>
