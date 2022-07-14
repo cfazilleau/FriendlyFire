@@ -10,7 +10,6 @@ interface IMessageVotes
 {
 	messageId: string,
 	channelId: string,
-	creationTimestamp: number,
 	locked: boolean,
 	votes: { [userId: string]: string },
 }
@@ -18,7 +17,6 @@ interface IMessageVotes
 const MessageVotesSchema = new Schema<IMessageVotes>({
 	messageId: { type: String, required: true },
 	channelId: { type: String, required: true },
-	creationTimestamp: { type: Number, required: true },
 	locked: { type: Boolean, default: false },
 	votes: { type: Object, default: {} },
 });
