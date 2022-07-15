@@ -179,11 +179,7 @@ class PollsPlugin extends Plugin
 					const MessageVotes = DatabaseModel(collectionName, MessageVotesSchema, guild);
 					const messageVotes = await MessageVotes.findOne({ messageId: message.id });
 
-					if (messageVotes == undefined || !(message instanceof Message))
-					{
-						await interaction.editReply({ content: 'Selected message is not a poll or wasn\'t found on the database.' });
-						return;
-					}
+					if (messageVotes == undefined || !(message instanceof Message)) throw 'Selected message is not a poll or wasn\'t found on the database.';
 
 					const locked = !messageVotes.locked;
 					await messageVotes.updateOne({ locked: locked });

@@ -1,7 +1,9 @@
-import { BaseGuildTextChannel, Client, CommandInteraction } from 'discord.js';
-import { SlashCommandBuilder } from '@discordjs/builders';
+import { BaseGuildTextChannel, Client, Collection, CommandInteraction, ContextMenuInteraction, Message, MessageActionRow, MessageButton, Modal, TextChannel, User } from 'discord.js';
+import { ContextMenuCommandBuilder, SlashCommandBuilder } from '@discordjs/builders';
 
 import { Plugin, PluginCommand } from '../plugin';
+import { ApplicationCommandType } from 'discord-api-types/v10';
+import { ButtonStyle } from 'discord-api-types/v9';
 
 class CorePlugin extends Plugin
 {
@@ -21,19 +23,34 @@ class CorePlugin extends Plugin
 						.setNameLocalization('fr', 'quantité')
 						.setDescriptionLocalization('fr', 'quantité de messages a supprimer.')
 						.setMinValue(1)
-						.setRequired(true)) as SlashCommandBuilder,
+						.setRequired(true))
+					.addUserOption(option => option
+						.setName('user')
+						.setDescription('user to delete messages.')
+						.setNameLocalization('fr', 'utilisateur')
+						.setDescriptionLocalization('fr', 'utilisateur auquel supprimer les messages.')) as SlashCommandBuilder,
 			callback:
 				async (interaction: CommandInteraction) =>
 				{
 					// Extract parameters
 					const number = interaction.options.getInteger('amount') ?? 0;
-					const channel : BaseGuildTextChannel = interaction.channel as BaseGuildTextChannel;
+					const channel = interaction.channel as BaseGuildTextChannel;
+					const user = interaction.options.getUser('user') as User;
 
 					// Check for valid context
 					if (channel == undefined) { throw 'undefined channel'; }
 
-					// delete messages
-					const deletedMessages = await channel.bulkDelete(number, true);
+					let deletedMessages: Collection<string, Message<boolean>> = new Collection();
+					if (user != null)
+					{
+						let i = 0;
+						const messages = (await channel.messages.fetch()).filter(msg => msg.author.id == user.id && i++ < number);
+						deletedMessages = await channel.bulkDelete(messages, true);
+					}
+					else
+					{
+						deletedMessages = await channel.bulkDelete(number, true);
+					}
 
 					switch (interaction.locale)
 					{
@@ -69,14 +86,44 @@ class CorePlugin extends Plugin
 						switch (interaction.locale)
 						{
 						case 'fr':
-							interaction.reply({ content: 'Voila!', ephemeral: true });
+							await interaction.reply({ content: 'Voila!', ephemeral: true });
 							break;
 						default:
-							interaction.reply({ content: 'Done!', ephemeral: true });
+							await interaction.reply({ content: 'Done!', ephemeral: true });
 							break;
 						}
 
-						interaction.channel?.send(text);
+						await interaction.channel?.send(text);
+					}
+				},
+		},
+		{
+			builder:
+				new ContextMenuCommandBuilder()
+					.setName('Delete following messages')
+					.setType(ApplicationCommandType.Message)
+					.setDefaultPermission(false) as ContextMenuCommandBuilder,
+			callback:
+				async (interaction: ContextMenuInteraction) =>
+				{
+					if (!interaction.isMessageContextMenu()) throw 'Interaction is not a Message context menu.';
+
+					const message = interaction.targetMessage as Message;
+					const channel = message.channel as TextChannel;
+
+					if (message == undefined || channel == undefined) throw 'Message or Channel is undefined.';
+
+					const messages = (await channel.messages.fetch({ after: message.id }));
+					const deletedMessages = await channel.bulkDelete(messages, true);
+
+					switch (interaction.locale)
+					{
+					case 'fr':
+						await interaction.reply({ content: `${deletedMessages.size} messages supprimés.`, ephemeral: true });
+						break;
+					default:
+						await interaction.reply({ content: `Deleted ${deletedMessages.size} messages.`, ephemeral: true });
+						break;
 					}
 				},
 		},

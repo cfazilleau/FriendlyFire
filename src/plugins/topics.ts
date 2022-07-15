@@ -48,7 +48,14 @@ class TopicsPlugin extends Plugin
 							))
 						.addStringOption(option => option
 							.setName('image')
-							.setDescription('link to an image URL'))) as SlashCommandBuilder,
+							.setDescription('link to an image URL')))
+					.addSubcommand(sub => sub
+						.setName('delete')
+						.setDescription('delete a topic')
+						.addRoleOption(option => option
+							.setName('role')
+							.setDescription('role of the topic')
+							.setRequired(true))) as SlashCommandBuilder,
 			callback:
 				async (interaction: CommandInteraction) =>
 				{
@@ -108,21 +115,43 @@ class TopicsPlugin extends Plugin
 							roleName: role.name,
 						});
 						model.save();
-
-						// acknowledge interaction
-						switch (interaction.locale)
-						{
-						case 'fr':
-							interaction.editReply({ content: 'Voila!' });
-							break;
-						default:
-							interaction.editReply({ content: 'Done!' });
-							break;
-						}
 					}
-					else
+					else if (interaction.options.getSubcommand() == 'delete')
 					{
-						throw 'interaction Error';
+						const role = interaction.options.getRole('role') as Role;
+						const guild = interaction.guild;
+
+						const Model = DatabaseModel(collectionName, TopicSchema, guild);
+						const topicData = await Model.findOne({ roleId: role.id });
+
+						if (topicData == undefined) throw 'Topic not found';
+
+						// Delete role
+						await role.delete(`Deleted topic ${topicData.roleName}`);
+
+						// Try to delete topic message
+						const channel = await guild?.channels.fetch(topicData.channelId).catch(() => undefined) as TextChannel;
+						if (channel != undefined)
+						{
+							const topicMessage = await channel.messages.fetch(topicData.messageId).catch(() => undefined);
+							if (topicMessage != undefined)
+							{
+								await topicMessage.delete();
+							}
+						}
+
+						topicData.delete();
+					}
+
+					// Acknowledge interaction
+					switch (interaction.locale)
+					{
+					case 'fr':
+						interaction.editReply({ content: 'Voila!' });
+						break;
+					default:
+						interaction.editReply({ content: 'Done!' });
+						break;
 					}
 				},
 		},

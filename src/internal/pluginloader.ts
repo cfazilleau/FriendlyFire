@@ -36,11 +36,14 @@ export async function HandleCommand(command : discord.CommandInteraction<discord
 	}
 	catch (error)
 	{
-		Log(`Error executing '${command.commandName}': '${error}'`);
+		Log(`Error executing command '${command.commandName}': '${error}'`);
 
 		const embed = new discord.MessageEmbed({
 			title: 'Oops',
-			description: `Error executing ${builders.inlineCode(command.toString())}:\n${builders.codeBlock(`${error}`)}`,
+			description: `
+				Error executing command ${builders.inlineCode(command.commandName)}:
+				${builders.inlineCode(command.toString())}
+				${builders.codeBlock(`${error}`)}`,
 			color: '#ff0000',
 		});
 
