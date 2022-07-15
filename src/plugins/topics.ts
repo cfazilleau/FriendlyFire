@@ -1,6 +1,7 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { Client, CommandInteraction, Message, MessageEmbed, Role, TextChannel } from 'discord.js';
 import { Schema } from 'mongoose';
+import fetch from 'node-fetch';
 
 import { CatchAndLog, DatabaseModel, Plugin, Log } from '../plugin';
 

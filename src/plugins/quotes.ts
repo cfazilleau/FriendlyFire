@@ -2,6 +2,7 @@ import { SlashCommandBuilder, time, userMention } from '@discordjs/builders';
 import { CacheType, Client, CommandInteraction, Guild, Message, MessageEmbed } from 'discord.js';
 import { Schema } from 'mongoose';
 import moment from 'moment';
+import fetch from 'node-fetch';
 
 import { Log, Plugin, PluginCommand, DatabaseModel } from '../plugin';
 

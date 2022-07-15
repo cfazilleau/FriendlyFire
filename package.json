@@ -30,6 +30,7 @@
 		"discord.js": "^13.7.0",
 		"dotenv": "^16.0.0",
 		"mongoose": "^6.4.1",
+		"node-fetch": "^3.2.8",
 		"quickchart-js": "^3.0.1",
 		"rcon-client": "^4.2.3"
 	}

@@ -1,9 +1,8 @@
-import { BaseGuildTextChannel, Client, Collection, CommandInteraction, ContextMenuInteraction, Message, MessageActionRow, MessageButton, Modal, TextChannel, User } from 'discord.js';
+import { BaseGuildTextChannel, Client, Collection, CommandInteraction, ContextMenuInteraction, Message, TextChannel, User } from 'discord.js';
 import { ContextMenuCommandBuilder, SlashCommandBuilder } from '@discordjs/builders';
 
 import { Plugin, PluginCommand } from '../plugin';
 import { ApplicationCommandType } from 'discord-api-types/v10';
-import { ButtonStyle } from 'discord-api-types/v9';
 
 class CorePlugin extends Plugin
 {
