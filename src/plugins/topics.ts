@@ -5,6 +5,17 @@ import fetch from 'node-fetch';
 
 import { CatchAndLog, DatabaseModel, Plugin, Log } from '../plugin';
 
+const topicTypes: { [id: string]: { color: number, emoji: string } } = {
+	game: {
+		color: 0xad5713,
+		emoji: '🎮',
+	},
+	thread: {
+		color: 0xa84300,
+		emoji: '🧵',
+	},
+};
+
 interface ITopic
 {
 	messageId: string,
@@ -69,21 +80,22 @@ class TopicsPlugin extends Plugin
 						const name = interaction.options.getString('name') as string;
 						const type = interaction.options.getString('type') as string;
 						const image = interaction.options.getString('image');
-						const color = this.colors[type];
 						const guild = interaction.guild;
+
+						const topicDescr = topicTypes[type] ?? {};
 
 						const Model = DatabaseModel(collectionName, TopicSchema, guild);
 
 						// Create new Role
 						const role = await interaction.guild?.roles.create({
 							name: name,
-							color: color,
+							color: topicDescr.color,
 						}) as Role;
 
 						// Create embed
 						const embed = new MessageEmbed({
-							title: `${name} ${type == 'game' ? '🎮 Game' : '🧵 Thread'}`,
-							color: color,
+							title: `${name} ${topicDescr.emoji} ${type}`,
+							color: topicDescr.color,
 							footer: { text: 'Clique sur ✅ pour t\'abonner à ce fil' },
 						});
 
@@ -159,11 +171,6 @@ class TopicsPlugin extends Plugin
 	];
 
 	private messages: Message[] = [];
-
-	private colors : { [key: string]: number } = {
-		game: 0xad5713,
-		thread: 0xa84300,
-	};
 
 	public Init(client: Client<boolean>): void
 	{
