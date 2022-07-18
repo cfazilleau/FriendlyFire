@@ -112,7 +112,8 @@ class MinecraftPlugin extends Plugin
 
 		const port = this.GetProperty<number>('port', 25575, guild);
 		const host = this.GetProperty<string | undefined>('ip', undefined, guild);
-		const pass = this.GetProperty<string | undefined>('password', undefined, guild);
+		const passKey = this.GetProperty<string>('passwordKey', 'MC_PASSWORD', guild);
+		const pass = process.env[passKey];
 
 		if (host == undefined || pass == undefined)
 		{

@@ -1,6 +1,35 @@
 {
 	"global": {},
 	"guilds": {
+		"207996892632580097": {
+			"name": "Phoenix Legacy",
+			"Invites.welcomeMessage": "\n\t\t**BIENVENUE SUR PHOENIX !!**\n\t\tBienvenue a toi sur le discord de Phoenix Legacy.\n\t\tici, on essaie au maximum de ne pas ressembler aux *X* autres serveurs discord que l'on peut trouver.\n\t\tc'est pourquoi on tiens a connaitre tout le monde, alors n'hesite pas a venir discuter avec des plus \"haut gradés\" :D\n\t\tLe grade invité que tu as actuellement te permets de rester temporairement et d'avoir acces a tout le necessaire pour passer de bons moments\n\t\tsi tu souhaite plus t'impliquer dans l'equipe et devenir membre, je t'invite a te presenter sur le channel presentation!\n\t\tmoi je te dis a plus dans le bus (I2C) et bon jeu !\n\n\t\t**En etant present sur ce serveur, vous vous engagez a respecter les \"conditions d'utilisation\"\n\t\tvous pouvez y acceder via la commande !rules sur le discord**\n\t\t",
+			"Invites.greetings": [
+				"Fait pas trop de betises ;)",
+				"Pas touche a minouche !",
+				"(Les autres, bizutez-le!)",
+				"Premiere conso offerte par elie",
+				"Les toilettes sont au fond à droite !",
+				"Faites comme chez vous ! (enfin dans la limite du raisonable)",
+				"Noté #3eme endroit le plus 'pas mal' par le guide des explorateurs",
+				"*ferme son livre* Je vous avais pas vu entrer...",
+				"Hé ! Tout le monde ! Voila de la viande fraiche.",
+				"Bienvenue a PhoenixLegacy Town, Population : Un de plus qu'avant",
+				"Bonjour ! Hello ! Guten Tag ! Inserez le langage de votre choix",
+				"Le meilleur zelda c'est Ocarina Of Time, comme ça vous saurez !",
+				"Random Fact #74 : Le briquet a été inventé avant les allumettes",
+				"Du sucre, Des épices et des tas de bonnes choses. C'est le genre de trucs qu'on trouve dans le coin",
+				"La tenue correcte n'exige pas de pantalon",
+				"Un nouveau starbucks en 2023",
+				"Vous seul êtes responsable de votre interaction avec les autres utilisateurs du Service et les autres parties que vous contactez via le Service. La Compagnie réfute par la présente toute responsabilité envers vous ou toute tierce partie concernant votre utilisation du Service. La Compagnie se réserve le droit mais n'a aucune obligation de gérer les conflits entre vous et d'autres utilisateurs du Service.",
+				"Votez Coda",
+				"Vous connaissez ma femme ?",
+				"Est-ce que c'est trop vous demander, de retirer vos putains de chaussures ?"
+			],
+			"Invites.baseRoleId": "207997903879405568",
+			"Invites.inviteMaxAge": 15,
+			"Quotes.channelId": "210880905236054016"
+		},
 		"458239249221812226": {
 			"name": "Phoenix Legacy Early Access",
 			"Invites.welcomeMessage": "\n\t\t**BIENVENUE SUR PHOENIX !!**\n\t\tBienvenue a toi sur le discord de Phoenix Legacy.\n\t\tici, on essaie au maximum de ne pas ressembler aux *X* autres serveurs discord que l'on peut trouver.\n\t\tc'est pourquoi on tiens a connaitre tout le monde, alors n'hesite pas a venir discuter avec des plus \"haut gradés\" :D\n\t\tLe grade invité que tu as actuellement te permets de rester temporairement et d'avoir acces a tout le necessaire pour passer de bons moments\n\t\tsi tu souhaite plus t'impliquer dans l'equipe et devenir membre, je t'invite a te presenter sur le channel presentation!\n\t\tmoi je te dis a plus dans le bus (I2C) et bon jeu !\n\n\t\t**En etant present sur ce serveur, vous vous engagez a respecter les \"conditions d'utilisation\"\n\t\tvous pouvez y acceder via la commande !rules sur le discord**\n\t\t",
@@ -27,11 +56,11 @@
 				"Est-ce que c'est trop vous demander, de retirer vos putains de chaussures ?"
 			],
 			"Invites.baseRoleId": "928035911197917244",
+			"Invites.inviteMaxAge": 15,
+			"Quotes.channelId": "994671095108075641",
 			"Minecraft.ip": "141.94.181.60",
 			"Minecraft.port": 30170,
-			"Minecraft.password": "password",
-			"Quotes.channelId": "994671095108075641",
-			"Invites.inviteMaxAge": 15
+			"Minecraft.passwordKey": "MC_PASSWORD"
 		}
 	}
 }

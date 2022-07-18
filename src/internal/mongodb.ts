@@ -8,7 +8,7 @@ export async function ConnectToDatabase()
 {
 	try
 	{
-		client = await mongoose.connect(process.env.MONGODB_URI as string, { dbName: process.env.MONGODB_DBNAME });
+		client = await mongoose.connect(process.env.MONGODB_URI as string);
 		Log('Connected to mongodb database');
 	}
 	catch (err)
