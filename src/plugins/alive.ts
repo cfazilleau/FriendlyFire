@@ -161,7 +161,7 @@ class AlivePlugin extends Plugin
 
 		// Set cached status
 		const status = this.GetProperty('status', undefined) as PresenceStatusData | undefined;
-		if (status)
+		if (status != undefined)
 		{
 			client.user?.setStatus(status);
 			Log(`Set status back to ${status}`);
@@ -169,7 +169,7 @@ class AlivePlugin extends Plugin
 
 		// Set cached activity
 		const activity = this.GetProperty('activity', undefined) as ActivityOptions | undefined;
-		if (activity)
+		if (activity != undefined)
 		{
 			client.user?.setActivity(activity);
 			Log(`Set activity back to ${activity.type} ${activity.name} with url '${activity.url}`);
