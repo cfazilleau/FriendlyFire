@@ -1,5 +1,12 @@
 {
-	"global": {},
+	"global": {
+		"Alive.status": "online",
+		"Alive.activity": {
+			"type": "COMPETING",
+			"name": "Ignition 🔥",
+			"url": null
+		}
+	},
 	"guilds": {
 		"207996892632580097": {
 			"name": "Phoenix Legacy",
