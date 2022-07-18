@@ -97,6 +97,7 @@ class AlivePlugin extends Plugin
 					else
 					{
 						await interaction.client.user?.setActivity();
+						this.SetProperty('activity', null);
 						Log('Cleared activity');
 					}
 
