@@ -1,6 +1,6 @@
 {
 	"global": {
-		"Alive.status": "online",
+		"Alive.status": "invisible",
 		"Alive.activity": {
 			"type": "COMPETING",
 			"name": "Ignition 🔥",
