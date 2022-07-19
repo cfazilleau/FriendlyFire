@@ -1,6 +1,6 @@
 {
 	"global": {
-		"Alive.status": "invisible",
+		"Alive.status": "online",
 		"Alive.activity": {
 			"type": "COMPETING",
 			"name": "Ignition 🔥",
@@ -43,7 +43,7 @@
 				"Si tu cherche a savoir si Baleine est vraiment une baleine, Diego a peut-être la réponse…",
 				"Si t'as une bombe et qu'il faut qu'on la désamorce, demande à Vorse.\nSi c'est un sandwich que tu veux désarmer, c'est à Teeta qu'il faut le ramener.",
 				"Random Fact #18 Si les entreprises vous demandent vos cookies c'est parce que c'est des gourmands et qu'ils veulent prendre le gouter",
-				"Si tu veux catapulter ta carrière jusqu'à des sommets, on en à 400 qui traînent là depuis 2017. Prends-en une si tu veux."
+				"Si tu veux catapulter ta carrière jusqu'à des sommets, on en a 400 qui traînent là depuis 2017. Prends-en une si tu veux."
 			],
 			"Invites.baseRoleId": "207997903879405568",
 			"Invites.inviteMaxAge": 15,
@@ -84,7 +84,7 @@
 				"Si tu cherche a savoir si Baleine est vraiment une baleine, Diego a peut-être la réponse…",
 				"Si t'as une bombe et qu'il faut qu'on la désamorce, demande à Vorse.\nSi c'est un sandwich que tu veux désarmer, c'est à Teeta qu'il faut le ramener.",
 				"Random Fact #18 Si les entreprises vous demandent vos cookies c'est parce que c'est des gourmands et qu'ils veulent prendre le gouter",
-				"Si tu veux catapulter ta carrière jusqu'à des sommets, on en à 400 qui traînent là depuis 2017. Prends-en une si tu veux."
+				"Si tu veux catapulter ta carrière jusqu'à des sommets, on en a 400 qui traînent là depuis 2017. Prends-en une si tu veux."
 			],
 			"Invites.baseRoleId": "928035911197917244",
 			"Invites.inviteMaxAge": 15,

@@ -1,18 +1,32 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { Client, CommandInteraction, Message, MessageEmbed, Role, TextChannel } from 'discord.js';
+import { Client, CommandInteraction, Message, MessageEmbed, Role, RoleData, TextChannel } from 'discord.js';
 import { Schema } from 'mongoose';
 import fetch from 'node-fetch';
 
 import { CatchAndLog, DatabaseModel, Plugin, Log } from '../plugin';
 
-const topicTypes: { [id: string]: { color: number, emoji: string } } = {
+interface TopicType
+{
+	color: number,
+	emoji: string,
+	text: string,
+}
+
+const topicTypes: { [id: string]: TopicType } = {
 	game: {
 		color: 0xad5713,
 		emoji: '🎮',
+		text: 'Jeu',
 	},
-	thread: {
+	music: {
 		color: 0xa84300,
-		emoji: '🧵',
+		emoji: '🎵',
+		text: 'Musique',
+	},
+	subject: {
+		color: 0xb96933,
+		emoji: '💥',
+		text: 'Sujet pratique',
 	},
 };
 
@@ -30,6 +44,10 @@ const TopicSchema = new Schema<ITopic>({
 	roleId: { type: String, required: true },
 	roleName: { type: String, required: true },
 });
+
+// Fill choices to add in slashcommandbuilder
+const choices: { name: string, value: string }[] = [];
+for (const key in topicTypes) choices.push({ name: key, value: key });
 
 const collectionName = 'topics';
 
@@ -54,10 +72,7 @@ class TopicsPlugin extends Plugin
 							.setName('type')
 							.setDescription('type of topic')
 							.setRequired(true)
-							.setChoices(
-								{ name: 'game', value: 'game' },
-								{ name: 'thread', value: 'thread' },
-							))
+							.setChoices(...choices))
 						.addStringOption(option => option
 							.setName('image')
 							.setDescription('link to an image URL')))
@@ -67,7 +82,25 @@ class TopicsPlugin extends Plugin
 						.addRoleOption(option => option
 							.setName('role')
 							.setDescription('role of the topic')
-							.setRequired(true))) as SlashCommandBuilder,
+							.setRequired(true)))
+					.addSubcommand(sub => sub
+						.setName('edit')
+						.setDescription('edit a topic')
+						.addRoleOption(option => option
+							.setName('role')
+							.setDescription('role of the topic')
+							.setRequired(true))
+						.addStringOption(option => option
+							.setName('type')
+							.setDescription('type of topic')
+							.setRequired(true)
+							.setChoices(...choices))
+						.addStringOption(option => option
+							.setName('name')
+							.setDescription('name of the new topic'))
+						.addStringOption(option => option
+							.setName('image')
+							.setDescription('link to an image URL'))) as SlashCommandBuilder,
 			callback:
 				async (interaction: CommandInteraction) =>
 				{
@@ -75,7 +108,9 @@ class TopicsPlugin extends Plugin
 
 					await interaction.deferReply({ ephemeral: true });
 
-					if (interaction.options.getSubcommand() == 'create')
+					const subcommand = interaction.options.getSubcommand();
+
+					if (subcommand == 'create')
 					{
 						const name = interaction.options.getString('name') as string;
 						const type = interaction.options.getString('type') as string;
@@ -94,9 +129,9 @@ class TopicsPlugin extends Plugin
 
 						// Create embed
 						const embed = new MessageEmbed({
-							title: `${name} ${topicDescr.emoji} ${type}`,
+							title: `${topicData.roleName} ${topicDescr.emoji} ${topicDescr.text}`,
 							color: topicDescr.color,
-							footer: { text: 'Clique sur ✅ pour t\'abonner à ce fil' },
+							footer: { text: 'Clique sur ✅ pour t\'abonner à ce topic' },
 						});
 
 						// get image
@@ -129,7 +164,69 @@ class TopicsPlugin extends Plugin
 						});
 						model.save();
 					}
-					else if (interaction.options.getSubcommand() == 'delete')
+					else if (subcommand == 'edit')
+					{
+						const role = interaction.options.getRole('role') as Role;
+						const type = interaction.options.getString('type') as string;
+						const name = interaction.options.getString('name') as string | undefined;
+						const image = interaction.options.getString('image') as string | undefined;
+						const guild = interaction.guild;
+
+						const topicDescr = topicTypes[type] ?? {};
+
+						const Model = DatabaseModel(collectionName, TopicSchema, guild);
+						const topicData = await Model.findOne({ roleId: role.id });
+
+						if (topicData == undefined) throw 'Topic not found';
+
+						// Delete role
+						const data: RoleData = {
+							color: topicDescr.color,
+							mentionable: true,
+						};
+
+						// Update name
+						if (name != undefined)
+						{
+							data.name = name;
+							topicData.roleName = name;
+							topicData.save();
+						}
+
+						await role.edit(data);
+
+						// Try to find topic message
+						const channel = await guild?.channels.fetch(topicData.channelId).catch(() => undefined) as TextChannel;
+						if (channel != undefined)
+						{
+							const topicMessage = await channel.messages.fetch(topicData.messageId).catch(() => undefined);
+							if (topicMessage != undefined)
+							{
+								const embed = await topicMessage.embeds[0];
+
+								embed.title = `${topicData.roleName} ${topicDescr.emoji} ${topicDescr.text}`;
+								embed.color = topicDescr.color;
+								embed.footer = { text: 'Clique sur ✅ pour t\'abonner à ce topic' };
+								embed.setImage('attachment://image.png');
+
+								if (image != undefined)
+								{
+									const res = await fetch(image);
+									if (!res.ok) throw `Image request failed: ${res.status} ${res.statusText}`;
+
+									// Create and send image buffer
+									const buffer = Buffer.from(await res.arrayBuffer());
+
+									await topicMessage.edit({ embeds: [ embed ], files: [{ attachment: buffer, name: 'image.png' }] });
+								}
+								else
+								{
+									await topicMessage.edit({ embeds: [ embed ] });
+								}
+							}
+						}
+					}
+					else if (subcommand == 'delete')
 					{
 						const role = interaction.options.getRole('role') as Role;
 						const guild = interaction.guild;
@@ -200,7 +297,9 @@ class TopicsPlugin extends Plugin
 		{
 			CatchAndLog(async () =>
 			{
-				if (reaction.message.author?.id as string != client.user?.id as string) return;
+				const bot = client.user;
+
+				if (user == undefined || bot == undefined || user.id == bot.id) return;
 
 				const Model = DatabaseModel(collectionName, TopicSchema, reaction.message.guild);
 				const roleData = await Model.findOne({ channelId: reaction.message.channelId, messageId: reaction.message.id });
@@ -218,7 +317,9 @@ class TopicsPlugin extends Plugin
 		{
 			CatchAndLog(async () =>
 			{
-				if (reaction.message.author?.id as string != client.user?.id as string) return;
+				const bot = client.user;
+
+				if (user == undefined || bot == undefined || user.id == bot.id) return;
 
 				const Model = DatabaseModel(collectionName, TopicSchema, reaction.message.guild);
 				const roleData = await Model.findOne({ channelId: reaction.message.channelId, messageId: reaction.message.id });
