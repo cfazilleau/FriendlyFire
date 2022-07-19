@@ -125,6 +125,7 @@ class TopicsPlugin extends Plugin
 						const role = await interaction.guild?.roles.create({
 							name: name,
 							color: topicDescr.color,
+							mentionable: true,
 						}) as Role;
 
 						// Create embed
