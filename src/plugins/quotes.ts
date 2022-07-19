@@ -75,7 +75,7 @@ class QuotesPlugin extends Plugin
 					const quote = await Quote.findOne().skip(id - 1) as IQuote;
 
 					// Fetch image from the API and return it
-					const image = await fetch(`http://api.cfaz.dev/quote/${encodeURI(quote.quote)}/${encodeURI(quote.author)}`);
+					const image = await fetch(`http://api.cfaz.dev/quote/${encodeURIComponent(quote.quote)}/${encodeURIComponent(quote.author)}`);
 					if (!image.ok) throw `CodaAPI request failed: ${image.status} ${image.statusText}`;
 
 					// Create and send image buffer
@@ -148,7 +148,7 @@ class QuotesPlugin extends Plugin
 			if (old) old.delete();
 
 			const embed = new MessageEmbed({
-				footer: { text: `Sauvegardé par ${quote.submitted_by}`, iconURL: 'http://i.imgur.com/EeC5BAb.png' },
+				footer: { text: `Sauvegardé par ${quote.submitted_by}. Quote #${await Quote.countDocuments()}`, iconURL: 'http://i.imgur.com/EeC5BAb.png' },
 				title: quote.author,
 				color: confirmationEmbedColor,
 				description: quote.quote,
