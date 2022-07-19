@@ -81,7 +81,6 @@ class CorePlugin extends Plugin
 
 					if (text != undefined)
 					{
-
 						switch (interaction.locale)
 						{
 						case 'fr':
