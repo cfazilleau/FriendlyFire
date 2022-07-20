@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [unreleased]
+
+### Added
+
+### Changed
+
+### Fixed
+
+- 404 Error when requesting quotes with empty body or author.
+
 ## [2.0.1] - 2022-07-20
 
 Small Fixed and Addings.

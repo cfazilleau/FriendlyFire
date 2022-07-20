@@ -75,8 +75,13 @@ class QuotesPlugin extends Plugin
 					const quote = await Quote.findOne().skip(id - 1) as IQuote;
 
 					// Fetch image from the API and return it
-					const image = await fetch(`http://api.cfaz.dev/quote/${encodeURIComponent(quote.quote)}/${encodeURIComponent(quote.author)}`);
-					if (!image.ok) throw `CodaAPI request failed: ${image.status} ${image.statusText}`;
+					const quoteURI = encodeURIComponent(quote.quote.length > 0 ? quote.quote : ' ');
+					const authorURI = encodeURIComponent(quote.author.length > 0 ? quote.author : ' ');
+
+					const requestURL = `http://api.cfaz.dev/quote/${quoteURI}/${authorURI}/`;
+
+					const image = await fetch(requestURL);
+					if (!image.ok) throw `CodaAPI request failed with URL ${requestURL}:\n${image.status} ${image.statusText}`;
 
 					// Create and send image buffer
 					const buffer = Buffer.from(await image.arrayBuffer());
