@@ -1,12 +1,13 @@
 import { SlashCommandBuilder, time, userMention } from '@discordjs/builders';
-import { CacheType, Client, CommandInteraction, Guild, Message, MessageEmbed } from 'discord.js';
+import { CacheType, Client, CommandInteraction, Guild, Message, MessageEmbed, MessageOptions, TextBasedChannel } from 'discord.js';
 import { Schema } from 'mongoose';
 import moment from 'moment';
 import fetch from 'node-fetch';
 
 import { Log, Plugin, PluginCommand, DatabaseModel } from '../plugin';
 
-const quoteChannelKey = 'channelId';
+const quoteChannelKey = 'captureChannelId';
+const quoteReplyChannelKey = 'replyChannelId';
 const quoteRegex = /"(.+?)"(?:\s*-*(.*)$)/ms;
 
 const confirmationEmbedColor = '#2ea42a';
@@ -49,9 +50,17 @@ class QuotesPlugin extends Plugin
 			callback:
 				async (interaction: CommandInteraction<CacheType>) =>
 				{
-					await interaction.deferReply();
-
 					const Quote = DatabaseModel('quotes', QuoteSchema, interaction.guild);
+					let quotesChannelId = this.GetProperty(quoteReplyChannelKey, undefined, interaction.guild as Guild) as string | undefined;
+
+					if (quotesChannelId == interaction.channelId)
+					{
+						quotesChannelId = undefined;
+					}
+
+					const ephemeral = quotesChannelId != undefined;
+
+					await interaction.deferReply({ ephemeral: ephemeral });
 
 					const count = await Quote.countDocuments() as number;
 					const id = interaction.options.getInteger('id') ?? Math.floor(Math.random() * count) + 1;
@@ -86,18 +95,48 @@ class QuotesPlugin extends Plugin
 					// Create and send image buffer
 					const buffer = Buffer.from(await image.arrayBuffer());
 
+					// Create payload
+					let payload: MessageOptions = {};
 					switch (interaction.locale)
 					{
 					case 'fr':
-						interaction.editReply({
+						payload = {
 							content: `> Citation #${id}/${count}, Envoyée par ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${quote.timestamp == 0 ? ' le ' + quote.time : time(new Date(quote.timestamp), 'R')}`,
-							files: [{ attachment: buffer, name: `quote_${id}.png` }] });
+							files: [{ attachment: buffer, name: `quote_${id}.png` }] };
 						break;
 					default:
-						interaction.editReply({
+						payload = {
 							content: `> Quote #${id}/${count}, Submitted by ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${quote.timestamp == 0 ? ' the ' + quote.time : time(new Date(quote.timestamp), 'R')}`,
-							files: [{ attachment: buffer, name: `quote_${id}.png` }] });
+							files: [{ attachment: buffer, name: `quote_${id}.png` }] };
 						break;
+					}
+
+					// Retrieve channel
+					let channel: TextBasedChannel | undefined = undefined;
+					if (quotesChannelId != undefined)
+					{
+						channel = await interaction.guild?.channels.fetch(quotesChannelId) as TextBasedChannel;
+					}
+
+					// Send payload
+					if (channel)
+					{
+						payload.content = userMention(interaction.user.id) + '\n' + payload.content;
+						const msg = await channel.send(payload);
+
+						switch (interaction.locale)
+						{
+						case 'fr':
+							await interaction.editReply(`Quote envoyée avec succès: ${msg.url}`);
+							break;
+						default:
+							await interaction.editReply(`Quote successfully sent here: ${msg.url}`);
+							break;
+						}
+					}
+					else
+					{
+						await interaction.editReply(payload);
 					}
 				},
 		},

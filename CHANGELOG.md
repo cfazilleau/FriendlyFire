@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Added a setting to allow the posting of quote images in a specific channel.
+
 ### Changed
 
 ### Fixed
