@@ -47,7 +47,8 @@
 			],
 			"Invites.baseRoleId": "207997903879405568",
 			"Invites.inviteMaxAge": 15,
-			"Quotes.channelId": "210880905236054016"
+			"Quotes.captureChannelId": "210880905236054016",
+			"Quotes.replyChannelId": "1000859459662401667"
 		},
 		"458239249221812226": {
 			"name": "Phoenix Legacy Early Access",
@@ -88,7 +89,8 @@
 			],
 			"Invites.baseRoleId": "928035911197917244",
 			"Invites.inviteMaxAge": 15,
-			"Quotes.channelId": "994671095108075641",
+			"Quotes.captureChannelId": "994671095108075641",
+			"Quotes.replyChannelId": "1000851972167041075",
 			"Minecraft.ip": "141.94.181.60",
 			"Minecraft.port": 30170,
 			"Minecraft.passwordKey": "MC_PASSWORD"
