@@ -28,7 +28,7 @@ const QuoteSchema = new Schema<IQuote>({
 	submitted_by: { type: String, required: true },
 	submitted_by_id: { type: String, default: '' },
 	quote: { type: String, required: true },
-	time: { type: String, required: true },
+	time: { type: String, default: '' },
 	timestamp: { type: Number, default: 0 },
 });
 
@@ -192,11 +192,16 @@ class QuotesPlugin extends Plugin
 		for (let i = 0; i < allQuotes.length; i++)
 		{
 			const quote = allQuotes[i];
-			quote.timestamp = moment.utc(quote.time, 'DD/MM/YY HH:mm').subtract(1, 'hour').valueOf();
-			await quote.save();
+
+			if (quote.timestamp == 0 && quote.time != '')
+			{
+				quote.timestamp = moment.utc(quote.time, 'DD/MM/YY HH:mm').subtract(1, 'hour').valueOf();
+				await quote.save();
+				Log(`Fixed a timestamp in quote ${quote._id.toString()}`);
+			}
 		}
 
-		await Quote.updateMany({}, { $unset: { time: '' } });
+		// await Quote.updateMany({}, { $unset: { time: '' } });
 	}
 
 	private async HandleQuoteMessageInternal(message: Message<boolean>, client: Client<boolean>)
@@ -243,10 +248,10 @@ class QuotesPlugin extends Plugin
 		client.on('messageCreate', (message: Message<boolean>) => this.HandleQuoteMessage(message, client));
 
 		// Register commands for all plugins and all guilds
-		//client.guilds.cache.forEach(async (guild : Guild, id : string) =>
-		//{
-		//	this.CleanQuotes(guild);
-		//});
+		client.guilds.cache.forEach(async (guild : Guild, id : string) =>
+		{
+			this.CleanQuotes(guild);
+		});
 	}
 }
 
