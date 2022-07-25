@@ -10,9 +10,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Added a routine to auto fix timestamps of old generated quotes.
+
 ### Changed
 
+- Reworked the random for quote selection to allow for more variety.
+
 ### Fixed
+
+- Fixed the indices sorting of quotes to follow a timestamp order.
 
 ## [2.0.2] - 2022-07-25
 
