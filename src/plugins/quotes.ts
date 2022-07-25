@@ -62,26 +62,44 @@ class QuotesPlugin extends Plugin
 
 					await interaction.deferReply({ ephemeral: ephemeral });
 
+					let id = interaction.options.getInteger('id');
 					const count = await Quote.countDocuments() as number;
-					const id = interaction.options.getInteger('id') ?? Math.floor(Math.random() * count) + 1;
 
-					if (id > count)
+					// get quotes ordered by timestamp
+					const quotes = (await Quote.find().sort({ timestamp: 'asc' }));
+
+					if (id != undefined)
 					{
-						switch (interaction.locale)
+						if (id > count)
 						{
-						case 'fr':
-							interaction.editReply({ content: `La valeur maximale de 'id' est ${count}.` });
-							break;
-						default:
-							interaction.editReply({ content: `The maximum value of 'id' is ${count}.` });
-							break;
-						}
+							switch (interaction.locale)
+							{
+							case 'fr':
+								interaction.editReply({ content: `La valeur maximale de 'id' est ${count}.` });
+								break;
+							default:
+								interaction.editReply({ content: `The maximum value of 'id' is ${count}.` });
+								break;
+							}
 
-						return;
+							return;
+						}
+					}
+					else
+					{
+						/*
+						// Get a random quote from the database
+						const doc = (await Quote.aggregate([{ $sample: { size: 1 } }])).at(0);
+
+						// Find the index of that quote
+						id = quotes.findIndex(obj => obj._id.toString() == doc._id.toString()) + 1;
+						*/
+
+						// Get a random quote from the database
+						id = Math.floor((Math.random() * quotes.length));
 					}
 
-					// Get quote from the database
-					const quote = await Quote.findOne().skip(id - 1) as IQuote;
+					const quote = quotes.at(id) as IQuote;
 
 					// Fetch image from the API and return it
 					const quoteURI = encodeURIComponent(quote.quote.length > 0 ? quote.quote : ' ');
@@ -101,12 +119,12 @@ class QuotesPlugin extends Plugin
 					{
 					case 'fr':
 						payload = {
-							content: `> Citation #${id}/${count}, Envoyée par ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${quote.timestamp == 0 ? ' le ' + quote.time : time(new Date(quote.timestamp), 'R')}`,
+							content: `> Citation #${id + 1}/${count}, Envoyée par ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${quote.timestamp == 0 ? ' le ' + quote.time : time(new Date(quote.timestamp), 'R')}`,
 							files: [{ attachment: buffer, name: `quote_${id}.png` }] };
 						break;
 					default:
 						payload = {
-							content: `> Quote #${id}/${count}, Submitted by ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${quote.timestamp == 0 ? ' the ' + quote.time : time(new Date(quote.timestamp), 'R')}`,
+							content: `> Quote #${id + 1}/${count}, Submitted by ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${quote.timestamp == 0 ? ' the ' + quote.time : time(new Date(quote.timestamp), 'R')}`,
 							files: [{ attachment: buffer, name: `quote_${id}.png` }] };
 						break;
 					}
@@ -164,6 +182,23 @@ class QuotesPlugin extends Plugin
 		}
 	}
 
+	private async CleanQuotes(guild: Guild)
+	{
+		const Quote = DatabaseModel('quotes', QuoteSchema, guild);
+
+		// clean all undefined timestamps
+		const allQuotes = await Quote.find({});
+
+		for (let i = 0; i < allQuotes.length; i++)
+		{
+			const quote = allQuotes[i];
+			quote.timestamp = moment.utc(quote.time, 'DD/MM/YY HH:mm').subtract(1, 'hour').valueOf();
+			await quote.save();
+		}
+
+		await Quote.updateMany({}, { $unset: { time: '' } });
+	}
+
 	private async HandleQuoteMessageInternal(message: Message<boolean>, client: Client<boolean>)
 	{
 		const matches = message.content.match(quoteRegex);
@@ -206,6 +241,12 @@ class QuotesPlugin extends Plugin
 	{
 		client.on('messageUpdate', (_, message) => this.HandleQuoteMessage(message as Message<boolean>, client));
 		client.on('messageCreate', (message: Message<boolean>) => this.HandleQuoteMessage(message, client));
+
+		// Register commands for all plugins and all guilds
+		//client.guilds.cache.forEach(async (guild : Guild, id : string) =>
+		//{
+		//	this.CleanQuotes(guild);
+		//});
 	}
 }
 
