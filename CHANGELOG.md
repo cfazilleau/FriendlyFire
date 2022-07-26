@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 
+- Fixed an issue where the inviter was not mentioned on the welcome message.
 - Fixed the indices sorting of quotes to follow a timestamp order.
 
 ## [2.0.2] - 2022-07-25
