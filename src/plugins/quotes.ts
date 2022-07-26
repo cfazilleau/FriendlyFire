@@ -158,8 +158,41 @@ class QuotesPlugin extends Plugin
 					}
 				},
 		},
-	];
+		{
+			builder:
+				new SlashCommandBuilder()
+					.setName('quotes-clean-database')
+					.setDescription('Cleans the quote database')
+					.setDefaultPermission(false),
+			callback:
+				async (interaction: CommandInteraction) =>
+				{
+					interaction.deferReply();
 
+					const guild = interaction.guild;
+					const Quote = DatabaseModel('quotes', QuoteSchema, guild);
+
+					// clean all undefined timestamps
+					const allQuotes = await Quote.find().sort({ _id: 'asc' });
+
+					for (let i = 0; i < allQuotes.length; i++)
+					{
+						const quote = allQuotes[i];
+
+						if (quote.timestamp == 0 && quote.time != '')
+						{
+							quote.timestamp = moment.utc(quote.time, 'DD/MM/YY HH:mm').subtract(1, 'hour').valueOf();
+							await quote.save();
+							Log(`Fixed a timestamp in quote #${i + 1}, id: ${quote._id.toString()}`);
+						}
+					}
+
+					await Quote.updateMany({}, { $unset: { time: '' } });
+
+					interaction.editReply('Done');
+				},
+		},
+	];
 
 	private async HandleQuoteMessage(message: Message<boolean>, client: Client<boolean>)
 	{
@@ -180,28 +213,6 @@ class QuotesPlugin extends Plugin
 			Log(`Error: '${error}'`);
 			message.channel?.send(`Error: '${error}`);
 		}
-	}
-
-	private async CleanQuotes(guild: Guild)
-	{
-		const Quote = DatabaseModel('quotes', QuoteSchema, guild);
-
-		// clean all undefined timestamps
-		const allQuotes = await Quote.find({});
-
-		for (let i = 0; i < allQuotes.length; i++)
-		{
-			const quote = allQuotes[i];
-
-			if (quote.timestamp == 0 && quote.time != '')
-			{
-				quote.timestamp = moment.utc(quote.time, 'DD/MM/YY HH:mm').subtract(1, 'hour').valueOf();
-				await quote.save();
-				Log(`Fixed a timestamp in quote ${quote._id.toString()}`);
-			}
-		}
-
-		// await Quote.updateMany({}, { $unset: { time: '' } });
 	}
 
 	private async HandleQuoteMessageInternal(message: Message<boolean>, client: Client<boolean>)
@@ -246,12 +257,6 @@ class QuotesPlugin extends Plugin
 	{
 		client.on('messageUpdate', (_, message) => this.HandleQuoteMessage(message as Message<boolean>, client));
 		client.on('messageCreate', (message: Message<boolean>) => this.HandleQuoteMessage(message, client));
-
-		// Register commands for all plugins and all guilds
-		client.guilds.cache.forEach(async (guild : Guild, id : string) =>
-		{
-			this.CleanQuotes(guild);
-		});
 	}
 }
 
