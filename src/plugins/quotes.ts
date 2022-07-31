@@ -1,7 +1,6 @@
 import { SlashCommandBuilder, time, userMention } from '@discordjs/builders';
 import { CacheType, Client, CommandInteraction, Guild, Message, MessageEmbed, MessageOptions, TextBasedChannel } from 'discord.js';
 import { Schema } from 'mongoose';
-import moment from 'moment';
 import fetch from 'node-fetch';
 
 import { Log, Plugin, PluginCommand, DatabaseModel } from '../plugin';
@@ -19,7 +18,6 @@ interface IQuote
 	submitted_by: string,
 	submitted_by_id: string,
 	quote: string,
-	time: string,
 	timestamp: number,
 	safe: boolean,
 }
@@ -29,7 +27,6 @@ const QuoteSchema = new Schema<IQuote>({
 	submitted_by: { type: String, required: true },
 	submitted_by_id: { type: String, default: '' },
 	quote: { type: String, required: true },
-	time: { type: String, default: '' },
 	timestamp: { type: Number, default: 0 },
 	safe: { type: Boolean, default: false },
 });
@@ -121,12 +118,12 @@ class QuotesPlugin extends Plugin
 					{
 					case 'fr':
 						payload = {
-							content: `> Citation #${id}/${count}, Envoyée par ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${quote.timestamp == 0 ? ' le ' + quote.time : time(new Date(quote.timestamp), 'R')}`,
+							content: `> Citation #${id}/${count}, Envoyée par ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${time(new Date(quote.timestamp), 'R')}`,
 							files: [{ attachment: buffer, name: `quote_${id}.png` }] };
 						break;
 					default:
 						payload = {
-							content: `> Quote #${id}/${count}, Submitted by ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${quote.timestamp == 0 ? ' the ' + quote.time : time(new Date(quote.timestamp), 'R')}`,
+							content: `> Quote #${id}/${count}, Submitted by ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${time(new Date(quote.timestamp), 'R')}`,
 							files: [{ attachment: buffer, name: `quote_${id}.png` }] };
 						break;
 					}
@@ -158,40 +155,6 @@ class QuotesPlugin extends Plugin
 					{
 						await interaction.editReply(payload);
 					}
-				},
-		},
-		{
-			builder:
-				new SlashCommandBuilder()
-					.setName('quotes-clean-database')
-					.setDescription('Cleans the quote database')
-					.setDefaultPermission(false),
-			callback:
-				async (interaction: CommandInteraction) =>
-				{
-					interaction.deferReply();
-
-					const guild = interaction.guild;
-					const Quote = DatabaseModel('quotes', QuoteSchema, guild);
-
-					// clean all undefined timestamps
-					const allQuotes = await Quote.find().sort({ _id: 'asc' });
-
-					for (let i = 0; i < allQuotes.length; i++)
-					{
-						const quote = allQuotes[i];
-
-						if (quote.timestamp == 0 && quote.time != '')
-						{
-							quote.timestamp = moment.utc(quote.time, 'DD/MM/YY HH:mm').subtract(1, 'hour').valueOf();
-							await quote.save();
-							Log(`Fixed a timestamp in quote #${i + 1}, id: ${quote._id.toString()}`);
-						}
-					}
-
-					await Quote.updateMany({}, { $unset: { time: '' }, $set: { safe: true } });
-
-					interaction.editReply('Done');
 				},
 		},
 	];
