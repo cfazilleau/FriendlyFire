@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+### Changed
+
+### Fixed
+
+## [2.1.0] - 2022-07-31
+
+### Added
+
 - Tag quotes as safe or unsafe
 - Added a routine to auto fix timestamps of old generated quotes.
 
