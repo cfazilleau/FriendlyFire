@@ -21,6 +21,7 @@ interface IQuote
 	quote: string,
 	time: string,
 	timestamp: number,
+	safe: boolean,
 }
 
 const QuoteSchema = new Schema<IQuote>({
@@ -30,6 +31,7 @@ const QuoteSchema = new Schema<IQuote>({
 	quote: { type: String, required: true },
 	time: { type: String, default: '' },
 	timestamp: { type: Number, default: 0 },
+	safe: { type: Boolean, default: false },
 });
 
 class QuotesPlugin extends Plugin
@@ -63,10 +65,10 @@ class QuotesPlugin extends Plugin
 					await interaction.deferReply({ ephemeral: ephemeral });
 
 					let id = interaction.options.getInteger('id');
-					const count = await Quote.countDocuments() as number;
 
 					// get quotes ordered by timestamp
-					const quotes = (await Quote.find().sort({ timestamp: 'asc' }));
+					const quotes = (await Quote.find({ safe: true }).sort({ timestamp: 'asc' }));
+					const count = quotes.length;
 
 					if (id != undefined)
 					{
@@ -99,7 +101,7 @@ class QuotesPlugin extends Plugin
 						id = Math.floor((Math.random() * quotes.length));
 					}
 
-					const quote = quotes.at(id) as IQuote;
+					const quote = quotes.at(id - 1) as IQuote;
 
 					// Fetch image from the API and return it
 					const quoteURI = encodeURIComponent(quote.quote.length > 0 ? quote.quote : ' ');
@@ -119,12 +121,12 @@ class QuotesPlugin extends Plugin
 					{
 					case 'fr':
 						payload = {
-							content: `> Citation #${id + 1}/${count}, Envoyée par ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${quote.timestamp == 0 ? ' le ' + quote.time : time(new Date(quote.timestamp), 'R')}`,
+							content: `> Citation #${id}/${count}, Envoyée par ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${quote.timestamp == 0 ? ' le ' + quote.time : time(new Date(quote.timestamp), 'R')}`,
 							files: [{ attachment: buffer, name: `quote_${id}.png` }] };
 						break;
 					default:
 						payload = {
-							content: `> Quote #${id + 1}/${count}, Submitted by ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${quote.timestamp == 0 ? ' the ' + quote.time : time(new Date(quote.timestamp), 'R')}`,
+							content: `> Quote #${id}/${count}, Submitted by ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${quote.timestamp == 0 ? ' the ' + quote.time : time(new Date(quote.timestamp), 'R')}`,
 							files: [{ attachment: buffer, name: `quote_${id}.png` }] };
 						break;
 					}
@@ -187,7 +189,7 @@ class QuotesPlugin extends Plugin
 						}
 					}
 
-					await Quote.updateMany({}, { $unset: { time: '' } });
+					await Quote.updateMany({}, { $unset: { time: '' }, $set: { safe: true } });
 
 					interaction.editReply('Done');
 				},
@@ -228,8 +230,9 @@ class QuotesPlugin extends Plugin
 				author: matches[2],
 				submitted_by: message.author.username,
 				submitted_by_id: message.author.id,
-				time: moment.utc(message.createdAt).add(1, 'hour').format('DD/MM/YY HH:mm'),
+				time: '',
 				timestamp: message.createdTimestamp,
+				safe: true,
 			});
 			await quote.save();
 			Log('New quote saved');
