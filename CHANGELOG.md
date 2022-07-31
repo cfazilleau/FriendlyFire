@@ -14,6 +14,22 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 
+## [2.1.0] - 2022-07-31
+
+### Added
+
+- Tag quotes as safe or unsafe
+- Added a routine to auto fix timestamps of old generated quotes.
+
+### Changed
+
+- Reworked the random for quote selection to allow for more variety.
+
+### Fixed
+
+- Fixed an issue where the inviter was not mentioned on the welcome message.
+- Fixed the indices sorting of quotes to follow a timestamp order.
+
 ## [2.0.2] - 2022-07-25
 
 ### Added

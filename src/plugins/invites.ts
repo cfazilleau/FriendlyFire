@@ -151,8 +151,10 @@ class InvitesPlugin extends Plugin
 		Log(`${invites.size} invites server-side, ${recordedInvites.length} bot-side.`);
 
 		let inviterMention = '';
-		recordedInvites.forEach(async inv =>
+		for (let i = 0; i < recordedInvites.length; i++)
 		{
+			const inv = recordedInvites[i];
+
 			if (!invites.has(inv.code))
 			{
 				const inviter = await guild.members.fetch(inv.author);
@@ -161,12 +163,17 @@ class InvitesPlugin extends Plugin
 				inviterMention = userMention(inv.author);
 				inv.delete();
 			}
-		});
+		}
+
+		if (inviterMention == '')
+		{
+			Log(`${member.displayName} joined using unknown invite code.`);
+		}
 
 		const embed = new MessageEmbed({
 			title: 'Bienvenue!',
 			thumbnail: { url: user.avatarURL({ size: 1024 }) as string },
-			description: `Bienvenue a ${userMention(member.id)} ${inviterMention != '' ? `, invité.e par ${inviterMention}` : ''}, sur le discord de Phoenix Legacy!\n${this.GetRandomGreeting(guild)}`,
+			description: `Bienvenue a ${userMention(member.id)}, ${inviterMention != '' ? `invité.e par ${inviterMention}, ` : ''}sur le discord de [Phoenix Legacy](http://phxlgc.com)!\n${this.GetRandomGreeting(guild)}`,
 			color: user.accentColor as number,
 		});
 

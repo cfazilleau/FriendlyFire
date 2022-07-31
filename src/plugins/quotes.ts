@@ -21,6 +21,7 @@ interface IQuote
 	quote: string,
 	time: string,
 	timestamp: number,
+	safe: boolean,
 }
 
 const QuoteSchema = new Schema<IQuote>({
@@ -28,8 +29,9 @@ const QuoteSchema = new Schema<IQuote>({
 	submitted_by: { type: String, required: true },
 	submitted_by_id: { type: String, default: '' },
 	quote: { type: String, required: true },
-	time: { type: String, required: true },
+	time: { type: String, default: '' },
 	timestamp: { type: Number, default: 0 },
+	safe: { type: Boolean, default: false },
 });
 
 class QuotesPlugin extends Plugin
@@ -62,26 +64,44 @@ class QuotesPlugin extends Plugin
 
 					await interaction.deferReply({ ephemeral: ephemeral });
 
-					const count = await Quote.countDocuments() as number;
-					const id = interaction.options.getInteger('id') ?? Math.floor(Math.random() * count) + 1;
+					let id = interaction.options.getInteger('id');
 
-					if (id > count)
+					// get quotes ordered by timestamp
+					const quotes = (await Quote.find({ safe: true }).sort({ timestamp: 'asc' }));
+					const count = quotes.length;
+
+					if (id != undefined)
 					{
-						switch (interaction.locale)
+						if (id > count)
 						{
-						case 'fr':
-							interaction.editReply({ content: `La valeur maximale de 'id' est ${count}.` });
-							break;
-						default:
-							interaction.editReply({ content: `The maximum value of 'id' is ${count}.` });
-							break;
-						}
+							switch (interaction.locale)
+							{
+							case 'fr':
+								interaction.editReply({ content: `La valeur maximale de 'id' est ${count}.` });
+								break;
+							default:
+								interaction.editReply({ content: `The maximum value of 'id' is ${count}.` });
+								break;
+							}
 
-						return;
+							return;
+						}
+					}
+					else
+					{
+						/*
+						// Get a random quote from the database
+						const doc = (await Quote.aggregate([{ $sample: { size: 1 } }])).at(0);
+
+						// Find the index of that quote
+						id = quotes.findIndex(obj => obj._id.toString() == doc._id.toString()) + 1;
+						*/
+
+						// Get a random quote from the database
+						id = Math.floor((Math.random() * quotes.length));
 					}
 
-					// Get quote from the database
-					const quote = await Quote.findOne().skip(id - 1) as IQuote;
+					const quote = quotes.at(id - 1) as IQuote;
 
 					// Fetch image from the API and return it
 					const quoteURI = encodeURIComponent(quote.quote.length > 0 ? quote.quote : ' ');
@@ -140,8 +160,41 @@ class QuotesPlugin extends Plugin
 					}
 				},
 		},
-	];
+		{
+			builder:
+				new SlashCommandBuilder()
+					.setName('quotes-clean-database')
+					.setDescription('Cleans the quote database')
+					.setDefaultPermission(false),
+			callback:
+				async (interaction: CommandInteraction) =>
+				{
+					interaction.deferReply();
 
+					const guild = interaction.guild;
+					const Quote = DatabaseModel('quotes', QuoteSchema, guild);
+
+					// clean all undefined timestamps
+					const allQuotes = await Quote.find().sort({ _id: 'asc' });
+
+					for (let i = 0; i < allQuotes.length; i++)
+					{
+						const quote = allQuotes[i];
+
+						if (quote.timestamp == 0 && quote.time != '')
+						{
+							quote.timestamp = moment.utc(quote.time, 'DD/MM/YY HH:mm').subtract(1, 'hour').valueOf();
+							await quote.save();
+							Log(`Fixed a timestamp in quote #${i + 1}, id: ${quote._id.toString()}`);
+						}
+					}
+
+					await Quote.updateMany({}, { $unset: { time: '' }, $set: { safe: true } });
+
+					interaction.editReply('Done');
+				},
+		},
+	];
 
 	private async HandleQuoteMessage(message: Message<boolean>, client: Client<boolean>)
 	{
@@ -177,8 +230,9 @@ class QuotesPlugin extends Plugin
 				author: matches[2],
 				submitted_by: message.author.username,
 				submitted_by_id: message.author.id,
-				time: moment.utc(message.createdAt).add(1, 'hour').format('DD/MM/YY HH:mm'),
+				time: '',
 				timestamp: message.createdTimestamp,
+				safe: true,
 			});
 			await quote.save();
 			Log('New quote saved');
