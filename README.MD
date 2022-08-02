@@ -1,43 +1,35 @@
-"moment": "^2.29.1",
-"mongoose": "^5.11.9",
-"npm": "^8.0.0",
-"rcon-client": "^4.2.3"
-
-	"eslint.format.enable": true,
-	"eslint.validate": ["typescript", "typescriptreact"],
-	"editor.codeActionsOnSave": {
-		"source.fixAll.eslint": true
-	},
-	"[typescript]": {
-		"editor.defaultFormatter": "dbaeumer.vscode-eslint"
-	}
-
-Phoenix Bot
--------------
+# Friendly Fire
 
 ## Installation
 
-in order to log in, the bot uses the env vars:
+First you will need to setup the following environment variables:
 
 ```
-# core
-BOT_TOKEN=
-BOT_ID=
-
-# quote plugin
-MONGODB_URI=
-
-# minecraft plugin
-MC_IP=
-MC_PORT=
-MC_PASSWORD=
+FF_Token=your_discord_app_token
+FF_ClientId=your_discord_app_clientId
+MONGODB_URI=your_mongodb_uri_including_credentials
 ```
 
-install all the required modules with a
+Example:
+```
+FF_Token=ABCDEFGHIJKLMNOPQRSTUVWXYZ.0123456789
+FF_ClientId=0123456789101112
+MONGODB_URI=mongodb+srv://USERNAME:PASSWORD@database.mongodb.net/
+```
+
+install all the required modules with
 
 >npm install
 
-then you're good to go, the entry point is main.js (`npm start` to compile and run)
+normally it should also compile the typescript code, if not, you can use
+
+>npm run build
+
+to compile the code.
+
+Now you just have to run the bot by typing
+
+>npm run start
 
 you'll be able to find the link to invite the bot on your server in the logs of the bot.
 

@@ -7,7 +7,7 @@ import { Log, Plugin, PluginCommand, DatabaseModel } from '../plugin';
 
 const quoteChannelKey = 'captureChannelId';
 const quoteReplyChannelKey = 'replyChannelId';
-const quoteRegex = /"(.+?)"(?:\s*-*(.*)$)/ms;
+const quoteRegex = /^"(.+?)"(?:\s*-*(.*)$)/ms;
 
 const confirmationEmbedColor = '#2ea42a';
 
