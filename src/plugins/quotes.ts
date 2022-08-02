@@ -8,7 +8,7 @@ import { Log, Plugin, PluginCommand, DatabaseModel } from '../plugin';
 
 const quoteChannelKey = 'captureChannelId';
 const quoteReplyChannelKey = 'replyChannelId';
-const quoteRegex = /"(.+?)"(?:\s*-*(.*)$)/ms;
+const quoteRegex = /^"(.+?)"(?:\s*-*(.*)$)/ms;
 
 const confirmationEmbedColor = '#2ea42a';
 
@@ -230,7 +230,6 @@ class QuotesPlugin extends Plugin
 				author: matches[2],
 				submitted_by: message.author.username,
 				submitted_by_id: message.author.id,
-				time: '',
 				timestamp: message.createdTimestamp,
 				safe: true,
 			});

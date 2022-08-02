@@ -18,15 +18,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
-- Tag quotes as safe or unsafe
+- Tag quotes as safe or unsafe.
 - Added a routine to auto fix timestamps of old generated quotes.
 
 ### Changed
 
 - Reworked the random for quote selection to allow for more variety.
+- Removed 'time' field on quote schemas.
 
 ### Fixed
 
+- Fixed an error with the quotes Regex.
 - Fixed an issue where the inviter was not mentioned on the welcome message.
 - Fixed the indices sorting of quotes to follow a timestamp order.
 
