@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 
+- Fixed an error with the quotes Regex
 - Fixed an issue where the inviter was not mentioned on the welcome message.
 - Fixed the indices sorting of quotes to follow a timestamp order.
 
