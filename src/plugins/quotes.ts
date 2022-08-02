@@ -193,7 +193,6 @@ class QuotesPlugin extends Plugin
 				author: matches[2],
 				submitted_by: message.author.username,
 				submitted_by_id: message.author.id,
-				time: '',
 				timestamp: message.createdTimestamp,
 				safe: true,
 			});
