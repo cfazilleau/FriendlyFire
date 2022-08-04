@@ -10,9 +10,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Added a development script to allow file watching and auto-reloading on save.
+
 ### Changed
 
+- Updated package.json
+- Made database connection async.
+
 ### Fixed
+
+- Fixed inconsistent log messages.
 
 ## [2.1.0] - 2022-07-31
 

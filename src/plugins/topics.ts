@@ -119,7 +119,7 @@ class TopicsPlugin extends Plugin
 
 						const topicDescr = topicTypes[type] ?? {};
 
-						const Model = DatabaseModel(collectionName, TopicSchema, guild);
+						const Model = await DatabaseModel(collectionName, TopicSchema, guild);
 
 						// Create new Role
 						const role = await interaction.guild?.roles.create({
@@ -175,7 +175,7 @@ class TopicsPlugin extends Plugin
 
 						const topicDescr = topicTypes[type] ?? {};
 
-						const Model = DatabaseModel(collectionName, TopicSchema, guild);
+						const Model = await DatabaseModel(collectionName, TopicSchema, guild);
 						const topicData = await Model.findOne({ roleId: role.id });
 
 						if (topicData == undefined) throw 'Topic not found';
@@ -232,7 +232,7 @@ class TopicsPlugin extends Plugin
 						const role = interaction.options.getRole('role') as Role;
 						const guild = interaction.guild;
 
-						const Model = DatabaseModel(collectionName, TopicSchema, guild);
+						const Model = await DatabaseModel(collectionName, TopicSchema, guild);
 						const topicData = await Model.findOne({ roleId: role.id });
 
 						if (topicData == undefined) throw 'Topic not found';
@@ -275,7 +275,7 @@ class TopicsPlugin extends Plugin
 		// Need to fetch all messages in order to receive reaction events
 		client.guilds.cache.forEach(async guild =>
 		{
-			const Model = DatabaseModel(collectionName, TopicSchema, guild);
+			const Model = await DatabaseModel(collectionName, TopicSchema, guild);
 			const topicMessages = await Model.find({});
 
 			topicMessages.forEach(async msg =>
@@ -302,7 +302,7 @@ class TopicsPlugin extends Plugin
 
 				if (user == undefined || bot == undefined || user.id == bot.id) return;
 
-				const Model = DatabaseModel(collectionName, TopicSchema, reaction.message.guild);
+				const Model = await DatabaseModel(collectionName, TopicSchema, reaction.message.guild);
 				const roleData = await Model.findOne({ channelId: reaction.message.channelId, messageId: reaction.message.id });
 
 				if (roleData != undefined)
@@ -322,7 +322,7 @@ class TopicsPlugin extends Plugin
 
 				if (user == undefined || bot == undefined || user.id == bot.id) return;
 
-				const Model = DatabaseModel(collectionName, TopicSchema, reaction.message.guild);
+				const Model = await DatabaseModel(collectionName, TopicSchema, reaction.message.guild);
 				const roleData = await Model.findOne({ channelId: reaction.message.channelId, messageId: reaction.message.id });
 
 				if (roleData != undefined)

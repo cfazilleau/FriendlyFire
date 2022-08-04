@@ -16,8 +16,6 @@ const client = new discord.Client({ intents: [discord.Intents.FLAGS.GUILDS, disc
 // When the client is ready, run this code (only once)
 client.once('ready', async () =>
 {
-	await ConnectToDatabase();
-
 	Log(`Ready! Join any server with this link: https://discord.com/oauth2/authorize?client_id=${process.env.FF_ClientId}&scope=bot&permissions=8`);
 
 	// Load Plugins
@@ -56,3 +54,4 @@ export const restAPI = new rest.REST({ version: '10' }).setToken(process.env.FF_
 
 // Login to Discord with your client's token
 client.login(process.env.FF_Token);
+ConnectToDatabase();

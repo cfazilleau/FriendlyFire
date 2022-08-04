@@ -22,8 +22,6 @@ function LoadConfig() : void
 {
 	let file = '{}';
 
-	Log(`Loading ${configPath}...`);
-
 	// Read file if it exists
 	if (fs.existsSync(configPath))
 	{
@@ -31,7 +29,7 @@ function LoadConfig() : void
 	}
 	else
 	{
-		Log(`${configPath} not found, creating it with default config.`);
+		Log(`${configPath} not found, creating it with default config`);
 	}
 
 	// try to load file as JSON
@@ -45,7 +43,7 @@ function LoadConfig() : void
 		config = new ConfigFile();
 	}
 
-	Log('Config loaded.');
+	Log(`Loaded ${configPath}`);
 }
 
 function SaveConfig() : void

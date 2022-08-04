@@ -176,7 +176,7 @@ class PollsPlugin extends Plugin
 					const guild = interaction.guild;
 					const message = interaction.targetMessage;
 
-					const MessageVotes = DatabaseModel(collectionName, MessageVotesSchema, guild);
+					const MessageVotes = await DatabaseModel(collectionName, MessageVotesSchema, guild);
 					const messageVotes = await MessageVotes.findOne({ messageId: message.id });
 
 					if (messageVotes == undefined || !(message instanceof Message)) throw 'Selected message is not a poll or wasn\'t found on the database.';
@@ -225,7 +225,7 @@ class PollsPlugin extends Plugin
 
 	private async GetMessageVotes(guild: Guild, channelId: string, messageId: string): Promise<{ [userId: string]: string }>
 	{
-		const MessageVotes = DatabaseModel(collectionName, MessageVotesSchema, guild);
+		const MessageVotes = await DatabaseModel(collectionName, MessageVotesSchema, guild);
 
 		const messageVotes = await MessageVotes.findOne({ channelId: channelId, messageId: messageId });
 		return (messageVotes as unknown as IMessageVotes)?.votes ?? {};
@@ -233,7 +233,7 @@ class PollsPlugin extends Plugin
 
 	private async SetMessageVotes(guild: Guild, channelId: string, messageId: string, data: {[userId: string]: string})
 	{
-		const MessageVotes = DatabaseModel(collectionName, MessageVotesSchema, guild);
+		const MessageVotes = await DatabaseModel(collectionName, MessageVotesSchema, guild);
 
 		await MessageVotes.findOneAndUpdate({ channelId: channelId, messageId: messageId }, { votes: data }, { upsert: true });
 	}
@@ -243,8 +243,7 @@ class PollsPlugin extends Plugin
 		await client.guilds.fetch();
 		client.guilds.cache.forEach(async guild =>
 		{
-			Log(`Clearing old votes in ${guild?.name}...`);
-			const MessageVotes = DatabaseModel(collectionName, MessageVotesSchema, guild);
+			const MessageVotes = await DatabaseModel(collectionName, MessageVotesSchema, guild);
 
 			const messages = await MessageVotes.find();
 			messages.forEach(async msg =>
@@ -259,6 +258,7 @@ class PollsPlugin extends Plugin
 				catch (_)
 				{
 					msg.delete();
+					Log(`Cleared an old poll in ${guild?.name}`);
 					return;
 				}
 			});

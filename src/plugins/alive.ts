@@ -173,7 +173,7 @@ class AlivePlugin extends Plugin
 		if (activity != undefined)
 		{
 			client.user?.setActivity(activity);
-			Log(`Set activity back to ${activity.type} ${activity.name} with url '${activity.url}`);
+			Log(`Set activity back to ${activity.type} ${activity.name} with url '${activity.url}'`);
 		}
 	}
 }

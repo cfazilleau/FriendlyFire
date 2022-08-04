@@ -47,7 +47,7 @@ class InvitesPlugin extends Plugin
 					if (author != undefined && interaction.guild != undefined)
 					{
 						const invite = await interaction.guild.invites.create(interaction.channelId, { temporary: true, maxAge: inviteMaxAge * 60, maxUses: 1, unique: true });
-						const Invite = DatabaseModel('invites', InviteSchema, interaction.guild);
+						const Invite = await DatabaseModel('invites', InviteSchema, interaction.guild);
 
 						const inviteData = new Invite({
 							author: author.id,
@@ -142,7 +142,7 @@ class InvitesPlugin extends Plugin
 		}
 
 		// Check invite used
-		const Invite = DatabaseModel('invites', InviteSchema, guild);
+		const Invite = await DatabaseModel('invites', InviteSchema, guild);
 
 		// To compare, we need to load the current invite list.
 		const invites = await guild.invites.fetch();
@@ -188,7 +188,7 @@ class InvitesPlugin extends Plugin
 		await client.guilds.fetch();
 		client.guilds.cache.forEach(async guild =>
 		{
-			const Invite = DatabaseModel('invites', InviteSchema, guild);
+			const Invite = await DatabaseModel('invites', InviteSchema, guild);
 
 			const recordedInvites = await Invite.find({});
 			recordedInvites.forEach(invite =>

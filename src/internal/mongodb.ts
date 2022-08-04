@@ -17,8 +17,9 @@ export async function ConnectToDatabase()
 	}
 }
 
-export function DatabaseModel<Type>(model: string, schema: Schema<Type>, guild?: Guild | undefined | null)
+export async function DatabaseModel<Type>(model: string, schema: Schema<Type>, guild?: Guild | undefined | null)
 {
+	await mongoose.connection.readyState == mongoose.ConnectionStates.connected;
 	const db = mongoose.connection.useDb(guild?.id ?? 'global');
 	return db.model<Type>(model, schema);
 }

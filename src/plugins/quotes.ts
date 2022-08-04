@@ -49,7 +49,7 @@ class QuotesPlugin extends Plugin
 			callback:
 				async (interaction: CommandInteraction<CacheType>) =>
 				{
-					const Quote = DatabaseModel('quotes', QuoteSchema, interaction.guild);
+					const Quote = await DatabaseModel('quotes', QuoteSchema, interaction.guild);
 					let quotesChannelId = this.GetProperty(quoteReplyChannelKey, undefined, interaction.guild as Guild) as string | undefined;
 
 					if (quotesChannelId == interaction.channelId)
@@ -186,7 +186,7 @@ class QuotesPlugin extends Plugin
 
 		if (matches?.length == 3)
 		{
-			const Quote = DatabaseModel('quotes', QuoteSchema, message.guild);
+			const Quote = await DatabaseModel('quotes', QuoteSchema, message.guild);
 
 			const quote = new Quote({
 				quote: matches[1],
