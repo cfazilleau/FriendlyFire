@@ -2,24 +2,28 @@
 	"name": "friendlyfire",
 	"version": "2.0.2",
 	"description": "A Typescript modular discord bot",
-	"main": "main.js",
+	"main": "dist/main.js",
 	"scripts": {
-		"lint": "eslint --fix src/**",
+		"start": "node .",
+		"dev": "nodemon --watch src/ --ext * --exec \"npm run build && npm run start\"",
 		"build": "tsc",
-		"start": "node dist/main.js",
+		"lint": "eslint --fix src/**",
 		"postinstall": "npm run build"
 	},
-	"author": "faz.cle",
+	"author": "Clément 'cfazilleau' Fazilleau (https://cfaz.dev/)",
 	"license": "ISC",
+	"homepage": "https://github.com/cfazilleau/friendlyfire#readme",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/cfazilleau/friendlyfire.git"
 	},
 	"devDependencies": {
 		"@eslint/eslintrc": "^1.2.2",
+		"@types/chart.js": "^2.9.37",
 		"@types/node": "^17.0.29",
 		"@typescript-eslint/eslint-plugin": "^5.30.7",
 		"eslint": "^8.14.0",
+		"nodemon": "^2.0.19",
 		"typescript": "^4.6.3"
 	},
 	"dependencies": {
