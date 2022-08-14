@@ -196,6 +196,7 @@ class QuotesPlugin extends Plugin
 		const embed = new MessageEmbed({
 			title: `quote ${id + 1}/${count}, the ${time(new Date(quote.timestamp))}`,
 			description: '```json\n' + JSON.stringify(quote as IQuote, null, 4) + '\n```',
+			color: quote.checked ? '#07A0DE' : '#000000',
 		});
 
 		const buttons = [
@@ -254,20 +255,18 @@ class QuotesPlugin extends Plugin
 			break;
 		}
 
-		let quote = quotes.at(curId);
+		if (curId < 0) curId = count - 1;
+		if (curId > count - 1) curId = 0;
+
+		const quote = quotes.at(curId);
 		if (quote == undefined) throw `no quote found at id: ${curId}`;
 
-		switch (action)
+		if (action == 'tag_safe' || action == 'tag_unsafe')
 		{
-		case 'tag_safe':
-			quote = await quote.update({ checked: true, safe: true });
-			break;
-		case 'tag_unsafe':
-			quote = await quote.update({ checked: true, safe: false });
-			break;
+			quote.safe = action == 'tag_safe';
+			quote.checked = true;
+			await quote.save();
 		}
-
-		if (quote == undefined) throw '';
 
 		interaction.editReply(this.GetCheckQuotePayload(quote, curId, count));
 	}
