@@ -1,9 +1,10 @@
 import { SlashCommandBuilder, time, userMention } from '@discordjs/builders';
-import { CacheType, Client, CommandInteraction, Guild, Message, MessageEmbed, MessageOptions, TextBasedChannel } from 'discord.js';
-import { Schema } from 'mongoose';
+import { Channel } from 'diagnostics_channel';
+import { ButtonInteraction, CacheType, Client, CommandInteraction, Guild, Interaction, Message, MessageActionRow, MessageButton, MessageEmbed, MessageOptions, MessagePayload, TextBasedChannel } from 'discord.js';
+import { Document, Schema, Types } from 'mongoose';
 import fetch from 'node-fetch';
 
-import { Log, Plugin, PluginCommand, DatabaseModel } from '../plugin';
+import { Log, Plugin, PluginCommand, DatabaseModel, CatchAndLog } from '../plugin';
 
 const quoteChannelKey = 'captureChannelId';
 const quoteReplyChannelKey = 'replyChannelId';
@@ -20,6 +21,7 @@ interface IQuote
 	quote: string,
 	timestamp: number,
 	safe: boolean,
+	checked: boolean,
 }
 
 const QuoteSchema = new Schema<IQuote>({
@@ -29,6 +31,7 @@ const QuoteSchema = new Schema<IQuote>({
 	quote: { type: String, required: true },
 	timestamp: { type: Number, default: 0 },
 	safe: { type: Boolean, default: false },
+	checked: { type: Boolean, default: false },
 });
 
 class QuotesPlugin extends Plugin
@@ -157,7 +160,117 @@ class QuotesPlugin extends Plugin
 					}
 				},
 		},
+		{
+			builder:
+				new SlashCommandBuilder()
+					.setName('check-quotes')
+					.setDescription('mark a random unchecked quote')
+					.setDefaultPermission(false) as SlashCommandBuilder,
+			callback:
+				async (interaction: CommandInteraction) =>
+				{
+					await interaction.deferReply({ ephemeral: true });
+
+					const model = await DatabaseModel('quotes', QuoteSchema, interaction.guild);
+
+					await model.updateMany({ checked: undefined }, { checked: false });
+
+					const quotes = (await model.find({}).sort({ timestamp: 'asc' }));
+					const count = quotes.length;
+					const id = quotes.findIndex(doc => doc.checked == false);
+					const quote = quotes.at(id);
+
+					if (quote == undefined)
+					{
+						throw 'no unchecked quote found';
+					}
+
+					const payload = this.GetCheckQuotePayload(quote, id, count);
+					interaction.editReply(payload);
+				},
+		},
 	];
+
+	private GetCheckQuotePayload(quote: Document<unknown, any, IQuote> & IQuote & { _id: Types.ObjectId; }, id: number, count: number)
+	{
+		const embed = new MessageEmbed({
+			title: `quote ${id + 1}/${count}, the ${time(new Date(quote.timestamp))}`,
+			description: '```json\n' + JSON.stringify(quote as IQuote, null, 4) + '\n```',
+		});
+
+		const buttons = [
+			new MessageButton({
+				customId: this.CustomId(`get_prev___${quote._id}`),
+				label: 'Previous',
+				style: 'SECONDARY',
+			}),
+			new MessageButton({
+				customId: this.CustomId(`tag_safe___${quote._id}`),
+				label: 'Safe',
+				style: 'SUCCESS',
+			}),
+			new MessageButton({
+				customId: this.CustomId(`tag_unsafe___${quote._id}`),
+				label: 'Unsafe',
+				style: 'DANGER',
+			}),
+			new MessageButton({
+				customId: this.CustomId(`get_next___${quote._id}`),
+				label: 'Next',
+				style: 'SECONDARY',
+			}),
+		];
+
+		const actionRow = new MessageActionRow({ components: buttons });
+
+		return { embeds: [ embed ], components: [ actionRow ] };
+	}
+
+	private async HandleButtonInteraction(interaction: ButtonInteraction)
+	{
+		const customId = this.GetShortCustomId(interaction.customId);
+		Log(`Handling interaction '${customId}' from '${interaction.user.tag}'`);
+
+		const split = customId.split('___');
+		const action = split[0];
+		const id = split[1];
+
+		const model = await DatabaseModel('quotes', QuoteSchema, interaction.guild);
+
+		// get quotes ordered by timestamp
+		const quotes = (await model.find({}).sort({ timestamp: 'asc' }));
+		const count = quotes.length;
+
+		// get current id
+		let curId = quotes.findIndex(doc => doc._id.toString() == id);
+
+		switch (action)
+		{
+		case 'get_next':
+			curId++;
+			break;
+		case 'get_prev':
+			curId--;
+			break;
+		}
+
+		let quote = quotes.at(curId);
+		if (quote == undefined) throw `no quote found at id: ${curId}`;
+
+		switch (action)
+		{
+		case 'tag_safe':
+			quote = await quote.update({ checked: true, safe: true });
+			break;
+		case 'tag_unsafe':
+			quote = await quote.update({ checked: true, safe: false });
+			break;
+		}
+
+		if (quote == undefined) throw '';
+
+		interaction.editReply(this.GetCheckQuotePayload(quote, curId, count));
+	}
 
 	private async HandleQuoteMessage(message: Message<boolean>, client: Client<boolean>)
 	{
@@ -222,6 +335,18 @@ class QuotesPlugin extends Plugin
 	{
 		client.on('messageUpdate', (_, message) => this.HandleQuoteMessage(message as Message<boolean>, client));
 		client.on('messageCreate', (message: Message<boolean>) => this.HandleQuoteMessage(message, client));
+
+		client.on('interactionCreate', interaction =>
+		{
+			CatchAndLog(async () =>
+			{
+				if (interaction.isButton() && this.CheckCustomId(interaction.customId))
+				{
+					await interaction.deferUpdate();
+					await this.HandleButtonInteraction(interaction);
+				}
+			}, interaction.channel);
+		});
 	}
 }
 

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - Added a development script to allow file watching and auto-reloading on save.
+- Added a check-quote command
 
 ### Changed
 
