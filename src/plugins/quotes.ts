@@ -1,6 +1,5 @@
 import { SlashCommandBuilder, time, userMention } from '@discordjs/builders';
-import { Channel } from 'diagnostics_channel';
-import { ButtonInteraction, CacheType, Client, CommandInteraction, Guild, Interaction, Message, MessageActionRow, MessageButton, MessageEmbed, MessageOptions, MessagePayload, TextBasedChannel } from 'discord.js';
+import { ButtonInteraction, CacheType, Client, CommandInteraction, Guild, Message, MessageActionRow, MessageButton, MessageEmbed, MessageOptions, MessageSelectMenu, MessageSelectOptionData, SelectMenuInteraction, TextBasedChannel } from 'discord.js';
 import { Document, Schema, Types } from 'mongoose';
 import fetch from 'node-fetch';
 
@@ -185,13 +184,13 @@ class QuotesPlugin extends Plugin
 						throw 'no unchecked quote found';
 					}
 
-					const payload = this.GetCheckQuotePayload(quote, id, count);
+					const payload = await this.GetCheckQuotePayload(interaction.guild as Guild, quote, id, count);
 					interaction.editReply(payload);
 				},
 		},
 	];
 
-	private GetCheckQuotePayload(quote: Document<unknown, any, IQuote> & IQuote & { _id: Types.ObjectId; }, id: number, count: number)
+	private async GetCheckQuotePayload(guild: Guild, quote: Document<unknown, unknown, IQuote> & IQuote & { _id: Types.ObjectId; }, id: number, count: number)
 	{
 		const embed = new MessageEmbed({
 			title: `quote ${id + 1}/${count}, the ${time(new Date(quote.timestamp))}`,
@@ -222,12 +221,40 @@ class QuotesPlugin extends Plugin
 			}),
 		];
 
-		const actionRow = new MessageActionRow({ components: buttons });
+		const members = await guild.members.fetch();
+		const defaultId = (await guild.members.fetch(quote.submitted_by_id))?.id;
 
-		return { embeds: [ embed ], components: [ actionRow ] };
+		const users: MessageSelectOptionData[] = [];
+		users.push({
+			label: 'None',
+			value: 'undefined',
+			default: quote.id == '',
+		});
+		members.forEach(member =>
+		{
+			users.push({
+				label: member.displayName,
+				description: member.user.tag,
+				value: member.id,
+				default: member.id == defaultId,
+			});
+		});
+
+		const userSelection = new MessageSelectMenu({
+			customId: this.CustomId(`set_submitter___${quote._id}`),
+			options: users,
+			placeholder: 'Set Submitter Id',
+		});
+
+		const actionRows = [
+			new MessageActionRow({ components: buttons }),
+			new MessageActionRow({ components: [ userSelection ] }),
+		];
+
+		return { embeds: [ embed ], components: actionRows };
 	}
 
-	private async HandleButtonInteraction(interaction: ButtonInteraction)
+	private async HandleInteraction(interaction: ButtonInteraction | SelectMenuInteraction)
 	{
 		const customId = this.GetShortCustomId(interaction.customId);
 		Log(`Handling interaction '${customId}' from '${interaction.user.tag}'`);
@@ -267,8 +294,27 @@ class QuotesPlugin extends Plugin
 			quote.checked = true;
 			await quote.save();
 		}
+		else if (action == 'set_submitter' && interaction.isSelectMenu())
+		{
+			const selectedId = interaction.values[0];
+			if (selectedId == 'undefined')
+			{
+				quote.submitted_by_id = '';
+				quote.submitted_by = 'Unknown';
+			}
+			else
+			{
+				const member = await interaction.guild?.members.fetch(selectedId);
+				if (member == undefined) throw 'guild or member not found';
 
-		interaction.editReply(this.GetCheckQuotePayload(quote, curId, count));
+				quote.submitted_by_id = selectedId;
+				quote.submitted_by = member.user.username;
+			}
+
+			await quote.save();
+		}
+
+		interaction.editReply(await this.GetCheckQuotePayload(interaction.guild as Guild, quote, curId, count));
 	}
 
 	private async HandleQuoteMessage(message: Message<boolean>, client: Client<boolean>)
@@ -339,10 +385,10 @@ class QuotesPlugin extends Plugin
 		{
 			CatchAndLog(async () =>
 			{
-				if (interaction.isButton() && this.CheckCustomId(interaction.customId))
+				if ((interaction.isButton() || interaction.isSelectMenu()) && this.CheckCustomId(interaction.customId))
 				{
 					await interaction.deferUpdate();
-					await this.HandleButtonInteraction(interaction);
+					await this.HandleInteraction(interaction);
 				}
 			}, interaction.channel);
 		});
