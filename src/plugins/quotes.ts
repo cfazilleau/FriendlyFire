@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, time, userMention } from '@discordjs/builders';
-import { ButtonInteraction, CacheType, Client, CommandInteraction, Guild, Message, MessageActionRow, MessageButton, MessageEmbed, MessageOptions, MessageSelectMenu, MessageSelectOptionData, SelectMenuInteraction, TextBasedChannel } from 'discord.js';
+import { ButtonInteraction, CacheType, Client, CommandInteraction, Guild, Interaction, Message, MessageActionRow, MessageButton, MessageEmbed, MessageOptions, MessageSelectMenu, MessageSelectOptionData, SelectMenuInteraction, TextBasedChannel } from 'discord.js';
 import { Document, Schema, Types } from 'mongoose';
 import fetch from 'node-fetch';
 
@@ -327,15 +327,7 @@ class QuotesPlugin extends Plugin
 		if (message.channelId != channelId)
 		{ return; }
 
-		try
-		{
-			this.HandleQuoteMessageInternal(message, client);
-		}
-		catch (error)
-		{
-			Log(`Error: '${error}'`);
-			message.channel?.send(`Error: '${error}`);
-		}
+		await this.HandleQuoteMessageInternal(message, client);
 	}
 
 	private async HandleQuoteMessageInternal(message: Message<boolean>, client: Client<boolean>)
@@ -378,8 +370,21 @@ class QuotesPlugin extends Plugin
 
 	public Init(client: Client<boolean>): void
 	{
-		client.on('messageUpdate', (_, message) => this.HandleQuoteMessage(message as Message<boolean>, client));
-		client.on('messageCreate', (message: Message<boolean>) => this.HandleQuoteMessage(message, client));
+		client.on('messageUpdate', (_, message) =>
+		{
+			CatchAndLog(async () =>
+			{
+				await this.HandleQuoteMessage(message as Message<boolean>, client);
+			}, message.channel);
+		});
+
+		client.on('messageCreate', (message: Message<boolean>) =>
+		{
+			CatchAndLog(async () =>
+			{
+				await this.HandleQuoteMessage(message, client);
+			}, message.channel);
+		});
 
 		client.on('interactionCreate', interaction =>
 		{
