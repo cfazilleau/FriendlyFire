@@ -15,6 +15,7 @@ interface ConfigData
 	[key:string] : unknown;
 }
 
+const readonly = process.env.READ_ONLY_FS == 'true';
 const configPath = '.ffconfig';
 let config : ConfigFile;
 
@@ -48,6 +49,11 @@ function LoadConfig() : void
 
 function SaveConfig() : void
 {
+	if (readonly)
+	{
+		return;
+	}
+
 	try
 	{
 		fs.writeFileSync(configPath, JSON.stringify(config, null, '\t'), 'utf8');
@@ -109,6 +115,11 @@ export function SetProperty<Type>(plugin: Plugin, key: string, value: Type, guil
 export function CreateGuildConfig(guild : discord.Guild)
 {
 	SetPropertyInternal<string>('name', guild.name, guild);
+}
+
+if (readonly)
+{
+	Log('Read only mode on.');
 }
 
 LoadConfig();

@@ -7,8 +7,7 @@
 		"start": "node .",
 		"dev": "nodemon --watch src/ --ext \"*\" --exec \"npm run build && npm run start\"",
 		"build": "tsc",
-		"lint": "eslint --fix src/**",
-		"postinstall": "npm run build"
+		"lint": "eslint --fix src/**"
 	},
 	"author": "Clément 'cfazilleau' Fazilleau (https://cfaz.dev/)",
 	"license": "ISC",
