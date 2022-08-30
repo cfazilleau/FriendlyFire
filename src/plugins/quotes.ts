@@ -223,7 +223,6 @@ class QuotesPlugin extends Plugin
 		});
 
 		const members = await guild.members.fetch();
-		const defaultId = (await guild.members.fetch(quote.submitted_by_id))?.id;
 
 		const users: MessageSelectOptionData[] = [];
 		users.push({
@@ -237,7 +236,7 @@ class QuotesPlugin extends Plugin
 				label: member.displayName,
 				description: member.user.tag,
 				value: member.id,
-				default: member.id == defaultId,
+				default: member.id == quote.submitted_by_id,
 			});
 		});
 
