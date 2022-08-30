@@ -12,12 +12,20 @@ class CorePlugin extends Plugin
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	public Init(client: Client<boolean>): void
 	{
-		express().listen(process.env.EXPRESS_PORT);
-		Log('started express.');
+		Log(`Express running on port ${process.env.EXPRESS_PORT}`);
 	}
 }
 
 if (process.env.EXPRESS_PORT)
 {
+	const app = express();
+
+	app.get('/', (_req, res) =>
+	{
+		res.send('Hello World');
+	});
+
+	app.listen(process.env.EXPRESS_PORT);
+
 	new CorePlugin().Register();
 }
