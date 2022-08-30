@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, time, userMention } from '@discordjs/builders';
-import { ButtonInteraction, CacheType, Client, CommandInteraction, Guild, Interaction, Message, MessageActionRow, MessageButton, MessageEmbed, MessageOptions, MessageSelectMenu, MessageSelectOptionData, SelectMenuInteraction, TextBasedChannel } from 'discord.js';
+import { ButtonInteraction, CacheType, Client, CommandInteraction, Guild, Message, MessageActionRow, MessageButton, MessageEmbed, MessageOptions, MessageSelectMenu, MessageSelectOptionData, SelectMenuInteraction, TextBasedChannel, User } from 'discord.js';
 import { Document, Schema, Types } from 'mongoose';
 import fetch from 'node-fetch';
 
@@ -184,42 +184,43 @@ class QuotesPlugin extends Plugin
 						throw 'no unchecked quote found';
 					}
 
-					const payload = await this.GetCheckQuotePayload(interaction.guild as Guild, quote, id, count);
+					const payload = await this.GetCheckQuotePayload(interaction.guild as Guild, interaction.user, quote, id, count);
 					interaction.editReply(payload);
 				},
 		},
 	];
 
-	private async GetCheckQuotePayload(guild: Guild, quote: Document<unknown, unknown, IQuote> & IQuote & { _id: Types.ObjectId; }, id: number, count: number)
+	private showPayload: Map<string, boolean> = new Map();
+
+	private async GetCheckQuotePayload(guild: Guild, user: User, quote: Document<unknown, unknown, IQuote> & IQuote & { _id: Types.ObjectId; }, id: number, count: number)
 	{
+		const showPayload = this.showPayload.get(user.id) ?? false;
+
 		const embed = new MessageEmbed({
-			title: `quote ${id + 1}/${count}, the ${time(new Date(quote.timestamp))}`,
-			description: '```json\n' + JSON.stringify(quote as IQuote, null, 4) + '\n```',
+			title: `Quote #${id + 1}/${count} (${quote.checked ? 'checked' : 'unchecked' })`,
+			description: `Submitted by ${quote.submitted_by_id == '' ? quote.submitted_by : `${userMention(quote.submitted_by_id)} (${quote.submitted_by})`}`,
 			color: quote.checked ? '#07A0DE' : '#000000',
+			fields: [],
+			timestamp: quote.timestamp,
+			footer: {
+				text: quote.author,
+			},
 		});
 
-		const buttons = [
-			new MessageButton({
-				customId: this.CustomId(`get_prev___${quote._id}`),
-				label: 'Previous',
-				style: 'SECONDARY',
-			}),
-			new MessageButton({
-				customId: this.CustomId(`tag_safe___${quote._id}`),
-				label: 'Safe',
-				style: 'SUCCESS',
-			}),
-			new MessageButton({
-				customId: this.CustomId(`tag_unsafe___${quote._id}`),
-				label: 'Unsafe',
-				style: 'DANGER',
-			}),
-			new MessageButton({
-				customId: this.CustomId(`get_next___${quote._id}`),
-				label: 'Next',
-				style: 'SECONDARY',
-			}),
-		];
+		if (showPayload)
+		{
+			embed.fields.push({
+				name: '‍',
+				value: '```json\n' + JSON.stringify(quote as IQuote, null, 4) + '\n```',
+				inline: true,
+			});
+		}
+
+		embed.fields.push({
+			name: '‍',
+			value: quote.quote,
+			inline: true,
+		});
 
 		const members = await guild.members.fetch();
 		const defaultId = (await guild.members.fetch(quote.submitted_by_id))?.id;
@@ -240,15 +241,49 @@ class QuotesPlugin extends Plugin
 			});
 		});
 
-		const userSelection = new MessageSelectMenu({
-			customId: this.CustomId(`set_submitter___${quote._id}`),
-			options: users,
-			placeholder: 'Set Submitter Id',
-		});
-
 		const actionRows = [
-			new MessageActionRow({ components: buttons }),
-			new MessageActionRow({ components: [ userSelection ] }),
+			new MessageActionRow({ components:
+				[
+					new MessageButton({
+						customId: this.CustomId(`tag_safe___${quote._id}`),
+						label: 'Safe',
+						style: quote.safe == true ? 'PRIMARY' : 'SECONDARY',
+					}),
+					new MessageButton({
+						customId: this.CustomId(`tag_unsafe___${quote._id}`),
+						label: 'Unsafe',
+						style: quote.safe != true ? 'PRIMARY' : 'SECONDARY',
+					}),
+				],
+			}),
+			new MessageActionRow({ components:
+				[
+					new MessageSelectMenu({
+						customId: this.CustomId(`set_submitter___${quote._id}`),
+						options: users,
+						placeholder: 'Set Submitter ID',
+					}),
+				],
+			}),
+			new MessageActionRow({ components:
+				[
+					new MessageButton({
+						customId: this.CustomId(`get_prev___${quote._id}`),
+						label: 'Previous',
+						style: 'SECONDARY',
+					}),
+					new MessageButton({
+						customId: this.CustomId(`get_next___${quote._id}`),
+						label: 'Next',
+						style: 'SECONDARY',
+					}),
+					new MessageButton({
+						customId: this.CustomId(`toggle_payload___${quote._id}`),
+						label: showPayload ? 'Hide Payload' : 'Show Payload',
+						style: 'SECONDARY',
+					}),
+				],
+			}),
 		];
 
 		return { embeds: [ embed ], components: actionRows };
@@ -313,8 +348,13 @@ class QuotesPlugin extends Plugin
 
 			await quote.save();
 		}
+		else if (action == 'toggle_payload')
+		{
+			const showPayload = this.showPayload.get(interaction.user.id) ?? false;
+			this.showPayload.set(interaction.user.id, !showPayload);
+		}
 
-		interaction.editReply(await this.GetCheckQuotePayload(interaction.guild as Guild, quote, curId, count));
+		interaction.editReply(await this.GetCheckQuotePayload(interaction.guild as Guild, interaction.user, quote, curId, count));
 	}
 
 	private async HandleQuoteMessage(message: Message<boolean>, client: Client<boolean>)
