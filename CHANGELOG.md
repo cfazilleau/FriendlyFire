@@ -17,9 +17,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Updated package.json
 - Made database connection async.
+- Removed all Heroku-related stuff
 
 ### Fixed
 
+- Fixed some issues with quotes
 - Fixed inconsistent log messages.
 
 ## [2.1.0] - 2022-07-31

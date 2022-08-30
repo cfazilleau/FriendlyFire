@@ -39,25 +39,25 @@ class CorePlugin extends Plugin
 					// Check for valid context
 					if (channel == undefined) { throw 'undefined channel'; }
 
-					let deletedMessages: Collection<string, Message<boolean>> = new Collection();
+					let deletedMessagesCount: number;
 					if (user != null)
 					{
 						let i = 0;
 						const messages = (await channel.messages.fetch()).filter(msg => msg.author.id == user.id && i++ < number);
-						deletedMessages = await channel.bulkDelete(messages, true);
+						deletedMessagesCount = (await channel.bulkDelete(messages, true)).size;
 					}
 					else
 					{
-						deletedMessages = await channel.bulkDelete(number, true);
+						deletedMessagesCount = await (await channel.bulkDelete(number, true)).size;
 					}
 
 					switch (interaction.locale)
 					{
 					case 'fr':
-						await interaction.reply({ content: `${deletedMessages.size} messages supprimés.`, ephemeral: true });
+						await interaction.reply({ content: `${deletedMessagesCount} messages supprimés.`, ephemeral: true });
 						break;
 					default:
-						await interaction.reply({ content: `Deleted ${deletedMessages.size} messages.`, ephemeral: true });
+						await interaction.reply({ content: `Deleted ${deletedMessagesCount} messages.`, ephemeral: true });
 						break;
 					}
 				},
