@@ -185,7 +185,7 @@ class QuotesPlugin extends Plugin
 					}
 
 					const payload = await this.GetCheckQuotePayload(interaction.guild as Guild, interaction.user, quote, id, count);
-					interaction.editReply(payload);
+					await interaction.editReply(payload);
 				},
 		},
 	];
@@ -348,7 +348,7 @@ class QuotesPlugin extends Plugin
 			this.showPayload.set(interaction.user.id, !showPayload);
 		}
 
-		interaction.editReply(await this.GetCheckQuotePayload(interaction.guild as Guild, interaction.user, quote, curId, count));
+		await interaction.editReply(await this.GetCheckQuotePayload(interaction.guild as Guild, interaction.user, quote, curId, count));
 	}
 
 	private async HandleQuoteMessage(message: Message<boolean>, client: Client<boolean>)
