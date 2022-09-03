@@ -240,30 +240,25 @@ class QuotesPlugin extends Plugin
 			});
 		});
 
-		const actionRows = [
+		const actionRows = [];
+
+		actionRows.push(
 			new MessageActionRow({ components:
-				[
-					new MessageButton({
-						customId: this.CustomId(`tag_safe___${quote._id}`),
-						label: 'Safe',
-						style: quote.safe == true ? 'PRIMARY' : 'SECONDARY',
-					}),
-					new MessageButton({
-						customId: this.CustomId(`tag_unsafe___${quote._id}`),
-						label: 'Unsafe',
-						style: quote.safe != true ? 'PRIMARY' : 'SECONDARY',
-					}),
-				],
-			}),
-			new MessageActionRow({ components:
-				[
-					new MessageSelectMenu({
-						customId: this.CustomId(`set_submitter___${quote._id}`),
-						options: users,
-						placeholder: 'Set Submitter ID',
-					}),
-				],
-			}),
+			[
+				new MessageButton({
+					customId: this.CustomId(`tag_safe___${quote._id}`),
+					label: 'Safe',
+					style: quote.safe == true ? 'PRIMARY' : 'SECONDARY',
+				}),
+				new MessageButton({
+					customId: this.CustomId(`tag_unsafe___${quote._id}`),
+					label: 'Unsafe',
+					style: quote.safe != true ? 'PRIMARY' : 'SECONDARY',
+				}),
+			] }),
+		);
+
+		actionRows.push(
 			new MessageActionRow({ components:
 				[
 					new MessageButton({
@@ -283,7 +278,7 @@ class QuotesPlugin extends Plugin
 					}),
 				],
 			}),
-		];
+		);
 
 		return { embeds: [ embed ], components: actionRows };
 	}
