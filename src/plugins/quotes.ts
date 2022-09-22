@@ -66,20 +66,42 @@ class QuotesPlugin extends Plugin
 					let id = interaction.options.getInteger('id');
 
 					// get quotes ordered by timestamp
-					const quotes = (await Quote.find({ safe: true }).sort({ timestamp: 'asc' }));
-					const count = quotes.length;
+					const allquotes = (await Quote.find().sort({ timestamp: 'asc' }));
+					const allcount = allquotes.length;
+
+					let quote : IQuote | undefined = undefined;
 
 					if (id != undefined)
 					{
-						if (id > count)
+						// Substract 1 to get a id starting at 0
+						id -= 1;
+
+						if (id >= allcount)
 						{
 							switch (interaction.locale)
 							{
 							case 'fr':
-								interaction.editReply({ content: `La valeur maximale de 'id' est ${count}.` });
+								await interaction.editReply({ content: `La valeur maximale de 'id' est ${allcount}.` });
 								break;
 							default:
-								interaction.editReply({ content: `The maximum value of 'id' is ${count}.` });
+								await interaction.editReply({ content: `The maximum value of 'id' is ${allcount}.` });
+								break;
+							}
+
+							return;
+						}
+
+						quote = allquotes.at(id) as IQuote;
+
+						if (quote.safe == false)
+						{
+							switch (interaction.locale)
+							{
+							case 'fr':
+								await interaction.editReply({ content: `La quote #${id + 1} est unsafe, je préfère éviter de la poster...` });
+								break;
+							default:
+								await interaction.editReply({ content: `The quote #${id + 1} is unsafe, I'd rather not share it...` });
 								break;
 							}
 
@@ -88,19 +110,15 @@ class QuotesPlugin extends Plugin
 					}
 					else
 					{
-						/*
 						// Get a random quote from the database
-						const doc = (await Quote.aggregate([{ $sample: { size: 1 } }])).at(0);
+						const selected = (await Quote.aggregate([{ $match: { safe: true } }, { $sample: { size: 1 } }])).at(0);
+						if (selected == undefined) throw 'undefined quote';
+
+						quote = selected as IQuote;
 
 						// Find the index of that quote
-						id = quotes.findIndex(obj => obj._id.toString() == doc._id.toString()) + 1;
-						*/
-
-						// Get a random quote from the database
-						id = Math.floor((Math.random() * quotes.length));
+						id = allquotes.findIndex(q => selected._id.toString() == q._id.toString());
 					}
-
-					const quote = quotes.at(id - 1) as IQuote;
 
 					// Fetch image from the API and return it
 					const quoteURI = encodeURIComponent(quote.quote.length > 0 ? quote.quote : ' ');
@@ -116,16 +134,20 @@ class QuotesPlugin extends Plugin
 
 					// Create payload
 					let payload: MessageOptions = {};
+
+					// Add 1 to get a id starting at 1
+					id += 1;
+
 					switch (interaction.locale)
 					{
 					case 'fr':
 						payload = {
-							content: `> Citation #${id}/${count}, Envoyée par ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${time(new Date(quote.timestamp), 'R')}`,
+							content: `> Citation #${id}/${allcount}, Envoyée par ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${time(new Date(quote.timestamp), 'R')}`,
 							files: [{ attachment: buffer, name: `quote_${id}.png` }] };
 						break;
 					default:
 						payload = {
-							content: `> Quote #${id}/${count}, Submitted by ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${time(new Date(quote.timestamp), 'R')}`,
+							content: `> Quote #${id}/${allcount}, Submitted by ${quote.submitted_by_id == '' ? quote.submitted_by : userMention(quote.submitted_by_id)} ${time(new Date(quote.timestamp), 'R')}`,
 							files: [{ attachment: buffer, name: `quote_${id}.png` }] };
 						break;
 					}
@@ -164,7 +186,12 @@ class QuotesPlugin extends Plugin
 				new SlashCommandBuilder()
 					.setName('check-quotes')
 					.setDescription('mark a random unchecked quote')
-					.setDefaultPermission(false) as SlashCommandBuilder,
+					.setDefaultPermission(false)
+					.addIntegerOption(option => option
+						.setName('id')
+						.setDescription('Id of the required quote')
+						.setDescriptionLocalization('fr', 'Id de la citation recherchée')
+						.setMinValue(1)) as SlashCommandBuilder,
 			callback:
 				async (interaction: CommandInteraction) =>
 				{
@@ -175,8 +202,19 @@ class QuotesPlugin extends Plugin
 					await model.updateMany({ checked: undefined }, { checked: false });
 
 					const quotes = (await model.find({}).sort({ timestamp: 'asc' }));
+
+					let id = interaction.options.getInteger('id');
+
+					if (id == undefined)
+					{
+						id = quotes.findIndex(doc => doc.checked == false);
+					}
+					else
+					{
+						id -= 1;
+					}
+
 					const count = quotes.length;
-					const id = quotes.findIndex(doc => doc.checked == false);
 					const quote = quotes.at(id);
 
 					if (quote == undefined)
