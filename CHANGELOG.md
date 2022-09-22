@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - id parameter for command /check-quotes
+- /crawl-missing-quotes command to crawl the entire channel and find missing quotes
 
 ### Changed
 

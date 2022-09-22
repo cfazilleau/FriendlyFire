@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, time, userMention } from '@discordjs/builders';
-import { ButtonInteraction, CacheType, Client, CommandInteraction, Guild, Message, MessageActionRow, MessageButton, MessageEmbed, MessageOptions, MessageSelectMenu, MessageSelectOptionData, SelectMenuInteraction, TextBasedChannel, User } from 'discord.js';
+import { ButtonInteraction, CacheType, Client, CommandInteraction, Guild, Message, MessageActionRow, MessageButton, MessageEmbed, MessageOptions, MessageSelectMenu, MessageSelectOptionData, SelectMenuInteraction, TextBasedChannel, TextChannel, User } from 'discord.js';
 import { Document, Schema, Types } from 'mongoose';
 import fetch from 'node-fetch';
 
@@ -226,6 +226,75 @@ class QuotesPlugin extends Plugin
 					await interaction.editReply(payload);
 				},
 		},
+		{
+			builder:
+				new SlashCommandBuilder()
+					.setName('crawl-missing-quotes')
+					.setDescription('crawl the whole hierarchy to find the missing quotes')
+					.setDefaultPermission(false) as SlashCommandBuilder,
+			callback:
+				async (interaction: CommandInteraction) =>
+				{
+					const reply = await interaction.reply({ content: 'Starting...', fetchReply: true });
+					const baseBatchSize = 50;
+					const channel = interaction.channel as TextChannel;
+
+					let batchSize	= baseBatchSize;
+					let lastMsg		= reply.id;
+					let saved		= 0;
+					let amount		= 0;
+
+					await interaction.editReply(`Starting...\n\n> ${amount} messages checked\n> ${saved} new quotes saved`);
+
+					const channelId = this.GetProperty(quoteChannelKey, '', interaction.guild as Guild);
+
+					if (interaction.channelId != channelId)
+					{
+						throw 'this command must be run from the #quote channel';
+					}
+
+					while (batchSize == baseBatchSize)
+					{
+						const batch = await channel.messages.fetch({ limit: baseBatchSize, before: lastMsg });
+						if (batch == undefined)
+						{
+							break;
+						}
+
+						batchSize = batch.size;
+						Log(`Fetched ${batchSize} messages.`);
+
+						amount += batchSize;
+
+						// Iterate on messages
+						for await (const element of batch.values())
+						{
+							if (element.author.id == interaction.client.user?.id)
+							{
+								continue;
+							}
+
+							// Check for existing quote
+							const quote = await this.HandleQuoteMessageInternal(element);
+							if (quote != undefined)
+							{
+								saved++;
+							}
+						}
+
+						await interaction.editReply(`Saving quotes...\n\n> ${amount} messages checked\n> ${saved} new quotes saved`);
+
+						// Continue fetching messages before the date of the first element of the previous batch
+						if (batchSize > 0)
+						{
+							lastMsg = (batch.last() as Message).id;
+						}
+					}
+
+					Log(`Done. ${amount} messages checked and ${saved} new quotes saved`);
+					await interaction.editReply(`Done.\n\n> ${amount} messages checked\n> ${saved} new quotes saved`);
+				},
+		},
 	];
 
 	private showPayload: Map<string, boolean> = new Map();
@@ -399,45 +468,61 @@ class QuotesPlugin extends Plugin
 		if (message.channelId != channelId)
 		{ return; }
 
-		await this.HandleQuoteMessageInternal(message, client);
+		const quote = await this.HandleQuoteMessageInternal(message);
+
+		if (quote == undefined)
+		{ return; }
+
+		// delete previous bot message
+		const messages = await message.channel.messages.fetch();
+		const old = messages.find(
+			msg => msg.deletable &&
+			msg.author.id == client.user?.id &&
+			msg.embeds?.at(0)?.hexColor == confirmationEmbedColor);
+		if (old) old.delete();
+
+		// create and send embed
+		const embed = new MessageEmbed({
+			footer: { text: `Sauvegardé par ${quote.submitted_by}. Quote #${quote?.id}`, iconURL: 'http://i.imgur.com/EeC5BAb.png' },
+			url: message.url,
+			title: quote.author,
+			color: confirmationEmbedColor,
+			description: quote.quote,
+		});
+
+		await message.channel.send({ embeds: [ embed ] });
 	}
 
-	private async HandleQuoteMessageInternal(message: Message<boolean>, client: Client<boolean>)
+	private async HandleQuoteMessageInternal(message: Message<boolean>) : Promise<IQuote & { id?: number } | undefined>
 	{
 		const matches = message.content.match(quoteRegex);
-
-		if (matches?.length == 3)
+		if (matches?.length != 3)
 		{
-			const Quote = await DatabaseModel('quotes', QuoteSchema, message.guild);
-
-			const quote = new Quote({
-				quote: matches[1],
-				author: matches[2],
-				submitted_by: message.author.username,
-				submitted_by_id: message.author.id,
-				timestamp: message.createdTimestamp,
-				safe: true,
-			});
-			await quote.save();
-			Log('New quote saved');
-
-			const messages = await message.channel.messages.fetch();
-
-			const old = messages.find(
-				msg => msg.deletable &&
-				msg.author.id == client.user?.id &&
-				msg.embeds?.at(0)?.hexColor == confirmationEmbedColor);
-			if (old) old.delete();
-
-			const embed = new MessageEmbed({
-				footer: { text: `Sauvegardé par ${quote.submitted_by}. Quote #${await Quote.countDocuments()}`, iconURL: 'http://i.imgur.com/EeC5BAb.png' },
-				title: quote.author,
-				color: confirmationEmbedColor,
-				description: quote.quote,
-			});
-
-			await message.channel.send({ embeds: [ embed ] });
+			// Regex failed
+			return undefined;
 		}
+
+		const Quote = await DatabaseModel('quotes', QuoteSchema, message.guild);
+
+		// new quote entry
+		const quote = new Quote({
+			quote: matches[1],
+			author: matches[2],
+			submitted_by: message.author.username,
+			submitted_by_id: message.author.id,
+			timestamp: message.createdTimestamp,
+			safe: true,
+		});
+		await quote.save();
+
+		const quotes = (await Quote.find({}).sort({ timestamp: 'asc' }));
+		const id = quotes.findIndex(q => quote._id.toString() == q._id.toString());
+
+		Log(`Quote #${id}/${quotes.length} saved`);
+
+		const ret: IQuote & { id?: number } = quote;
+		ret.id = id;
+		return ret;
 	}
 
 	public Init(client: Client<boolean>): void
