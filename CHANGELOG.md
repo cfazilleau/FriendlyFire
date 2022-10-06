@@ -10,9 +10,31 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- id parameter for command /check-quotes
+- /crawl-missing-quotes command to crawl the entire channel and find missing quotes
+
 ### Changed
 
+- better random for quote selection
+
 ### Fixed
+
+- Removed check-quotes select menu as the maximum size is 25
+
+## [2.2.0]
+
+### Added
+
+- id parameter for command /check-quotes
+- /crawl-missing-quotes command to crawl the entire channel and find missing quotes
+
+### Changed
+
+- better random for quote selection
+
+### Fixed
+
+- Removed check-quotes select menu as the maximum size is 25
 
 ## [2.1.1]
 

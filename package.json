@@ -1,6 +1,6 @@
 {
 	"name": "friendlyfire",
-	"version": "2.1.1",
+	"version": "2.2.0",
 	"description": "A Typescript modular discord bot",
 	"main": "dist/main.js",
 	"scripts": {
