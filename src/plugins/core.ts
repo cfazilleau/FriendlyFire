@@ -1,4 +1,4 @@
-import { BaseGuildTextChannel, Client, Collection, CommandInteraction, ContextMenuInteraction, Message, TextChannel, User } from 'discord.js';
+import { BaseGuildTextChannel, Client, CommandInteraction, ContextMenuInteraction, Message, TextChannel, User } from 'discord.js';
 import { ContextMenuCommandBuilder, SlashCommandBuilder } from '@discordjs/builders';
 
 import { Plugin, PluginCommand } from '../plugin';
