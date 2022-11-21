@@ -1,30 +1,8 @@
-import { Client, CommandInteraction } from 'discord.js';
+import { Client, CommandInteraction, MessageEmbed } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
 
 import { Log, Plugin, PluginCommand } from '../plugin';
-import fetch from 'node-fetch';
-import { request } from 'https';
-
-interface Drink {
-        idDrink: string;
-        strDrink: string;
-        strIngredient1?: string;
-        strIngredient2?: string;
-        strIngredient3?: string;
-        strIngredient4?: string;
-        strIngredient5?: string;
-        strIngredient6?: string;
-        strIngredient7?: string;
-        strIngredient8?: string;
-        strIngredient9?: string;
-        strIngredient10?: string;
-        strIngredient11?: string;
-        strIngredient12?: string;
-        strIngredient13?: string;
-        strIngredient14?: string;
-        strIngredient15?: string;
-        strImageSource: string;
-    }
+import { Drink, FetchById, FetchByIngredient, FetchByName } from './cocktail/cocktaildbWrapper';
 
 class CocktailPlugin extends Plugin
 {
@@ -35,28 +13,93 @@ class CocktailPlugin extends Plugin
 			builder:
 				new SlashCommandBuilder()
 					.setName('cocktail')
-					.setDescription('Search a cocktail in the database.') as SlashCommandBuilder,
+					.setDescription('Search a cocktail in the database.')
+					.setDefaultPermission(false)
+					.addStringOption(option => option
+						.setName('name')
+						.setDescription('name of the cocktail')
+						.setRequired(true)) as SlashCommandBuilder,
 			callback:
 				async (interaction: CommandInteraction) =>
 				{
-					await interaction.deferReply({ ephemeral: true });
+					await interaction.deferReply({ ephemeral: false });
+					const name = interaction.options.getString('name');
 
-					const response = await fetch('https://www.thecocktaildb.com/api/json/v1/1/search.php?s=margarita');
-					
-					if (response == undefined)
+					if (name == undefined)
 					{
-						throw 'no response';
+						throw 'no name provided';
 					}
-					
-					Log(await response.json);
-					const drinkspacket: { drinks: Drink[] } = JSON.parse(await response.json());
-					
-					if (drinkspacket.drinks == undefined)
+
+					let drink: Drink;
+
+					// try to fetch a cocktail by name
+					let cocktails = await FetchByName(name);
+					if (cocktails.length > 0)
 					{
-						throw 'no result';
+						// pick a random drink from the results
+						drink = cocktails[Math.floor(Math.random() * cocktails.length)];
 					}
-					
-					await interaction.editReply({ content: JSON.stringify(drinkspacket.drinks[0]) });
+					// Not found ? try by ingredient
+					else
+					{
+						cocktails = await FetchByIngredient(name);
+
+						// Still nothing...
+						if (cocktails.length == 0)
+						{
+							await interaction.editReply({ content: `Hmm... je ne suis pas sur de connaitre un cocktail qui s'appelle '${name}'` });
+							return;
+						}
+
+						// Cocktail found, fetch full details by id
+						const dr = cocktails[Math.floor(Math.random() * cocktails.length)];
+						const fetched = await FetchById(dr.id);
+
+						if (fetched == undefined)
+						{
+							throw `error fetching cocktail with id ${dr.id}`;
+						}
+
+						drink = fetched;
+					}
+
+					// Send embed
+					const embed = new MessageEmbed()
+						.setTitle(drink.name)
+						.setColor('#5c3626')
+						.setURL(`https://www.thecocktaildb.com/drink/${drink.id}`);
+
+					// Add ingredients
+					if (drink.ingredients.length > 0)
+					{
+						let ingredients = '';
+						drink.ingredients.forEach(ing => {
+							ingredients += `${ing.measure} ${ing.ingredient}\n`;
+						});
+
+						embed.addFields([{
+							name: '**Ingredients:**',
+							value: ingredients,
+						}]);
+					}
+
+					// Add thumbnail
+					if (drink.thumbnailURL != undefined)
+					{
+						embed.setImage(drink.thumbnailURL);
+					}
+
+					// Add instructions
+					const instruction = drink.instructionLocalized.find(val => val.locale == 'FR')?.instructions ?? drink.instruction;
+					if (instruction != undefined)
+					{
+						embed.addFields([{
+							name: '**Instructions:**',
+							value: instruction,
+						}]);
+					}
+
+					await interaction.editReply({ content: 'Voila pour toi!', embeds: [ embed ] });
 				},
 		},
 	];
