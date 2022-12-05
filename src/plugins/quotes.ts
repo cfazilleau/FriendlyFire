@@ -8,6 +8,7 @@ import { Log, Plugin, PluginCommand, DatabaseModel, CatchAndLog } from '../plugi
 const quoteChannelKey = 'captureChannelId';
 const quoteReplyChannelKey = 'replyChannelId';
 const quoteRegex = /^"(.+?)"(?:\s*-*(.*)$)/ms;
+const apiURL = process.env.API_URL;
 
 const confirmationEmbedColor = '#2ea42a';
 
@@ -150,7 +151,7 @@ class QuotesPlugin extends Plugin
 		const quoteURI = encodeURIComponent(quote.quote.length > 0 ? quote.quote : ' ');
 		const authorURI = encodeURIComponent(quote.author.length > 0 ? quote.author : ' ');
 
-		const requestURL = `http://api.cfaz.dev/quote/${quoteURI}/${authorURI}/`;
+		const requestURL = `${apiURL}/${quoteURI}/${authorURI}/`;
 
 		const image = await fetch(requestURL);
 		if (!image.ok) throw `CodaAPI request failed with URL ${requestURL}:\n${image.status} ${image.statusText}`;
