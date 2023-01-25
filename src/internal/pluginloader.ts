@@ -6,6 +6,7 @@ import * as fs from 'node:fs';
 import { Plugin, CommandCallback, ContextMenuCallback } from '../plugin';
 import { restAPI } from '../main';
 import { Log } from './utils';
+import { RESTPostAPIContextMenuApplicationCommandsJSONBody } from 'discord-api-types/v10';
 
 // Referenced plugins
 const plugins : Map<string, Plugin> = new Map;
@@ -106,22 +107,22 @@ export function LoadPlugins(client : discord.Client<boolean>)
 		try
 		{
 			plugin.Init(client);
-			Log(`Loaded plugin ${plugin.name}`);
+			Log(`Plugin initialized: ${plugin.name}`);
+
+			// Import commands from plugins
+			plugin.commands.forEach(command =>
+			{
+				const json = command.builder.toJSON();
+				commands.push(json);
+				Log(`Command loaded: [${plugin.name}] ${json.type == null ? '/' : '-'}${json.name}`);
+
+				callbacks.set(command.builder.name, command.callback);
+			});
 		}
 		catch (error)
 		{
 			Log(`Error initializing plugin ${plugin.name}: ${error}`);
 		}
-	});
-
-	// Import commands from plugins
-	plugins.forEach(plugin =>
-	{
-		plugin.commands.forEach(command =>
-		{
-			commands.push(command.builder.toJSON());
-			callbacks.set(command.builder.name, command.callback);
-		});
 	});
 
 	// Set flags so plugins registered after LoadPlugins() will throw an error.
