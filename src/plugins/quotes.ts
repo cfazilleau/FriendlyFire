@@ -8,6 +8,7 @@ import { Log, Plugin, PluginCommand, DatabaseModel, CatchAndLog } from '../plugi
 const quoteChannelKey = 'captureChannelId';
 const quoteReplyChannelKey = 'replyChannelId';
 const quoteRegex = /^"(.+?)"(?:\s*-*(.*)$)/ms;
+const apiURL = process.env.API_URL;
 
 const confirmationEmbedColor = '#2ea42a';
 
@@ -70,6 +71,22 @@ class QuotesPlugin extends Plugin
 				.setDefaultPermission(false) as SlashCommandBuilder,
 			callback:
 				async (interaction: CommandInteraction<CacheType>) => this.HandleCrawlMissingQuotesCommand(interaction),
+		},
+		{
+			builder: new SlashCommandBuilder()
+				.setName('quote-custom')
+				.setDescription('create a custom quote image')
+				.addStringOption(option => option
+					.setName('body')
+					.setDescription('Quote text')
+					.setRequired(true))
+				.addStringOption(option => option
+					.setName('author')
+					.setDescription('Author name')
+					.setRequired(true))
+				.setDefaultPermission(false) as SlashCommandBuilder,
+			callback:
+				async (interaction: CommandInteraction<CacheType>) => this.HandleCustomQuoteCommand(interaction),
 		},
 	];
 
@@ -150,7 +167,7 @@ class QuotesPlugin extends Plugin
 		const quoteURI = encodeURIComponent(quote.quote.length > 0 ? quote.quote : ' ');
 		const authorURI = encodeURIComponent(quote.author.length > 0 ? quote.author : ' ');
 
-		const requestURL = `http://api.cfaz.dev/quote/${quoteURI}/${authorURI}/`;
+		const requestURL = `${apiURL}/${quoteURI}/${authorURI}/`;
 
 		const image = await fetch(requestURL);
 		if (!image.ok) throw `CodaAPI request failed with URL ${requestURL}:\n${image.status} ${image.statusText}`;
@@ -330,6 +347,45 @@ class QuotesPlugin extends Plugin
 
 		Log(`Done. ${amount} messages checked and ${saved} new quotes saved`);
 		await interaction.editReply(`Done.\n\n> ${amount} messages checked\n> ${saved} new quotes saved`);
+	}
+
+	private async HandleCustomQuoteCommand(interaction: CommandInteraction)
+	{
+		await interaction.deferReply({ ephemeral: true });
+
+		const authorText = interaction.options.getString('author') ?? ' ';
+		const bodyText = interaction.options.getString('body') ?? ' ';
+
+		// Fetch image from the API and return it
+		const quoteURI = encodeURIComponent(bodyText);
+		const authorURI = encodeURIComponent(authorText);
+
+		const requestURL = `${apiURL}/${quoteURI}/${authorURI}/`;
+
+		const image = await fetch(requestURL);
+		if (!image.ok) throw `CodaAPI request failed with URL ${requestURL}:\n${image.status} ${image.statusText}`;
+
+		// Create and send image buffer
+		const buffer = Buffer.from(await image.arrayBuffer());
+
+		// Create payload
+		let payload: MessageOptions = {};
+
+		switch (interaction.locale)
+		{
+		case 'fr':
+			payload = {
+				content: '> Citation Custom',
+				files: [{ attachment: buffer, name: 'custom_quote.png' }] };
+			break;
+		default:
+			payload = {
+				content: '> Custom Quote',
+				files: [{ attachment: buffer, name: 'custom_quote.png' }] };
+			break;
+		}
+
+		await interaction.editReply(payload);
 	}
 
 	private IsMessageQuote(message: Message<boolean>, quote: IQuote): boolean

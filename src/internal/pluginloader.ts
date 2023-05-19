@@ -6,6 +6,7 @@ import * as fs from 'node:fs';
 import { Plugin, CommandCallback, ContextMenuCallback, PluginCommand } from '../plugin';
 import { restAPI } from '../main';
 import { Log } from './utils';
+import { RESTPostAPIContextMenuApplicationCommandsJSONBody } from 'discord-api-types/v10';
 
 // Referenced plugins
 const plugins : Map<string, Plugin> = new Map;
@@ -112,7 +113,7 @@ export function LoadPlugins(client : discord.Client<boolean>)
 		try
 		{
 			plugin.Init(client);
-			Log(`Loaded plugin ${plugin.name}`);
+			Log(`Plugin initialized: ${plugin.name}`);
 		}
 		catch (error)
 		{
