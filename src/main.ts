@@ -10,6 +10,8 @@ import { CreateGuildConfig } from './internal/config';
 import { Log } from './internal/utils';
 import { ConnectToDatabase } from './internal/mongodb';
 
+import './internal/web';
+
 // Create a new client instance
 const client = new discord.Client({ intents: [discord.Intents.FLAGS.GUILDS, discord.Intents.FLAGS.GUILD_MEMBERS, discord.Intents.FLAGS.GUILD_MESSAGES, discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS ] });
 
@@ -32,6 +34,18 @@ client.once('ready', async () =>
 		RegisterCommands(guild)
 			.catch(e => Log(e));
 	});
+});
+
+client.on('guildCreate', async guild =>
+{
+	// Register commands for all plugins on this guild
+	Log(`Joined guild ${guild.id}. (${guild.name})`);
+
+	// Create Config
+	CreateGuildConfig(guild);
+
+	RegisterCommands(guild)
+		.catch(e => Log(e));
 });
 
 // When the client receives an interaction, execute command

@@ -94,6 +94,10 @@
 			"Minecraft.ip": "141.94.181.60",
 			"Minecraft.port": 30170,
 			"Minecraft.passwordKey": "MC_PASSWORD"
+		},
+		"1109176759510904904": {
+			"Quotes.captureChannelId": "",
+			"name": "Project Mineworld"
 		}
 	}
 }

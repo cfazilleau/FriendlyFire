@@ -3,14 +3,14 @@ import * as types from 'discord-api-types/v10';
 import * as discord from 'discord.js';
 import * as fs from 'node:fs';
 
-import { Plugin, CommandCallback, ContextMenuCallback } from '../plugin';
+import { Plugin, CommandCallback, ContextMenuCallback, PluginCommand } from '../plugin';
 import { restAPI } from '../main';
 import { Log } from './utils';
 
 // Referenced plugins
 const plugins : Map<string, Plugin> = new Map;
 // CommandBuilders
-export const commands : types.RESTPostAPIApplicationCommandsJSONBody[] = [];
+const commands : types.RESTPostAPIApplicationCommandsJSONBody[] = [];
 // Callbacks by command names
 const callbacks : Map<string, CommandCallback | ContextMenuCallback> = new Map();
 // Are plugins loaded
@@ -79,6 +79,12 @@ export async function RegisterCommands(guild : discord.Guild) : Promise<void>
 	Log(`Registered ${commands.length} commands. (${guild.name})`);
 }
 
+function LoadCommand(command : PluginCommand)
+{
+	commands.push(command.builder.toJSON());
+	callbacks.set(command.builder.name, command.callback);
+}
+
 export function LoadPlugins(client : discord.Client<boolean>)
 {
 	// TODO: find a better way and clean that
@@ -117,11 +123,7 @@ export function LoadPlugins(client : discord.Client<boolean>)
 	// Import commands from plugins
 	plugins.forEach(plugin =>
 	{
-		plugin.commands.forEach(command =>
-		{
-			commands.push(command.builder.toJSON());
-			callbacks.set(command.builder.name, command.callback);
-		});
+		plugin.commands.forEach(LoadCommand);
 	});
 
 	// Set flags so plugins registered after LoadPlugins() will throw an error.
