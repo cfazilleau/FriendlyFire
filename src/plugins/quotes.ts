@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, time, userMention } from '@discordjs/builders';
+import { channelMention, SlashCommandBuilder, time, userMention } from '@discordjs/builders';
 import { ButtonInteraction, CacheType, Client, CommandInteraction, Guild, Message, MessageActionRow, MessageButton, MessageEmbed, MessageOptions, MessageSelectOptionData, SelectMenuInteraction, TextBasedChannel, TextChannel, User } from 'discord.js';
 import { Document, Schema, Types } from 'mongoose';
 import fetch from 'node-fetch';
@@ -208,15 +208,25 @@ class QuotesPlugin extends Plugin
 			payload.content = userMention(interaction.user.id) + '\n' + payload.content;
 			const msg = await channel.send(payload);
 
+			const button = new MessageButton({ style: 'LINK', url: msg.url });
+			let text = '';
+
 			switch (interaction.locale)
 			{
 			case 'fr':
-				await interaction.editReply(`Quote envoyée avec succès: ${msg.url}`);
+				text = `Quote envoyée avec succès dans ${channelMention(msg.channelId)}.`;
+				button.label = 'Acceder à la quote';
 				break;
 			default:
-				await interaction.editReply(`Quote successfully sent here: ${msg.url}`);
+				text = `Quote successfully sent in ${channelMention(msg.channelId)}.`;
+				button.label = 'Access quote';
 				break;
 			}
+
+			await interaction.editReply({
+				content: text,
+				components: [ new MessageActionRow().setComponents([ button ]) ],
+			});
 		}
 		else
 		{

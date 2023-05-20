@@ -25,7 +25,7 @@ function GetFileName(err : Error) : string
 function GetLabel(fileName: string) : string
 {
 	// Regex to get last part of path and trim file extension
-	const matches : RegExpMatchArray = fileName.match(/(.+[\\/])*(.+).[jt]s/i) ?? [];
+	const matches : RegExpMatchArray = fileName.match(/(.+[\\/])*(.+).[jt]s/i) ?? {} as RegExpMatchArray;
 	const label : string = matches.at(-1) ?? 'global';
 	const colorDelegate = GetColorDelegate(fileName);
 

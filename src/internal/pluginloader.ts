@@ -3,17 +3,19 @@ import * as types from 'discord-api-types/v10';
 import * as discord from 'discord.js';
 import * as fs from 'node:fs';
 
-import { Plugin, CommandCallback, ContextMenuCallback } from '../plugin';
+import { Plugin, CommandCallback, ContextMenuCallback, PluginCommand } from '../plugin';
 import { restAPI } from '../main';
 import { Log } from './utils';
 import { RESTPostAPIContextMenuApplicationCommandsJSONBody } from 'discord-api-types/v10';
+import { GetProperty } from './config';
+import { coreplugin as corePlugin, coreplugin } from './core';
 
 // Referenced plugins
 const plugins : Map<string, Plugin> = new Map;
-// CommandBuilders
-export const commands : types.RESTPostAPIApplicationCommandsJSONBody[] = [];
 // Callbacks by command names
 const callbacks : Map<string, CommandCallback | ContextMenuCallback> = new Map();
+// Commands by plugins
+const commands : {[key: string]: types.RESTPostAPIApplicationCommandsJSONBody[]} = {};
 // Are plugins loaded
 let pluginsLoaded = false;
 
@@ -63,6 +65,19 @@ export async function HandleCommand(command : discord.CommandInteraction<discord
 	}
 }
 
+function GetCommandsPayload(guild: discord.Guild): types.RESTPostAPIApplicationCommandsJSONBody[]
+{
+	// Get plugins enabled per guild
+	const pluginNames: string[] = GetProperty(corePlugin, 'enabledPlugins', Array.from(plugins.keys()), guild)
+
+	let payload: types.RESTPostAPIApplicationCommandsJSONBody[] = [];
+	pluginNames.forEach(plugin => {
+		payload = payload.concat(commands[plugin] ?? []);
+	})
+
+	return payload;
+}
+
 export async function RegisterCommands(guild : discord.Guild) : Promise<void>
 {
 	// Check for valid clientId
@@ -73,20 +88,37 @@ export async function RegisterCommands(guild : discord.Guild) : Promise<void>
 
 	Log(`Registering commands... (${guild.name})`);
 
+	const commandsPayload = GetCommandsPayload(guild);
+
 	// Register commands from all loaded plugins
-	await restAPI.put(types.Routes.applicationGuildCommands(process.env.FF_ClientId, guild.id), { body: commands })
+	await restAPI.put(types.Routes.applicationGuildCommands(process.env.FF_ClientId, guild.id), { body: commandsPayload })
 		.catch(e => Log(e));
 
-	Log(`Registered ${commands.length} commands. (${guild.name})`);
+	Log(`Registered ${commandsPayload.length} commands. (${guild.name})`);
+}
+
+function LoadCommand(command : PluginCommand, plugin: Plugin)
+{
+	if (!commands[plugin.name])
+	{
+		commands[plugin.name] = [];
+	}
+	commands[plugin.name].push(command.builder.toJSON());
+	callbacks.set(command.builder.name, command.callback);
 }
 
 export function LoadPlugins(client : discord.Client<boolean>)
 {
+	Log(`Loading core plugin...`);
+
+	// Load Core plugin first
+	RegisterPlugin(coreplugin);
+
 	// TODO: find a better way and clean that
 	const pluginsDir = 'plugins';
 	const commandFiles = fs.readdirSync(`./dist/${pluginsDir}`).filter(file => file.endsWith('.js'));
 
-	Log(`Loading ${commandFiles.length} plugins...`);
+	Log(`Loading ${commandFiles.length} additionnal plugins...`);
 
 	// Require plugins so they can all register themselves
 	for (const file of commandFiles)
@@ -108,21 +140,17 @@ export function LoadPlugins(client : discord.Client<boolean>)
 		{
 			plugin.Init(client);
 			Log(`Plugin initialized: ${plugin.name}`);
-
-			// Import commands from plugins
-			plugin.commands.forEach(command =>
-			{
-				const json = command.builder.toJSON();
-				commands.push(json);
-				Log(`Command loaded: [${plugin.name}] ${json.type == null ? '/' : '-'}${json.name}`);
-
-				callbacks.set(command.builder.name, command.callback);
-			});
 		}
 		catch (error)
 		{
 			Log(`Error initializing plugin ${plugin.name}: ${error}`);
 		}
+	});
+
+	// Import commands from plugins
+	plugins.forEach(plugin =>
+	{
+		plugin.commands.forEach(command => LoadCommand(command, plugin));
 	});
 
 	// Set flags so plugins registered after LoadPlugins() will throw an error.

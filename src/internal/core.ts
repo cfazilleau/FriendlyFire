@@ -134,4 +134,4 @@ class CorePlugin extends Plugin
 	}
 }
 
-(new CorePlugin()).Register();
+export const coreplugin = new CorePlugin();
