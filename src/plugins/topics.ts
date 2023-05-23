@@ -275,27 +275,35 @@ class TopicsPlugin extends Plugin
 		// Need to fetch all messages in order to receive reaction events
 		client.guilds.cache.forEach(async guild =>
 		{
-			const Model = await DatabaseModel(collectionName, TopicSchema, guild);
-			const topicMessages = await Model.find({});
-
-			topicMessages.forEach(async msg =>
+			if (this.IsPluginEnabledOnGuild(guild))
 			{
-				const channel = await guild.channels.fetch(msg.channelId).catch(() => undefined);
-				if (channel != undefined && channel instanceof TextChannel)
-				{
-					const message = await channel.messages.fetch(msg.messageId).catch(() => undefined);
-					if (message != undefined)
-					{
-						this.messages.push(message);
-					}
-				}
-			});
+				const Model = await DatabaseModel(collectionName, TopicSchema, guild);
+				const topicMessages = await Model.find({});
 
-			Log(`Fetched ${this.messages.length} topic messages in guild ${guild.name}`);
+				topicMessages.forEach(async msg =>
+				{
+					const channel = await guild.channels.fetch(msg.channelId).catch(() => undefined);
+					if (channel != undefined && channel instanceof TextChannel)
+					{
+						const message = await channel.messages.fetch(msg.messageId).catch(() => undefined);
+						if (message != undefined)
+						{
+							this.messages.push(message);
+						}
+					}
+				});
+
+				Log(`Fetched ${this.messages.length} topic messages in guild ${guild.name}`);
+			}
 		});
 
 		client.on('messageReactionAdd', async (reaction, user) =>
 		{
+			if (reaction.message.guild != null && !this.IsPluginEnabledOnGuild(reaction.message.guild))
+			{
+				return;
+			}
+
 			CatchAndLog(async () =>
 			{
 				const bot = client.user;
@@ -316,6 +324,11 @@ class TopicsPlugin extends Plugin
 
 		client.on('messageReactionRemove', async (reaction, user) =>
 		{
+			if (reaction.message.guild != null && !this.IsPluginEnabledOnGuild(reaction.message.guild))
+			{
+				return;
+			}
+
 			CatchAndLog(async () =>
 			{
 				const bot = client.user;

@@ -151,6 +151,11 @@ class AlivePlugin extends Plugin
 	{
 		client.on('messageCreate', message =>
 		{
+			if (message.guild != null && !this.IsPluginEnabledOnGuild(message.guild))
+			{
+				return;
+			}
+
 			CatchAndLog(() =>
 			{
 				if (message.mentions.users.has(client.user?.id ?? ''))
