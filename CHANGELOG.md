@@ -12,9 +12,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+### Fixed
+
+## [2.3.0]
+
+### Added
+
+- enabling / disabling plugins for specific servers is now possible via the .ffconfig file
+
+### Changed
+
 - callback message and link when sending /quote from the wrong channel
 
 ### Fixed
+
+- minor bugs
 
 ## [2.2.0]
 

@@ -133,32 +133,6 @@ export function LoadPlugins(client : discord.Client<boolean>)
 		}
 	}
 
-	/*
-	// Add plugin manager commands
-	LoadCommand({
-		builder:
-			new builders.SlashCommandBuilder()
-				.setName('plugin')
-				.setDescription('enable or disable plugins for this server')
-				.setDefaultPermission(false)
-				.addUserOption(option => option
-					.setName('enable')
-					.setDescription('enable a plugin for this server'))
-				.addUserOption(option => option
-					.setName('disable')
-					.setDescription('disable a plugin for this server'))
-				.addUserOption(option => option
-					.setName('list')
-					.setDescription('list all plugins')) as builders.SlashCommandBuilder,
-		callback:
-			async (interaction: discord.CommandInteraction) =>
-			{
-				const guild = interaction.guild;
-
-			},
-	});
-	*/
-
 	// Init plugins
 	plugins.forEach(plugin =>
 	{
