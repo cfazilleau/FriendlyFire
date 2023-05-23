@@ -5,12 +5,10 @@ import { Log, Plugin, PluginCommand, DatabaseModel, CatchAndLog } from '../plugi
 import { Schema } from 'mongoose';
 
 const welcomeMessageKey = 'welcomeMessage';
-const greetingsKey = 'greetings';
 const inviteChannelKey = 'invitesChannel';
 const inviteMaxAgeKey = 'inviteMaxAge';
 const baseRoleKey = 'baseRoleId';
 
-const defaultGreetings = [ 'Welcome!' ];
 const defaultWelcomeMessage = 'Welcome to the server';
 
 interface IInvite
@@ -164,7 +162,7 @@ class InvitesPlugin extends Plugin
 	private async GetRandomGreeting(guild: Guild)
 	{
 		const Greeting = await DatabaseModel('greetings', GreetingSchema, guild);
-		return (await Greeting.aggregate([{ $sample: { size: 1 } }])).at(0) ?? '';
+		return (await Greeting.aggregate([{ $sample: { size: 1 } }])).at(0)?.greeting ?? '';
 	}
 
 	private async OnGuildMemberAdded(member: GuildMember)
