@@ -14,6 +14,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 
+## [2.4.0]
+
+### Added
+
+- /addgreeting command to create a new greeting message
+
+### Changed
+
+- moved the greetings messages to a mongodb-based setup
+
 ## [2.3.0]
 
 ### Added
