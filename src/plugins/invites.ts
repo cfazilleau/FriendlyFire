@@ -20,10 +20,19 @@ interface IInvite
 	expiration: number,
 }
 
+interface IGreeting
+{
+	greeting: string,
+}
+
 const InviteSchema = new Schema<IInvite>({
 	author: { type: String, required: true },
 	code: { type: String, required: true },
 	expiration: { type: Number, required: true },
+});
+
+const GreetingSchema = new Schema<IGreeting>({
+	greeting: { type: String, required: true },
 });
 
 class InvitesPlugin extends Plugin
@@ -115,12 +124,47 @@ class InvitesPlugin extends Plugin
 					}
 				},
 		},
+		{
+			builder:
+				new SlashCommandBuilder()
+					.setName('addgreeting')
+					.setDescription('Adds a greeting to the database')
+					.setDescriptionLocalization('fr', 'Ajoute un message de bienvenue a la base de données')
+					.setDefaultPermission(false)
+					.addStringOption(option => option
+						.setName('greeting')
+						.setDescription('greeting message to add')
+						.setDescriptionLocalization('fr', 'message de bienvenue a ajouter')
+						.setRequired(true)) as SlashCommandBuilder,
+			callback:
+				async (interaction: CommandInteraction) =>
+				{
+					const greetingOption = interaction.options.getString('greeting');
+
+					const Greeting = await DatabaseModel('greetings', GreetingSchema, interaction.guild);
+					const greetingEntry = new Greeting({
+						greeting: greetingOption,
+					});
+
+					await greetingEntry.save();
+
+					switch (interaction.locale)
+					{
+					case 'fr':
+						interaction.reply({ content: 'Message de bienvenue ajouté!', ephemeral: true });
+						break;
+					default:
+						interaction.reply({ content: 'Greeting message saved!', ephemeral: true });
+						break;
+					}
+				},
+		},
 	];
 
-	private GetRandomGreeting(guild: Guild)
+	private async GetRandomGreeting(guild: Guild)
 	{
-		const greetings: string[] = this.GetProperty<string[]>(greetingsKey, defaultGreetings, guild);
-		return greetings[Math.floor(Math.random() * greetings.length)];
+		const Greeting = await DatabaseModel('greetings', GreetingSchema, guild);
+		return (await Greeting.aggregate([{ $sample: { size: 1 } }])).at(0) ?? '';
 	}
 
 	private async OnGuildMemberAdded(member: GuildMember)
@@ -173,7 +217,7 @@ class InvitesPlugin extends Plugin
 		const embed = new MessageEmbed({
 			title: 'Bienvenue!',
 			thumbnail: { url: user.avatarURL({ size: 1024 }) as string },
-			description: `Bienvenue a ${userMention(member.id)}, ${inviterMention != '' ? `invité.e par ${inviterMention}, ` : ''}sur le discord de [Phoenix Legacy](http://phxlgc.com)!\n${this.GetRandomGreeting(guild)}`,
+			description: `Bienvenue a ${userMention(member.id)}, ${inviterMention != '' ? `invité.e par ${inviterMention}, ` : ''}sur le discord de [Phoenix Legacy](http://phxlgc.com)!\n${await this.GetRandomGreeting(guild)}`,
 			color: user.accentColor as number,
 		});
 
