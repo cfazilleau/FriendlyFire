@@ -5,15 +5,15 @@ import { Client, CommandInteraction, PresenceStatusData } from 'discord.js';
 import { Log, Plugin } from '../plugin';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-class TemplatePlugin extends Plugin
+class SamplePlugin extends Plugin
 {
-	public name = 'Template';
+	public name = 'SamplePlugin';
 	public commands = [
 		{
 			builder:
 				new SlashCommandBuilder()
-					.setName('template')
-					.setDescription('template to be used as an example')
+					.setName('sample-command')
+					.setDescription('command to be used as an example')
 					.setDefaultPermission(false) as SlashCommandBuilder,
 			callback:
 				async (interaction: CommandInteraction) =>
@@ -47,4 +47,4 @@ class TemplatePlugin extends Plugin
 	}
 }
 
-// (new TemplatePlugin()).Register();
+// (new SamplePlugin()).Register();

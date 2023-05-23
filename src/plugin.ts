@@ -1,7 +1,7 @@
 import * as discord from 'discord.js';
 import * as builders from '@discordjs/builders';
 
-import { RegisterPlugin } from './internal/pluginloader';
+import { IsPluginEnabledOnGuild, RegisterPlugin } from './internal/pluginloader';
 import { GetProperty, SetProperty } from './internal/config';
 import { Log } from './internal/utils';
 
@@ -24,6 +24,11 @@ export abstract class Plugin
 	public abstract name : string;
 	public abstract commands : PluginCommand[];
 	public abstract Init(client : discord.Client<boolean>): void;
+
+	protected IsPluginEnabledOnGuild(guild : discord.Guild) : boolean
+	{
+		return IsPluginEnabledOnGuild(this, guild);
+	}
 
 	protected GetProperty<Type>(key: string, defaultValue: Type, guild? : discord.Guild) : Type
 	{

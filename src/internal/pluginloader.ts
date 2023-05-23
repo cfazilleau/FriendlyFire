@@ -167,3 +167,9 @@ export function RegisterPlugin(plugin : Plugin)
 	plugins.set(plugin.name, plugin);
 	Log(`Registered plugin '${plugin.name}'`);
 }
+
+export function IsPluginEnabledOnGuild(plugin: Plugin, guild: discord.Guild): boolean
+{
+	const enabledPlugins: string[] = GetProperty(corePlugin, 'enabledPlugins', Array.from(plugins.keys()), guild);
+	return enabledPlugins.includes(plugin.name);
+}
