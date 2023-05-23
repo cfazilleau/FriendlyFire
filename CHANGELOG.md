@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - moved the greetings messages to a mongodb-based setup
 
+### Fixed
+
+- fixed an issue where disabled plugins were still active
+
 ## [2.3.0]
 
 ### Added

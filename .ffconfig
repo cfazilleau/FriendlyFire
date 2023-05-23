@@ -43,6 +43,7 @@
 		"1109176759510904904": {
 			"name": "Project Mineworld",
 			"Core.enabledPlugins": [
+				"Core",
 				"Minecraft"
 			],
 			"Minecraft.ip": "141.94.181.60",
