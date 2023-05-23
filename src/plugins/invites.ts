@@ -248,6 +248,11 @@ class InvitesPlugin extends Plugin
 	{
 		client.on('guildMemberAdd', async (member) =>
 		{
+			if (member.guild != null && !this.IsPluginEnabledOnGuild(member.guild))
+			{
+				return;
+			}
+
 			CatchAndLog(async () =>
 			{
 				await this.OnGuildMemberAdded(member);

@@ -203,6 +203,11 @@ class PollsPlugin extends Plugin
 	{
 		client.on('interactionCreate', interaction =>
 		{
+			if (interaction.guild != null && !this.IsPluginEnabledOnGuild(interaction.guild))
+			{
+				return;
+			}
+
 			CatchAndLog(async () =>
 			{
 				if (interaction.isButton() && this.CheckCustomId(interaction.customId))

@@ -626,6 +626,11 @@ class QuotesPlugin extends Plugin
 	{
 		client.on('messageUpdate', (_, message) =>
 		{
+			if (message.guild != null && !this.IsPluginEnabledOnGuild(message.guild))
+			{
+				return;
+			}
+
 			CatchAndLog(async () =>
 			{
 				await this.HandleQuoteMessage(message as Message<boolean>, client);
@@ -634,6 +639,11 @@ class QuotesPlugin extends Plugin
 
 		client.on('messageCreate', (message: Message<boolean>) =>
 		{
+			if (message.guild != null && !this.IsPluginEnabledOnGuild(message.guild))
+			{
+				return;
+			}
+
 			CatchAndLog(async () =>
 			{
 				await this.HandleQuoteMessage(message, client);
@@ -642,6 +652,11 @@ class QuotesPlugin extends Plugin
 
 		client.on('interactionCreate', interaction =>
 		{
+			if (interaction.guild != null && !this.IsPluginEnabledOnGuild(interaction.guild))
+			{
+				return;
+			}
+
 			CatchAndLog(async () =>
 			{
 				if ((interaction.isButton() || interaction.isSelectMenu()) && this.CheckCustomId(interaction.customId))
