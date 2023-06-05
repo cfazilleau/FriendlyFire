@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- timeout of 10 seconds for all image API calls.
+
 ### Changed
 
 ### Fixed
