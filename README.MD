@@ -1,5 +1,8 @@
 # Friendly Fire
 
+Official discord bot for the phoenix legacy community.
+Version numbers are: `major.minor.hotfix`
+
 ## Installation
 
 First you will need to setup the following environment variables:
