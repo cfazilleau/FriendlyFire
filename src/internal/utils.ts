@@ -69,12 +69,13 @@ function GetColorDelegate(fileName: string) : ColorDelegate
 export function Log(text: any, tags: (string | undefined)[] = []) : void
 {
 	const fileName = GetFileName(new Error());
-	let prefix = GetLabel(fileName);
+	let prefix = '';
 	tags.filter(tag => tag != undefined)
 		.forEach(tag =>
 		{
 			prefix += GetColorDelegate(tag as string)(`[${tag}]`);
 		});
+	prefix += GetLabel(fileName);
 
 	console.log(`${prefix} ${text}`);
 }

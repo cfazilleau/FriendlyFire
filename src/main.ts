@@ -66,6 +66,8 @@ if (process.env.FF_Token == undefined)
 // Login to REST API
 export const restAPI = new rest.REST({ version: '10' }).setToken(process.env.FF_Token);
 
-// Login to Discord with your client's token
-client.login(process.env.FF_Token);
-ConnectToDatabase();
+(async () =>
+{
+	await ConnectToDatabase();
+	await client.login(process.env.FF_Token);
+})();
