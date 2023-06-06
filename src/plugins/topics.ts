@@ -5,6 +5,8 @@ import fetch from 'node-fetch';
 
 import { CatchAndLog, DatabaseModel, Plugin, Log } from '../plugin';
 
+const fetchTimeout = 10000;
+
 interface TopicType
 {
 	color: number,
@@ -139,7 +141,7 @@ class TopicsPlugin extends Plugin
 						const files = [];
 						if (image != undefined)
 						{
-							const res = await fetch(image);
+							const res = await fetch(image, { timeout: fetchTimeout });
 							if (!res.ok) throw `Image request failed: ${res.status} ${res.statusText}`;
 
 							// Create and send image buffer
@@ -212,7 +214,7 @@ class TopicsPlugin extends Plugin
 
 								if (image != undefined)
 								{
-									const res = await fetch(image);
+									const res = await fetch(image, { timeout: fetchTimeout });
 									if (!res.ok) throw `Image request failed: ${res.status} ${res.statusText}`;
 
 									// Create and send image buffer

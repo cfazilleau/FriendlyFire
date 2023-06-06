@@ -110,18 +110,23 @@ class MinecraftPlugin extends Plugin
 			return this.guildRcons.get(guild.id) as Rcon;
 		}
 
-		const port = this.GetProperty<number>('port', 25575, guild);
-		const host = this.GetProperty<string | undefined>('ip', undefined, guild);
-		const passKey = this.GetProperty<string>('passwordKey', 'MC_PASSWORD', guild);
-		const pass = process.env[passKey];
+		const uriKey = this.GetProperty<string>('uriKey', 'MC_URI', guild);
 
-		if (host == undefined || pass == undefined)
+		const uri = process.env[uriKey] ?? '';
+		const regex = /(.+)@(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d{1,5})/g;
+
+		const match = regex.exec(uri);
+		if (match?.length != 4)
 		{
-			throw `config not set for guild '${guild.name}'`;
+			throw `bad match for uri '${uri}'. expected line should match regex ${regex}`;
 		}
 
+		const password = match[1];
+		const host = match[2];
+		const port = +match[3];
+
 		Log(`Creating new Rcon for guild ${guild.id}. (${guild.name})`);
-		const rcon = new Rcon({ host: host, port: port, password: pass });
+		const rcon = new Rcon({ host: host, port: port, password: password });
 		this.guildRcons.set(guild.id, rcon);
 		return rcon;
 	}

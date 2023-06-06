@@ -9,6 +9,7 @@ const quoteChannelKey = 'captureChannelId';
 const quoteReplyChannelKey = 'replyChannelId';
 const quoteRegex = /^"(.+?)"(?:\s*-*(.*)$)/ms;
 const apiURL = process.env.API_URL;
+const fetchTimeout = 10000;
 
 const confirmationEmbedColor = '#2ea42a';
 
@@ -169,7 +170,7 @@ class QuotesPlugin extends Plugin
 
 		const requestURL = `${apiURL}/${quoteURI}/${authorURI}/`;
 
-		const image = await fetch(requestURL);
+		const image = await fetch(requestURL, { timeout: fetchTimeout });
 		if (!image.ok) throw `CodaAPI request failed with URL ${requestURL}:\n${image.status} ${image.statusText}`;
 
 		// Create and send image buffer
@@ -362,7 +363,7 @@ class QuotesPlugin extends Plugin
 
 		const requestURL = `${apiURL}/${quoteURI}/${authorURI}/`;
 
-		const image = await fetch(requestURL);
+		const image = await fetch(requestURL, { timeout: fetchTimeout });
 		if (!image.ok) throw `CodaAPI request failed with URL ${requestURL}:\n${image.status} ${image.statusText}`;
 
 		// Create and send image buffer
