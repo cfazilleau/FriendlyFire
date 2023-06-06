@@ -32,13 +32,15 @@
 				"Invites",
 				"Polls",
 				"Quotes",
-				"Topics"
+				"Topics",
+				"Minecraft"
 			],
 			"Invites.welcomeMessage": "**BIENVENUE SUR PHOENIX LEGACY !!**\nSalut ! Je t'en prie installe-toi, mets toi bien à l'aise :)\nJe suis FriendlyFire, assistant de vie de la communauté et je suis là pour t'aider à faire tes premiers pas vers tes nouveaux amis ! Tout d'abord n'hésite pas à faire connaissance avec tout le monde d'un triomphant \"Bonjour tout le monde !\" dans le salon #general, tu devrais rapidement voir une réponse !\n\nPour l'instant tu possède le grade \"**Invité**\" ce qui te permet d'accéder à la quasi-totalité de ce qu'offre la communauté. Pour tout le reste, tu peux t’adresser à la personne qui t'a invité (ton parrain / ta marraine) ou alors tu peux en parler à **Demo ou Coda** (Admins du serveur), ils pourront te donner un coup de main :) Si tu désires t'impliquer dans la communauté et devenir membre tu peux prendre connaissance de la charte sur le site internet http://phxlgc.com et te présenter dans #présentation !\n\nAllez maintenant va, et soit sympa ferme la porte de nos MP derrière toi, je m'apprêtais à lancer un stream avant que tu arrives.",
 			"Invites.baseRoleId": "928035911197917244",
 			"Invites.inviteMaxAge": 15,
 			"Quotes.captureChannelId": "994671095108075641",
-			"Quotes.replyChannelId": "1000851972167041075"
+			"Quotes.replyChannelId": "1000851972167041075",
+			"Minecraft.uriKey": "PhoenixEA_URI"
 		},
 		"1109176759510904904": {
 			"name": "Project Mineworld",
@@ -46,9 +48,7 @@
 				"Core",
 				"Minecraft"
 			],
-			"Minecraft.ip": "141.94.181.60",
-			"Minecraft.port": 30170,
-			"Minecraft.passwordKey": "MC_PASSWORD"
+			"Minecraft.uriKey": "MineWorld_URI"
 		}
 	}
 }

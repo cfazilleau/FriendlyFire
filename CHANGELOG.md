@@ -10,11 +10,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+### Changed
+
+### Fixed
+
+## [2.5.0]
+
+### Added
+
 - timeout of 10 seconds for all image API calls.
 
 ### Changed
 
+- minecraft Rcon connection now works using a URI (password@ip:port)
+
 ### Fixed
+
+- minor issues
 
 ## [2.4.0]
 
