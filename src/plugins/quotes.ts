@@ -579,9 +579,15 @@ class QuotesPlugin extends Plugin
 			msg.embeds?.at(0)?.hexColor == confirmationEmbedColor);
 		if (old) old.delete();
 
+		const model = await DatabaseModel('quotes', QuoteSchema, message.guild);
+		const quotes = (await model.find({}).sort({ timestamp: 'asc' }));
+
+		// get current id
+		let curId = quotes.findIndex(doc => doc._id.toString() == quote?.id?.toString());
+
 		// create and send embed
 		const embed = new MessageEmbed({
-			footer: { text: `Sauvegardé par ${quote.submitted_by}. Quote #${quote?.id}`, iconURL: 'http://i.imgur.com/EeC5BAb.png' },
+			footer: { text: `Sauvegardé par ${quote.submitted_by}.${curId ? ' Quote #' + (+curId + 1) : ''}`, iconURL: 'http://i.imgur.com/EeC5BAb.png' },
 			url: message.url,
 			title: quote.author,
 			color: confirmationEmbedColor,

@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 
+- Fixed the Id displayed for newly added quotes
+
 ## [2.5.0]
 
 ### Added
