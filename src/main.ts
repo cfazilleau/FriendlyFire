@@ -5,7 +5,7 @@ import './internal/mongodb';
 import * as discord from 'discord.js';
 import * as rest from '@discordjs/rest';
 
-import { HandleCommand, LoadPlugins, RegisterCommands } from './internal/pluginloader';
+import { HandleCommand, LoadPlugins, RegisterCommands } from './internal/pluginmanager';
 import { CreateGuildConfig } from './internal/config';
 import { Log } from './internal/utils';
 import { ConnectToDatabase } from './internal/mongodb';

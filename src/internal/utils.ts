@@ -40,29 +40,7 @@ function sdbm(str: string): number
 
 function GetColorDelegate(fileName: string) : ColorDelegate
 {
-	// handle filename cases
-	switch (fileName)
-	{
-	// special case for files under the 'plugins' folder
-	case fileName.match(/^plugins[/\\]/)?.input:
-		return chalk.cyan;
-
-	case 'main.js':
-		return chalk.green;
-
-	case fileName.match(/^internal[/\\]config\.js/)?.input:
-		return chalk.yellow;
-
-	case 'plugin.js':
-	case fileName.match(/^internal[/\\]pluginloader\.js/)?.input:
-		return chalk.blue;
-
-	case fileName.match(/^internal[/\\]mongodb\.js/)?.input:
-		return chalk.greenBright;
-
-	default:
-		return chalk.hsv(Math.abs(sdbm(fileName)) % 360, 90, 75);
-	}
+	return chalk.hsv(Math.abs(sdbm(fileName)) % 360, 90, 75);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
