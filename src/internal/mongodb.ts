@@ -8,6 +8,7 @@ export async function ConnectToDatabase()
 {
 	try
 	{
+		mongoose.set('strictQuery', false);
 		client = await mongoose.connect(process.env.MONGODB_URI as string);
 		Log('Connected to mongodb database');
 	}

@@ -30,7 +30,7 @@ class AlivePlugin extends Plugin
 
 					const status = interaction.options.getString('status') as PresenceStatusData;
 
-					Log(`Setting status to ${status}`);
+					Log(`Setting status to ${status}`, [ interaction.guild?.name ]);
 
 					await interaction.client.user?.setStatus(status);
 					this.SetProperty('status', status);
@@ -92,13 +92,13 @@ class AlivePlugin extends Plugin
 						await interaction.client.user?.setActivity(options);
 						this.SetProperty('activity', options);
 
-						Log(`Set activity to ${type} ${text} with url '${url}'`);
+						Log(`Set activity to ${type} ${text} with url '${url}'`, [ interaction.guild?.name ]);
 					}
 					else
 					{
 						await interaction.client.user?.setActivity();
 						this.SetProperty('activity', null);
-						Log('Cleared activity');
+						Log('Cleared activity', [ interaction.guild?.name ]);
 					}
 
 					switch (interaction.locale)
@@ -129,9 +129,9 @@ class AlivePlugin extends Plugin
 					const avatar = interaction.options.getAttachment('avatar')?.url;
 					if (avatar)
 					{
-						Log(`Previous avatar url ${interaction.client.user?.avatarURL({ format: 'png', size: 2048 })}`);
+						Log(`Previous avatar url ${interaction.client.user?.avatarURL({ format: 'png', size: 2048 })}`, [ interaction.guild?.name ]);
 						await interaction.client.user?.setAvatar(avatar);
-						Log(`Set avatar to url '${avatar}'`);
+						Log(`Set avatar to url '${avatar}'`, [ interaction.guild?.name ]);
 					}
 
 					switch (interaction.locale)

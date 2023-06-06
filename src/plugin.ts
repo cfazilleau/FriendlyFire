@@ -69,7 +69,7 @@ export async function CatchAndLog<Type>(listener: () => Type, channel? : discord
 	}
 	catch (error)
 	{
-		Log(error);
+		Log(error, [ (channel as discord.TextChannel)?.guild?.name ]);
 
 		if (channel)
 		{

@@ -170,7 +170,7 @@ class InvitesPlugin extends Plugin
 		const guild = member.guild;
 		const user = await member.user.fetch(true);
 
-		Log(`New guild member: ${member.displayName}`);
+		Log(`New guild member: ${member.displayName}`, [ guild.name ]);
 
 		// Add role
 		const roleId = this.GetProperty(baseRoleKey, undefined, guild);
@@ -190,7 +190,7 @@ class InvitesPlugin extends Plugin
 		const invites = await guild.invites.fetch();
 		const recordedInvites = await Invite.find({});
 
-		Log(`${invites.size} invites server-side, ${recordedInvites.length} bot-side.`);
+		Log(`${invites.size} invites server-side, ${recordedInvites.length} bot-side.`, [ guild.name ]);
 
 		let inviterMention = '';
 		for (let i = 0; i < recordedInvites.length; i++)
@@ -201,7 +201,7 @@ class InvitesPlugin extends Plugin
 			{
 				const inviter = await guild.members.fetch(inv.author);
 
-				Log(`${member.displayName} joined using invite code ${inv.code} from ${inviter.displayName}.`);
+				Log(`${member.displayName} joined using invite code ${inv.code} from ${inviter.displayName}.`, [ guild.name ]);
 				inviterMention = userMention(inv.author);
 				inv.delete();
 			}
@@ -209,7 +209,7 @@ class InvitesPlugin extends Plugin
 
 		if (inviterMention == '')
 		{
-			Log(`${member.displayName} joined using unknown invite code.`);
+			Log(`${member.displayName} joined using unknown invite code.`, [ guild.name ]);
 		}
 
 		const embed = new MessageEmbed({
@@ -237,7 +237,7 @@ class InvitesPlugin extends Plugin
 			{
 				if (invite.expiration - Date.now() < 0)
 				{
-					Log(`Deleting expired invite: ${invite.code}`);
+					Log(`Deleting expired invite: ${invite.code}`, [ guild.name ]);
 					invite.delete();
 				}
 			});

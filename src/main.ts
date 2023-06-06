@@ -26,26 +26,26 @@ client.once('ready', async () =>
 	// Register commands for all plugins and all guilds
 	client.guilds.cache.forEach(async (guild : discord.Guild, id : string) =>
 	{
-		Log(`Connected to guild ${id}. (${guild.name})`);
+		Log(`Connected to guild ${id}.`, [ guild.name ]);
 
 		// Create Config
 		CreateGuildConfig(guild);
 
 		RegisterCommands(guild)
-			.catch(e => Log(e));
+			.catch(e => Log(e, [ guild.name ]));
 	});
 });
 
 client.on('guildCreate', async guild =>
 {
 	// Register commands for all plugins on this guild
-	Log(`Joined guild ${guild.id}. (${guild.name})`);
+	Log(`Joined guild ${guild.id}.`, [ guild.name ]);
 
 	// Create Config
 	CreateGuildConfig(guild);
 
 	RegisterCommands(guild)
-		.catch(e => Log(e));
+		.catch(e => Log(e, [ guild.name ]));
 });
 
 // When the client receives an interaction, execute command

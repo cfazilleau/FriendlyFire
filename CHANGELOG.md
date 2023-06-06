@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Log() function now accept tags as arguments
+- Added tags to existing Log() functions to log guild names
+
 ### Changed
 
 ### Fixed
@@ -18,15 +21,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
-- timeout of 10 seconds for all image API calls.
+- Timeout of 10 seconds for all image API calls.
 
 ### Changed
 
-- minecraft Rcon connection now works using a URI (password@ip:port)
+- Minecraft Rcon connection now works using a URI (password@ip:port)
 
 ### Fixed
 
-- minor issues
+- Minor issues
 
 ## [2.4.0]
 
@@ -36,36 +39,36 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
-- moved the greetings messages to a mongodb-based setup
+- Moved the greetings messages to a mongodb-based setup
 
 ### Fixed
 
-- fixed an issue where disabled plugins were still active
+- Fixed an issue where disabled plugins were still active
 
 ## [2.3.0]
 
 ### Added
 
-- enabling / disabling plugins for specific servers is now possible via the .ffconfig file
+- Enabling / disabling plugins for specific servers is now possible via the .ffconfig file
 
 ### Changed
 
-- callback message and link when sending /quote from the wrong channel
+- Callback message and link when sending /quote from the wrong channel
 
 ### Fixed
 
-- minor bugs
+- Minor bugs
 
 ## [2.2.0]
 
 ### Added
 
-- id parameter for command /check-quotes
+- Id parameter for command /check-quotes
 - /crawl-missing-quotes command to crawl the entire channel and find missing quotes
 
 ### Changed
 
-- better random for quote selection
+- Better random for quote selection
 
 ### Fixed
 

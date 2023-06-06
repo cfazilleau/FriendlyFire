@@ -32,6 +32,12 @@ function GetLabel(fileName: string) : string
 	return colorDelegate(`[${label}]`);
 }
 
+function sdbm(str: string): number
+{
+	return str.split('').reduce((hashCode, currentVal) =>
+		(hashCode = currentVal.charCodeAt(0) + (hashCode << 6) + (hashCode << 16) - hashCode), 0);
+}
+
 function GetColorDelegate(fileName: string) : ColorDelegate
 {
 	// handle filename cases
@@ -55,15 +61,20 @@ function GetColorDelegate(fileName: string) : ColorDelegate
 		return chalk.greenBright;
 
 	default:
-		return (s) => s;
+		return chalk.hsv(Math.abs(sdbm(fileName)) % 360, 90, 75);
 	}
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function Log(text : any) : void
+export function Log(text: any, tags: (string | undefined)[] = []) : void
 {
 	const fileName = GetFileName(new Error());
-	const label = GetLabel(fileName);
+	let prefix = GetLabel(fileName);
+	tags.filter(tag => tag != undefined)
+		.forEach(tag =>
+		{
+			prefix += GetColorDelegate(tag as string)(`[${tag}]`);
+		});
 
-	console.log(`${label} ${text}`);
+	console.log(`${prefix} ${text}`);
 }

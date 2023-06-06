@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { Client, CommandInteraction, Message, MessageEmbed, Role, RoleData, TextChannel } from 'discord.js';
+import { Client, CommandInteraction, Guild, Message, MessageEmbed, Role, RoleData, TextChannel } from 'discord.js';
 import { Schema } from 'mongoose';
 import fetch from 'node-fetch';
 
@@ -295,13 +295,14 @@ class TopicsPlugin extends Plugin
 					}
 				});
 
-				Log(`Fetched ${this.messages.length} topic messages in guild ${guild.name}`);
+				Log(`Fetched ${this.messages.length} topic messages.`, [ guild.name ]);
 			}
 		});
 
 		client.on('messageReactionAdd', async (reaction, user) =>
 		{
-			if (reaction.message.guild != null && !this.IsPluginEnabledOnGuild(reaction.message.guild))
+			const guild = reaction.message.guild as Guild;
+			if (guild == null || !this.IsPluginEnabledOnGuild(guild))
 			{
 				return;
 			}
@@ -312,21 +313,23 @@ class TopicsPlugin extends Plugin
 
 				if (user == undefined || bot == undefined || user.id == bot.id) return;
 
-				const Model = await DatabaseModel(collectionName, TopicSchema, reaction.message.guild);
+
+				const Model = await DatabaseModel(collectionName, TopicSchema, guild);
 				const roleData = await Model.findOne({ channelId: reaction.message.channelId, messageId: reaction.message.id });
 
 				if (roleData != undefined)
 				{
-					const members = await reaction.message.guild?.members.fetch();
+					const members = await guild?.members.fetch();
 					await members?.get(user.id)?.roles.add(roleData.roleId);
-					Log(`${user.tag} added role ${roleData.roleName}`);
+					Log(`${user.tag} added role ${roleData.roleName}`, [ guild.name ]);
 				}
 			});
 		});
 
 		client.on('messageReactionRemove', async (reaction, user) =>
 		{
-			if (reaction.message.guild != null && !this.IsPluginEnabledOnGuild(reaction.message.guild))
+			const guild = reaction.message.guild as Guild;
+			if (guild == null || !this.IsPluginEnabledOnGuild(guild))
 			{
 				return;
 			}
@@ -337,14 +340,14 @@ class TopicsPlugin extends Plugin
 
 				if (user == undefined || bot == undefined || user.id == bot.id) return;
 
-				const Model = await DatabaseModel(collectionName, TopicSchema, reaction.message.guild);
+				const Model = await DatabaseModel(collectionName, TopicSchema, guild);
 				const roleData = await Model.findOne({ channelId: reaction.message.channelId, messageId: reaction.message.id });
 
 				if (roleData != undefined)
 				{
-					const members = await reaction.message.guild?.members.fetch();
+					const members = await guild?.members.fetch();
 					await members?.get(user.id)?.roles.remove(roleData.roleId);
-					Log(`${user.tag} removed role ${roleData.roleName}`);
+					Log(`${user.tag} removed role ${roleData.roleName}`, [ guild.name ]);
 				}
 			});
 		});
