@@ -300,7 +300,7 @@ class QuotesPlugin extends Plugin
 			}
 
 			batchSize = batch.size;
-			Log(`Fetched ${batchSize} messages.`);
+			Log(`Fetched ${batchSize} messages.`, [ channel.guild.name ]);
 
 			amount += batchSize;
 
@@ -333,7 +333,7 @@ class QuotesPlugin extends Plugin
 					checked: false,
 				});
 				await quote.save();
-				Log(`new quote found: "${quote.quote}" --${quote.author} from the ${new Date(quote.timestamp).toLocaleString()}`);
+				Log(`new quote found: "${quote.quote}" --${quote.author} from the ${new Date(quote.timestamp).toLocaleString()}`, [ channel.guild.name ]);
 				saved++;
 			}
 
@@ -346,7 +346,7 @@ class QuotesPlugin extends Plugin
 			}
 		}
 
-		Log(`Done. ${amount} messages checked and ${saved} new quotes saved`);
+		Log(`Done. ${amount} messages checked and ${saved} new quotes saved`, [ channel.guild.name ]);
 		await interaction.editReply(`Done.\n\n> ${amount} messages checked\n> ${saved} new quotes saved`);
 	}
 
@@ -491,7 +491,7 @@ class QuotesPlugin extends Plugin
 	private async HandleInteraction(interaction: ButtonInteraction | SelectMenuInteraction)
 	{
 		const customId = this.GetShortCustomId(interaction.customId);
-		Log(`Handling interaction '${customId}' from '${interaction.user.tag}'`);
+		Log(`Handling interaction '${customId}' from '${interaction.user.tag}'`, [ interaction.guild?.name ]);
 
 		const split = customId.split('___');
 		const action = split[0];
@@ -579,9 +579,15 @@ class QuotesPlugin extends Plugin
 			msg.embeds?.at(0)?.hexColor == confirmationEmbedColor);
 		if (old) old.delete();
 
+		const model = await DatabaseModel('quotes', QuoteSchema, message.guild);
+		const quotes = (await model.find({}).sort({ timestamp: 'asc' }));
+
+		// get current id
+		let curId = quotes.findIndex(doc => doc._id.toString() == quote?.id?.toString());
+
 		// create and send embed
 		const embed = new MessageEmbed({
-			footer: { text: `Sauvegardé par ${quote.submitted_by}. Quote #${quote?.id}`, iconURL: 'http://i.imgur.com/EeC5BAb.png' },
+			footer: { text: `Sauvegardé par ${quote.submitted_by}.${curId ? ' Quote #' + (+curId + 1) : ''}`, iconURL: 'http://i.imgur.com/EeC5BAb.png' },
 			url: message.url,
 			title: quote.author,
 			color: confirmationEmbedColor,
@@ -616,7 +622,7 @@ class QuotesPlugin extends Plugin
 		const quotes = (await Quote.find({}).sort({ timestamp: 'asc' }));
 		const id = quotes.findIndex(q => quote._id.toString() == q._id.toString());
 
-		Log(`Quote #${id}/${quotes.length} saved`);
+		Log(`Quote #${id}/${quotes.length} saved`, [ message.guild?.name ]);
 
 		const ret: IQuote & { id?: number } = quote;
 		ret.id = id;

@@ -5,7 +5,7 @@ import './internal/mongodb';
 import * as discord from 'discord.js';
 import * as rest from '@discordjs/rest';
 
-import { HandleCommand, LoadPlugins, RegisterCommands } from './internal/pluginloader';
+import { HandleCommand, LoadPlugins, RegisterCommands } from './internal/pluginmanager';
 import { CreateGuildConfig } from './internal/config';
 import { Log } from './internal/utils';
 import { ConnectToDatabase } from './internal/mongodb';
@@ -26,26 +26,26 @@ client.once('ready', async () =>
 	// Register commands for all plugins and all guilds
 	client.guilds.cache.forEach(async (guild : discord.Guild, id : string) =>
 	{
-		Log(`Connected to guild ${id}. (${guild.name})`);
+		Log(`Connected to guild ${id}.`, [ guild.name ]);
 
 		// Create Config
 		CreateGuildConfig(guild);
 
 		RegisterCommands(guild)
-			.catch(e => Log(e));
+			.catch(e => Log(e, [ guild.name ]));
 	});
 });
 
 client.on('guildCreate', async guild =>
 {
 	// Register commands for all plugins on this guild
-	Log(`Joined guild ${guild.id}. (${guild.name})`);
+	Log(`Joined guild ${guild.id}.`, [ guild.name ]);
 
 	// Create Config
 	CreateGuildConfig(guild);
 
 	RegisterCommands(guild)
-		.catch(e => Log(e));
+		.catch(e => Log(e, [ guild.name ]));
 });
 
 // When the client receives an interaction, execute command
@@ -66,6 +66,8 @@ if (process.env.FF_Token == undefined)
 // Login to REST API
 export const restAPI = new rest.REST({ version: '10' }).setToken(process.env.FF_Token);
 
-// Login to Discord with your client's token
-client.login(process.env.FF_Token);
-ConnectToDatabase();
+(async () =>
+{
+	await ConnectToDatabase();
+	await client.login(process.env.FF_Token);
+})();

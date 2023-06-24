@@ -100,7 +100,7 @@ class MinecraftPlugin extends Plugin
 		let response = await rcon.send(command);
 		response = this.CleanMinecraftTags(response);
 		await rcon.end();
-		interaction.editReply(response);
+		await interaction.editReply(response);
 	}
 
 	private GetGuildRcon(guild: Guild) : Rcon
@@ -125,7 +125,7 @@ class MinecraftPlugin extends Plugin
 		const host = match[2];
 		const port = +match[3];
 
-		Log(`Creating new Rcon for guild ${guild.id}. (${guild.name})`);
+		Log('Creating new Rcon for this guild.', [ guild.name ]);
 		const rcon = new Rcon({ host: host, port: port, password: password });
 		this.guildRcons.set(guild.id, rcon);
 		return rcon;

@@ -215,7 +215,7 @@ class PollsPlugin extends Plugin
 					await interaction.deferUpdate();
 
 					const customId = this.GetShortCustomId(interaction.customId);
-					Log(`Handling interaction '${customId}' from '${interaction.user.tag}'`);
+					Log(`Handling interaction '${customId}' from '${interaction.user.tag}'`, [ interaction.guild?.name ]);
 
 					await this.HandleButtonInteraction(interaction);
 				}
@@ -263,7 +263,7 @@ class PollsPlugin extends Plugin
 				catch (_)
 				{
 					msg.delete();
-					Log(`Cleared an old poll in ${guild?.name}`);
+					Log(`Cleared an old poll with id ${msg.messageId}`, [ guild.name ]);
 					return;
 				}
 			});
@@ -327,11 +327,11 @@ class PollsPlugin extends Plugin
 
 		// Update Lock indicator
 		const embed = message.embeds.at(0) as MessageEmbed;
-		embed.setImage('attachment://chart.png');
+		embed.setImage(chart.getUrl());
 		embed.setFooter({ text: locked ? '🔒 Sondage verouillé' : '' });
 
 		// Update message
-		await message.edit({ embeds: [ embed ], components: [ row ], files: [{ attachment: await chart.toBinary(), name: 'chart.png' }] });
+		await message.edit({ embeds: [ embed ], components: [ row ]});
 	}
 
 	private CreateChart(voteCounts: number[], colors: string[])

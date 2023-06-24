@@ -1,7 +1,7 @@
 import * as discord from 'discord.js';
 import * as builders from '@discordjs/builders';
 
-import { IsPluginEnabledOnGuild, RegisterPlugin } from './internal/pluginloader';
+import { IsPluginEnabledOnGuild, RegisterPlugin } from './internal/pluginmanager';
 import { GetProperty, SetProperty } from './internal/config';
 import { Log } from './internal/utils';
 
@@ -69,7 +69,7 @@ export async function CatchAndLog<Type>(listener: () => Type, channel? : discord
 	}
 	catch (error)
 	{
-		Log(error);
+		Log(error, [ (channel as discord.TextChannel)?.guild?.name ]);
 
 		if (channel)
 		{

@@ -6,7 +6,6 @@ import * as fs from 'node:fs';
 import { Plugin, CommandCallback, ContextMenuCallback, PluginCommand } from '../plugin';
 import { restAPI } from '../main';
 import { Log } from './utils';
-import { RESTPostAPIContextMenuApplicationCommandsJSONBody } from 'discord-api-types/v10';
 import { GetProperty } from './config';
 import { coreplugin as corePlugin, coreplugin } from './core';
 
@@ -21,7 +20,7 @@ let pluginsLoaded = false;
 
 export async function HandleCommand(command : discord.CommandInteraction<discord.CacheType> | discord.ContextMenuInteraction<discord.CacheType>)
 {
-	Log(`Executing command '${command.commandName}' from '${command.user.tag}'`);
+	Log(`Executing command '${command.commandName}' from '${command.user.tag}'`, [ command.guild?.name ]);
 
 	const callback = callbacks.get(command.commandName);
 	if (callback == undefined) throw 'Undefined Callback';
@@ -39,7 +38,7 @@ export async function HandleCommand(command : discord.CommandInteraction<discord
 	}
 	catch (error)
 	{
-		Log(`Error executing command '${command.commandName}': '${error}'`);
+		Log(`Error executing command '${command.commandName}': '${error}'`, [ command.guild?.name ]);
 
 		const embed = new discord.MessageEmbed({
 			title: 'Oops',
@@ -65,15 +64,13 @@ export async function HandleCommand(command : discord.CommandInteraction<discord
 	}
 }
 
-function GetCommandsPayload(guild: discord.Guild): types.RESTPostAPIApplicationCommandsJSONBody[]
+function GetCommandsPayload(pluginNames: string[]): types.RESTPostAPIApplicationCommandsJSONBody[]
 {
-	// Get plugins enabled per guild
-	const pluginNames: string[] = GetProperty(corePlugin, 'enabledPlugins', Array.from(plugins.keys()), guild)
-
 	let payload: types.RESTPostAPIApplicationCommandsJSONBody[] = [];
-	pluginNames.forEach(plugin => {
+	pluginNames.forEach(plugin =>
+	{
 		payload = payload.concat(commands[plugin] ?? []);
-	})
+	});
 
 	return payload;
 }
@@ -86,15 +83,17 @@ export async function RegisterCommands(guild : discord.Guild) : Promise<void>
 		throw 'Environment variable \'FF_ClientId\' not set.';
 	}
 
-	Log(`Registering commands... (${guild.name})`);
+	Log('Registering commands...', [ guild.name ]);
 
-	const commandsPayload = GetCommandsPayload(guild);
+	// Get plugins enabled per guild
+	const pluginNames: string[] = GetProperty(corePlugin, 'enabledPlugins', Array.from(plugins.keys()), guild);
+	const commandsPayload = GetCommandsPayload(pluginNames);
 
 	// Register commands from all loaded plugins
 	await restAPI.put(types.Routes.applicationGuildCommands(process.env.FF_ClientId, guild.id), { body: commandsPayload })
 		.catch(e => Log(e));
 
-	Log(`Registered ${commandsPayload.length} commands. (${guild.name})`);
+	Log(`Registered ${commandsPayload.length} commands from ${pluginNames.length} plugins.`, [ guild.name ]);
 }
 
 function LoadCommand(command : PluginCommand, plugin: Plugin)
@@ -109,7 +108,7 @@ function LoadCommand(command : PluginCommand, plugin: Plugin)
 
 export function LoadPlugins(client : discord.Client<boolean>)
 {
-	Log(`Loading core plugin...`);
+	Log('Loading core plugin...');
 
 	// Load Core plugin first
 	RegisterPlugin(coreplugin);

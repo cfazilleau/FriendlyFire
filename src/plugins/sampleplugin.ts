@@ -22,7 +22,7 @@ class SamplePlugin extends Plugin
 
 					const status = interaction.options.getString('status') as PresenceStatusData;
 
-					Log(`Setting status to ${status}`);
+					Log(`Setting status to ${status}`, [ interaction.guild?.name ]);
 
 					await interaction.client.user?.setStatus(status);
 					this.SetProperty('status', status);

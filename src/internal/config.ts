@@ -114,7 +114,11 @@ export function SetProperty<Type>(plugin: Plugin, key: string, value: Type, guil
 
 export function CreateGuildConfig(guild : discord.Guild)
 {
-	SetPropertyInternal<string>('name', guild.name, guild);
+	if (GetPropertyInternal<string | undefined>('name', undefined, guild) == undefined)
+	{
+		SetPropertyInternal<string>('name', guild.name, guild);
+		Log('Created new guild configuration', [ guild.name ]);
+	}
 }
 
 if (readonly)
