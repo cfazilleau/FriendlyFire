@@ -331,7 +331,7 @@ class PollsPlugin extends Plugin
 		embed.setFooter({ text: locked ? '🔒 Sondage verouillé' : '' });
 
 		// Update message
-		await message.edit({ embeds: [ embed ], components: [ row ]});
+		await message.edit({ embeds: [ embed ], components: [ row ], attachments: []});
 	}
 
 	private CreateChart(voteCounts: number[], colors: string[])
