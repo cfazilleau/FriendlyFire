@@ -327,11 +327,11 @@ class PollsPlugin extends Plugin
 
 		// Update Lock indicator
 		const embed = message.embeds.at(0) as MessageEmbed;
-		embed.setImage('attachment://chart.png');
+		embed.setImage(chart.getUrl());
 		embed.setFooter({ text: locked ? '🔒 Sondage verouillé' : '' });
 
 		// Update message
-		await message.edit({ embeds: [ embed ], components: [ row ], files: [{ attachment: await chart.toBinary(), name: 'chart.png' }] });
+		await message.edit({ embeds: [ embed ], components: [ row ]});
 	}
 
 	private CreateChart(voteCounts: number[], colors: string[])

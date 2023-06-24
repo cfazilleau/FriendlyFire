@@ -6,17 +6,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [unreleased]
+## [Unreleased]
+
+### Added
+
+### Changed
+
+### Fixed
+
+## [2.6.0]
 
 ### Added
 
 - Log() function now accept tags as arguments
 - Added tags to existing Log() functions to log guild names
 
-### Changed
-
 ### Fixed
 
+- polls quickchart timeout error
 - Fixed the Id displayed for newly added quotes
 
 ## [2.5.0]
