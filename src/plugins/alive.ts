@@ -1,6 +1,5 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { ActivityOptions, Client, CommandInteraction, ExcludeEnum, PresenceStatusData, TextChannel } from 'discord.js';
-import { ActivityTypes } from 'discord.js/typings/enums';
+import { ActivityOptions, ActivityType, Client, CommandInteraction, PresenceStatusData, TextChannel } from 'discord.js';
 import { Log, CatchAndLog, Plugin } from '../plugin';
 
 class AlivePlugin extends Plugin
@@ -84,7 +83,7 @@ class AlivePlugin extends Plugin
 
 					if (subcommand == 'set')
 					{
-						const type = interaction.options.getString('type') as ExcludeEnum<typeof ActivityTypes, 'CUSTOM'>;
+						const type = interaction.options.getString('type') as Exclude<ActivityType, 'CUSTOM'>;
 						const text = interaction.options.getString('text') as string;
 						const url = interaction.options.getString('url') as string | undefined;
 

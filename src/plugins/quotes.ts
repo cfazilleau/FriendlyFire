@@ -209,7 +209,10 @@ class QuotesPlugin extends Plugin
 			payload.content = userMention(interaction.user.id) + '\n' + payload.content;
 			const msg = await channel.send(payload);
 
-			const button = new MessageButton({ style: 'LINK', url: msg.url });
+			const button = new MessageButton({ 
+				type: 'BUTTON',
+				style: 'LINK',
+				url: msg.url });
 			let text = '';
 
 			switch (interaction.locale)
@@ -451,11 +454,13 @@ class QuotesPlugin extends Plugin
 			new MessageActionRow({ components:
 			[
 				new MessageButton({
+					type: 'BUTTON',
 					customId: this.CustomId(`tag_safe___${quote._id}`),
 					label: 'Safe',
 					style: quote.safe == true ? 'PRIMARY' : 'SECONDARY',
 				}),
 				new MessageButton({
+					type: 'BUTTON',
 					customId: this.CustomId(`tag_unsafe___${quote._id}`),
 					label: 'Unsafe',
 					style: quote.safe != true ? 'PRIMARY' : 'SECONDARY',
@@ -467,16 +472,19 @@ class QuotesPlugin extends Plugin
 			new MessageActionRow({ components:
 				[
 					new MessageButton({
+						type: 'BUTTON',
 						customId: this.CustomId(`get_prev___${quote._id}`),
 						label: 'Previous',
 						style: 'SECONDARY',
 					}),
 					new MessageButton({
+						type: 'BUTTON',
 						customId: this.CustomId(`get_next___${quote._id}`),
 						label: 'Next',
 						style: 'SECONDARY',
 					}),
 					new MessageButton({
+						type: 'BUTTON',
 						customId: this.CustomId(`toggle_payload___${quote._id}`),
 						label: showPayload ? 'Hide Payload' : 'Show Payload',
 						style: 'SECONDARY',

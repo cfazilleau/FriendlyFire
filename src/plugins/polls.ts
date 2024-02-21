@@ -47,12 +47,14 @@ class PollsPlugin extends Plugin
 
 					await this.SendPoll(interaction, text, [
 						new MessageButton({
+							type: 'BUTTON',
 							customId: this.CustomId('yes'),
 							label: interaction.locale == 'fr' ? 'Oui' : 'Yes',
 							style: 'SUCCESS',
 							emoji: '👍',
 						}),
 						new MessageButton({
+							type: 'BUTTON',
 							customId: this.CustomId('no'),
 							label: interaction.locale == 'fr' ? 'Non' : 'No',
 							style: 'DANGER',
@@ -81,18 +83,21 @@ class PollsPlugin extends Plugin
 
 					await this.SendPoll(interaction, text, [
 						new MessageButton({
+							type: 'BUTTON',
 							customId: this.CustomId('yes'),
 							label: interaction.locale == 'fr' ? 'Oui' : 'Yes',
 							style: 'SUCCESS',
 							emoji: '👍',
 						}),
 						new MessageButton({
+							type: 'BUTTON',
 							customId: this.CustomId('no'),
 							label: interaction.locale == 'fr' ? 'Non' : 'No',
 							style: 'DANGER',
 							emoji: '👎',
 						}),
 						new MessageButton({
+							type: 'BUTTON',
 							customId: this.CustomId('maybe'),
 							label: interaction.locale == 'fr' ? 'Peut-être' : 'Maybe',
 							style: 'PRIMARY',
@@ -146,6 +151,7 @@ class PollsPlugin extends Plugin
 						if (name == undefined) continue;
 
 						buttons.push(new MessageButton({
+							type: 'BUTTON',
 							customId: this.CustomId(id),
 							label: name,
 							style: 'SECONDARY',
