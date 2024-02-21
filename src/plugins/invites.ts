@@ -1,4 +1,4 @@
-import { Client, CommandInteraction, Guild, GuildMember, MessageEmbed, TextChannel, User } from 'discord.js';
+import { Client, CommandInteraction, Guild, GuildMember, Invite, MessageEmbed, TextChannel, User } from 'discord.js';
 import { SlashCommandBuilder, time, userMention } from '@discordjs/builders';
 
 import { Log, Plugin, PluginCommand, DatabaseModel, CatchAndLog } from '../plugin';
@@ -225,6 +225,24 @@ class InvitesPlugin extends Plugin
 		user.send(this.GetProperty<string>(welcomeMessageKey, defaultWelcomeMessage, guild));
 	}
 
+	private async OnInviteDelete(invite: Invite, client: Client<boolean>) {
+		this.ClearExpiredInvites(client);
+	}
+
+	private async OnInviteCreate(invite: Invite, client: Client<boolean>) {
+		if (invite.inviterId == client.user?.id)
+			return;
+		
+		const Invite = await DatabaseModel('invites', InviteSchema, invite.guild as Guild);
+
+		const inviteData = new Invite({
+			author: invite.inviterId,
+			code: invite.code,
+			expiration: invite.expiresTimestamp,
+		});
+		inviteData.save();
+	}
+
 	private async ClearExpiredInvites(client: Client<boolean>)
 	{
 		await client.guilds.fetch();
@@ -256,6 +274,32 @@ class InvitesPlugin extends Plugin
 			CatchAndLog(async () =>
 			{
 				await this.OnGuildMemberAdded(member);
+			});
+		});
+
+		client.on('inviteCreate', async (invite) =>
+		{
+			if (invite.guild as Guild != null && !this.IsPluginEnabledOnGuild(invite.guild as Guild))
+			{
+				return;
+			}
+
+			CatchAndLog(async () =>
+			{
+				await this.OnInviteCreate(invite, client);
+			});
+		});
+
+		client.on('inviteDelete', async (invite) =>
+		{
+			if (invite.guild as Guild != null && !this.IsPluginEnabledOnGuild(invite.guild as Guild))
+			{
+				return;
+			}
+
+			CatchAndLog(async () =>
+			{
+				await this.OnInviteDelete(invite, client);
 			});
 		});
 
