@@ -1,0 +1,19 @@
+<<<<<<< ours
+# Jetbrains
+.idea
+
+# Python
+__pycache__
+.venv
+
+# Environment variables
+.env
+
+# Local git configuration
+/.gitconfig
+=======
+.idea
+__pycache__
+.venv
+.env
+>>>>>>> theirs
