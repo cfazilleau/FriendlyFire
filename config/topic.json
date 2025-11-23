@@ -1,0 +1,17 @@
+{
+    "game": {
+        "color": "AD5713",
+        "emoji": "🎮",
+        "text": "Jeu"
+    },
+    "music": {
+        "color": "A84300",
+        "emoji": "🎵",
+        "text": "Musique"
+    },
+    "subject": {
+        "color": "B96933",
+        "emoji": "💥",
+        "text": "Sujet pratique"
+    }
+}

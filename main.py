@@ -3,9 +3,10 @@ import os
 
 # load env variables
 TOKEN = os.environ['TOKEN']
+MONGO_URI = os.environ['MONGO_URI']
 
 # create bot
-bot = FriendlyFire()
+bot = FriendlyFire(mongo_uri=MONGO_URI)
 
 # load all cogs as extensions
 for cog in os.listdir('./cogs'):
