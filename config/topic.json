@@ -1,4 +1,5 @@
 {
+  "topicTypes": {
     "game": {
         "color": "AD5713",
         "emoji": "🎮",
@@ -14,4 +15,5 @@
         "emoji": "💥",
         "text": "Sujet pratique"
     }
+  }
 }

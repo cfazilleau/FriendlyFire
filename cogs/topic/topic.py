@@ -1,14 +1,13 @@
-﻿import io
-from typing import TypedDict
+﻿from typing import TypedDict
 
 import discord
-import json
-
 from discord import option
 from discord.ext import commands
 from pymongo.asynchronous.collection import AsyncCollection
 
 from src import FriendlyFire
+from src.config import Config
+
 
 class TopicEntry(TypedDict):
     messageId: str
@@ -19,24 +18,24 @@ class TopicEntry(TypedDict):
 class Topic(commands.Cog):
     def __init__(self, bot: FriendlyFire):
         self.bot = bot
+        self.config = Config('topic')
 
-    # get the topic types from the config file
-    config = io.open(f'config/{__qualname__.lower()}.json', 'r', encoding='utf-8').read()
-    topicTypes = json.loads(config)
+        # generate type options depending on the topic types
+        self.choices = []
+        for topic in self.config.config['topicTypes'].keys():
+            self.choices.append(discord.OptionChoice(name=topic, value=topic))
 
-    # generate type options depending on the topic types
-    choices = []
-    for topic in topicTypes.keys():
-        choices.append(discord.OptionChoice(name=topic, value=topic))
-
-    # make sure we have existing topic types
-    assert len(choices) > 0
+        # make sure we have existing topic types
+        assert len(self.choices) > 0
 
     topicGroup = discord.SlashCommandGroup(name="topic", description="manage topics")
 
+    async def get_topic_types(self, ctx: discord.AutocompleteContext):
+        return self.config.config['topicTypes'].keys()
+
     @topicGroup.command(name="create", description="create a topic", default_permission=False)
     @option(name="name", description="name of the new topic", required=True)
-    @option(name="type", description="type of topic", required=True, choices=choices)
+    @option(name="type", description="type of topic", required=True, autocomplete=get_topic_types)
     @option(name="image", description="URL of an image for this topic", required=False)
     async def create_topic(self, ctx: discord.ApplicationContext, name: str, input_type: str, image: str = None):
         await ctx.defer(ephemeral=True)
@@ -71,7 +70,7 @@ class Topic(commands.Cog):
 
     @topicGroup.command(name="edit", description="edit a topic", default_permission=False)
     @option(name="role", description="current role of the topic", required=True, input_type=discord.SlashCommandOptionType.role)
-    @option(name="type", description="type of topic", required=True, choices=choices)
+    @option(name="type", description="type of topic", required=True, autocomplete=get_topic_types)
     @option(name="name", description="name of the new topic", required=False)
     @option(name="image", description="URL of an image for this topic", required=False)
     async def edit_topic(self, ctx: discord.ApplicationContext, role: discord.Role, input_type: str, name: str = None, image: str = None):
@@ -98,6 +97,7 @@ class Topic(commands.Cog):
             title=f"{name} {type_descriptor["emoji"]} {type_descriptor["text"]}",
             color=color,
             footer=discord.embeds.EmbedFooter(text="Clique sur ✅ pour t'abonner à ce topic"),
+            # TODO: maybe cache the picture before, so if the original link dies, we still have a reliable url
             image=image
         )
 
