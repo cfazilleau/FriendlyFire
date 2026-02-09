@@ -35,13 +35,13 @@ class Topic(commands.Cog):
 
     @topicGroup.command(name="create", description="create a topic", default_permission=False)
     @option(name="name", description="name of the new topic", required=True)
-    @option(name="type", description="type of topic", required=True, autocomplete=get_topic_types)
+    @option(name="type", parameter_name="topic_type", description="type of topic", required=True, autocomplete=get_topic_types)
     @option(name="image", description="URL of an image for this topic", required=False)
-    async def create_topic(self, ctx: discord.ApplicationContext, name: str, input_type: str, image: str = None):
+    async def create_topic(self, ctx: discord.ApplicationContext, name: str, topic_type: str, image: str = None):
         await ctx.defer(ephemeral=True)
 
         #retrieve the corresponding type data
-        type_descriptor = self.topicTypes[input_type]
+        type_descriptor = self.topicTypes[topic_type]
 
         # create the role
         color = discord.Color(int(type_descriptor["color"], 16))
@@ -70,15 +70,15 @@ class Topic(commands.Cog):
 
     @topicGroup.command(name="edit", description="edit a topic", default_permission=False)
     @option(name="role", description="current role of the topic", required=True, input_type=discord.SlashCommandOptionType.role)
-    @option(name="type", description="type of topic", required=True, autocomplete=get_topic_types)
+    @option(name="type", parameter_name="topic_type", description="type of topic", required=True, autocomplete=get_topic_types)
     @option(name="name", description="name of the new topic", required=False)
     @option(name="image", description="URL of an image for this topic", required=False)
-    async def edit_topic(self, ctx: discord.ApplicationContext, role: discord.Role, input_type: str, name: str = None, image: str = None):
+    async def edit_topic(self, ctx: discord.ApplicationContext, role: discord.Role, topic_type: str, name: str = None, image: str = None):
         await ctx.defer(ephemeral=True)
 
         collection: AsyncCollection[TopicEntry] = await self.bot.mongo.get_collection(ctx.guild_id, "topics")
         topic = await collection.find_one(filter={"roleId": str(role.id)})
-        type_descriptor = self.topicTypes[input_type]
+        type_descriptor = self.topicTypes[topic_type]
         color = discord.Color(int(type_descriptor["color"], 16))
 
         message = await ctx.fetch_message(topic["messageId"])
