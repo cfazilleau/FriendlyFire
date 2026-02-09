@@ -10,6 +10,4 @@ class FriendlyFire(commands.Bot):
         self.mongo = Mongo(mongo_uri)
 
     async def on_ready(self):
-        print('Logged in as')
-        print(self.user.name)
-        print(self.user.id)
+        print(f'Logged in as {self.user.name} ({self.user.id})')
