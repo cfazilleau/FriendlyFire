@@ -18,7 +18,10 @@ class TopicEntry(TypedDict):
 class Topic(commands.Cog):
     def __init__(self, bot: FriendlyFire):
         self.bot = bot
-        self.config = Config('topic')
+        default_config = {
+            "topicTypes": {},
+        }
+        self.config = Config('topic', default_config)
 
         # generate type options depending on the topic types
         self.choices = []

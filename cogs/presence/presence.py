@@ -7,18 +7,17 @@ from src.config import Config
 class Presence(commands.Cog):
     def __init__(self, bot: discord.Bot):
         self.bot = bot
-        self.config = Config('presence')
+        self.config = Config('presence', {
+            'status': 'online',
+            'activity': None
+        })
 
-        self.status = self.config.config.get('status', 'online')
-        self.activity = self.config.config.get('activity', None)
-
-        self.save_config()
+        self.status = self.config.config['status']
+        self.activity = self.config.config['activity']
 
     def save_config(self):
-        self.config.config = {
-            'status': self.status,
-            'activity': self.activity
-        }
+        self.config.config['status'] = self.status
+        self.config.config['activity'] = self.activity
         self.config.save()
 
     async def apply_status(self):

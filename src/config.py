@@ -2,9 +2,10 @@
 import io
 
 class Config:
-    def __init__(self, cog_name: str):
+    def __init__(self, cog_name: str, default_config: dict):
         self.config_file = f'config/{cog_name}.json'
-        self.config = self.load()
+        self.config = default_config | self.load()
+        self.save()
 
     def save(self):
         data = json.dumps(self.config, indent=4)
