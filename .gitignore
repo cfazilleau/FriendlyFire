@@ -1,4 +1,3 @@
-<<<<<<< ours
 # Jetbrains
 .idea
 
@@ -11,10 +10,9 @@ __pycache__
 
 # Local git configuration
 /.gitconfig
-=======
-.idea
-__pycache__
-.venv
-.env
->>>>>>> theirs
+
+# Runtime
 .run
+
+# Config (use *.template.json as reference)
+config/*.json
