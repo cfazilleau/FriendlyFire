@@ -1,1 +1,12 @@
-{}
+{
+    "global": {
+        "captureChannelId": null,
+        "replyChannelId": null
+    },
+    "guilds": {
+        "123456789": {
+            "captureChannelId": "channel_id_here",
+            "replyChannelId": "channel_id_here"
+        }
+    }
+}

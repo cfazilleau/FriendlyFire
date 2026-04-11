@@ -1,8 +1,11 @@
 {
-    "status": "idle",
-    "activity": {
-        "type": "playing",
-        "name": "games",
-        "url": null
-    }
+    "global": {
+        "status": "idle",
+        "activity": {
+            "type": "playing",
+            "name": "games",
+            "url": null
+        }
+    },
+    "guilds": {}
 }

@@ -22,13 +22,13 @@ class Topic(commands.Cog):
         }
         self.config = Config('topic', default_config)
 
-        if not self.config.config['topicTypes']:
+        if not self.config.get('topicTypes'):
             print('[Topic] No topic types configured in config/topic.json — topic commands will be unavailable.')
 
     topicGroup = discord.SlashCommandGroup(name="topic", description="manage topics")
 
     async def get_topic_types(self, ctx: discord.AutocompleteContext):
-        return list(self.config.config['topicTypes'].keys())
+        return list(self.config.get('topicTypes').keys())
 
     @topicGroup.command(name="create", description="create a topic", default_permission=False)
     @option(name="name", description="name of the new topic", required=True)
@@ -37,8 +37,12 @@ class Topic(commands.Cog):
     async def create_topic(self, ctx: discord.ApplicationContext, name: str, topic_type: str, image: str = None):
         await ctx.defer(ephemeral=True)
 
-        #retrieve the corresponding type data
-        type_descriptor = self.config.config['topicTypes'][topic_type]
+        topic_types = self.config.get('topicTypes') or {}
+        if topic_type not in topic_types:
+            await ctx.respond(f"Unknown topic type `{topic_type}`. Valid types: {', '.join(f'`{t}`' for t in topic_types)}")
+            return
+
+        type_descriptor = topic_types[topic_type]
 
         # create the role
         color = discord.Color(int(type_descriptor["color"], 16))
@@ -73,9 +77,14 @@ class Topic(commands.Cog):
     async def edit_topic(self, ctx: discord.ApplicationContext, role: discord.Role, topic_type: str, name: str = None, image: str = None):
         await ctx.defer(ephemeral=True)
 
+        topic_types = self.config.get('topicTypes') or {}
+        if topic_type not in topic_types:
+            await ctx.respond(f"Unknown topic type `{topic_type}`. Valid types: {', '.join(f'`{t}`' for t in topic_types)}")
+            return
+
         collection: AsyncCollection[TopicEntry] = await self.bot.mongo.get_collection(ctx.guild_id, "topics")
         topic = await collection.find_one(filter={"roleId": str(role.id)})
-        type_descriptor = self.config.config['topicTypes'][topic_type]
+        type_descriptor = topic_types[topic_type]
         color = discord.Color(int(type_descriptor["color"], 16))
 
         channel = self.bot.get_channel(int(topic["channelId"]))

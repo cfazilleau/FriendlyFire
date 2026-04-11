@@ -12,13 +12,12 @@ class Presence(commands.Cog):
             'activity': None
         })
 
-        self.status = self.config.config['status']
-        self.activity = self.config.config['activity']
+        self.status = self.config.get('status')
+        self.activity = self.config.get('activity')
 
     def save_config(self):
-        self.config.config['status'] = self.status
-        self.config.config['activity'] = self.activity
-        self.config.save()
+        self.config.set('status', self.status)
+        self.config.set('activity', self.activity)
 
     async def apply_status(self):
         status = discord.enums.Status[self.status]

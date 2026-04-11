@@ -1,9 +1,12 @@
 {
-    "topicTypes": {
-        "example": {
-            "color": "AD5713",
-            "emoji": "🎮",
-            "text": "Example topic type"
+    "global": {
+        "topicTypes": {
+            "example": {
+                "color": "AD5713",
+                "emoji": "🎮",
+                "text": "Example topic type"
+            }
         }
-    }
+    },
+    "guilds": {}
 }

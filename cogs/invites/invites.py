@@ -56,7 +56,7 @@ class Invites(commands.Cog):
         await ctx.defer(ephemeral=True)
 
         author = ctx.author
-        invite_max_age = self.config.config['inviteMaxAge']
+        invite_max_age = self.config.get('inviteMaxAge')
 
         invite = await ctx.channel.create_invite(temporary=True, max_age=invite_max_age)
         invite_entry = InviteEntry(
@@ -80,7 +80,7 @@ class Invites(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         # Add default role
-        new_role_id = self.config.config['inviteRole']
+        new_role_id = self.config.get('inviteRole', member.guild.id)
         if new_role_id is not None:
             role_to_add = member.guild.get_role(new_role_id)
             if role_to_add is None:
@@ -107,7 +107,7 @@ class Invites(commands.Cog):
         if inviter_id is None:
             print(f"{member.name} joined using unknown invite code.")
 
-        announcement_channel_id = self.config.config['invitesChannel']
+        announcement_channel_id = self.config.get('invitesChannel', member.guild.id)
         if announcement_channel_id:
             announcement_channel = member.guild.get_channel(announcement_channel_id)
             if announcement_channel is not None:
