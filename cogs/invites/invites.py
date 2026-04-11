@@ -97,7 +97,7 @@ class Invites(commands.Cog):
 
         inviter_id = None
         for invite in recorded_invites:
-            if invite['code'] not in server_invites:
+            if invite['code'] not in [i.code for i in server_invites]:
                 inviter = member.guild.get_member(invite['author_id'])
                 print(f"{member.name} joined \"{member.guild.name}\" using the invite {invite['code']} by {inviter.name}")
                 inviter_id = inviter.id

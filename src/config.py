@@ -13,6 +13,10 @@ class Config:
             file.write(data)
 
     def load(self):
-        with io.open(self.config_file, 'r', encoding='utf-8-sig') as file:
-            data = file.read()
-        return json.loads(data)
+        try:
+            with io.open(self.config_file, 'r', encoding='utf-8-sig') as file:
+                data = file.read()
+            return json.loads(data)
+        except FileNotFoundError:
+            print(f'[Config] Config file not found: {self.config_file}, using defaults.')
+            return {}

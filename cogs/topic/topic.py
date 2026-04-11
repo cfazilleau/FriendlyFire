@@ -1,4 +1,4 @@
-﻿from typing import TypedDict
+from typing import TypedDict
 
 import discord
 from discord import option
@@ -7,7 +7,6 @@ from pymongo.asynchronous.collection import AsyncCollection
 
 from src import FriendlyFire
 from src.config import Config
-
 
 class TopicEntry(TypedDict):
     messageId: str
@@ -23,18 +22,13 @@ class Topic(commands.Cog):
         }
         self.config = Config('topic', default_config)
 
-        # generate type options depending on the topic types
-        self.choices = []
-        for topic in self.config.config['topicTypes'].keys():
-            self.choices.append(discord.OptionChoice(name=topic, value=topic))
-
-        # make sure we have existing topic types
-        assert len(self.choices) > 0
+        if not self.config.config['topicTypes']:
+            raise ValueError("No topic types configured in config/topic.json")
 
     topicGroup = discord.SlashCommandGroup(name="topic", description="manage topics")
 
     async def get_topic_types(self, ctx: discord.AutocompleteContext):
-        return self.config.config['topicTypes'].keys()
+        return list(self.config.config['topicTypes'].keys())
 
     @topicGroup.command(name="create", description="create a topic", default_permission=False)
     @option(name="name", description="name of the new topic", required=True)
@@ -44,7 +38,7 @@ class Topic(commands.Cog):
         await ctx.defer(ephemeral=True)
 
         #retrieve the corresponding type data
-        type_descriptor = self.topicTypes[topic_type]
+        type_descriptor = self.config.config['topicTypes'][topic_type]
 
         # create the role
         color = discord.Color(int(type_descriptor["color"], 16))
@@ -81,14 +75,15 @@ class Topic(commands.Cog):
 
         collection: AsyncCollection[TopicEntry] = await self.bot.mongo.get_collection(ctx.guild_id, "topics")
         topic = await collection.find_one(filter={"roleId": str(role.id)})
-        type_descriptor = self.topicTypes[topic_type]
+        type_descriptor = self.config.config['topicTypes'][topic_type]
         color = discord.Color(int(type_descriptor["color"], 16))
 
-        message = await ctx.fetch_message(topic["messageId"])
+        channel = self.bot.get_channel(int(topic["channelId"]))
+        message = await channel.fetch_message(int(topic["messageId"]))
         prev_embed = message.embeds[0]
 
         if name is None:
-            name = topic["name"]
+            name = topic["roleName"]
         else:
             await role.edit(name=name)
 
