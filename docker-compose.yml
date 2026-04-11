@@ -1,0 +1,9 @@
+services:
+  bot:
+    build: .
+    restart: unless-stopped
+    environment:
+      - TOKEN=${TOKEN}
+      - MONGO_URI=${MONGO_URI}
+    volumes:
+      - ./config:/app/config
