@@ -16,3 +16,4 @@ __pycache__
 
 # Config (use *.template.json as reference)
 config/*.json
+!config/*.template.json

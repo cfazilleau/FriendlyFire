@@ -23,7 +23,7 @@ class Topic(commands.Cog):
         self.config = Config('topic', default_config)
 
         if not self.config.config['topicTypes']:
-            raise ValueError("No topic types configured in config/topic.json")
+            print('[Topic] No topic types configured in config/topic.json — topic commands will be unavailable.')
 
     topicGroup = discord.SlashCommandGroup(name="topic", description="manage topics")
 

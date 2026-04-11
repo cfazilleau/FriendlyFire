@@ -1,11 +1,15 @@
 ﻿import json
 import io
+import os
 
 class Config:
     def __init__(self, cog_name: str, default_config: dict):
         self.config_file = f'config/{cog_name}.json'
-        self.config = default_config | self.load()
-        self.save()
+        self.template_file = f'config/{cog_name}.template.json'
+        loaded = self.load()
+        self.config = default_config | loaded
+        if loaded:
+            self.save()
 
     def save(self):
         data = json.dumps(self.config, indent=4)
@@ -18,5 +22,6 @@ class Config:
                 data = file.read()
             return json.loads(data)
         except FileNotFoundError:
-            print(f'[Config] Config file not found: {self.config_file}, using defaults.')
+            template_hint = f' See {self.template_file} for reference.' if os.path.exists(self.template_file) else ''
+            print(f'[Config] {self.config_file} not found, using defaults.{template_hint}')
             return {}

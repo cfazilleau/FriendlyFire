@@ -1,0 +1,9 @@
+{
+    "topicTypes": {
+        "example": {
+            "color": "AD5713",
+            "emoji": "🎮",
+            "text": "Example topic type"
+        }
+    }
+}
