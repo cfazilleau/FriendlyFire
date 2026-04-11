@@ -37,7 +37,7 @@ class QuoteView(discord.ui.View):
         self.current_idx, quote = random.choice(safe_quotes)
         total = len(all_quotes)
 
-        image_bytes = await generate_quote_image(quote['quote'], quote.get('author', ''))
+        image_bytes = await generate_quote_image(quote['quote'], quote.get('author', ''), self.quotes_cog.config.get('fontPath'))
         file = discord.File(io.BytesIO(image_bytes), filename='quote.jpg')
         content = self.quotes_cog._quote_content(quote, self.current_idx + 1, total, notify=self.notify)
 
@@ -59,6 +59,7 @@ class Quotes(commands.Cog):
         self.config = Config('quotes', {
             'captureChannelId': None,
             'replyChannelId': None,
+            'fontPath': 'assets/fonts/PlayfairDisplay-Italic.ttf',
         })
 
     quotesGroup = discord.SlashCommandGroup(name="quotes", description="manage quotes config")
@@ -110,7 +111,7 @@ class Quotes(commands.Cog):
                 return
             idx, quote = random.choice(safe_quotes)
 
-        image_bytes = await generate_quote_image(quote['quote'], quote.get('author', ''))
+        image_bytes = await generate_quote_image(quote['quote'], quote.get('author', ''), self.config.get('fontPath'))
         file = discord.File(io.BytesIO(image_bytes), filename='quote.jpg')
         notify = ctx.author.mention if use_reply_channel else None
         view = QuoteView(self, ctx.guild_id, idx, notify)

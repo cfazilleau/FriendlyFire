@@ -41,7 +41,7 @@ A Discord bot for the Phoenix Legacy community, built with [py-cord](https://git
 - Python 3.13+
 - MongoDB instance (e.g. [MongoDB Atlas](https://www.mongodb.com/atlas))
 - A Discord bot token ([Discord Developer Portal](https://discord.com/developers/applications))
-- A font file at `assets/fonts/PlayfairDisplay-Italic.ttf` (used for quote image generation)
+- A font file for quote image generation (path configured via `fontPath` in `config/quotes.json`, defaults to `assets/fonts/PlayfairDisplay-Italic.ttf`)
 
 ## Environment Variables
 
@@ -122,7 +122,7 @@ Config files live in `config/` and are gitignored. Template files (`*.template.j
 | `config/topic.json` | Topic types (name, color hex, emoji) — must be hand-edited |
 | `config/invites.json` | Invite settings (max age, role ID, announcement channel) |
 | `config/presence.json` | Cached bot status and activity |
-| `config/quotes.json` | Per-guild capture and reply channel IDs |
+| `config/quotes.json` | Capture channel, reply channel, and font path for quote images |
 
 All configs support per-guild overrides under a `guilds` key:
 ```json

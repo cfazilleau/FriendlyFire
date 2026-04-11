@@ -3,8 +3,6 @@ import io
 import aiohttp
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
-FONT_PATH = 'assets/fonts/PlayfairDisplay-Italic.ttf'
-
 IMG_W = 800
 IMG_H = 800
 PADDING = 120
@@ -27,7 +25,7 @@ def _wrap_text(draw: ImageDraw.ImageDraw, text: str, font, max_width: int) -> li
     return lines
 
 
-def _render(bg_data: bytes, quote: str, author: str) -> bytes:
+def _render(bg_data: bytes, quote: str, author: str, font_path: str) -> bytes:
     # Background: resize, blur, darken
     bg = Image.open(io.BytesIO(bg_data)).convert('RGBA').resize((IMG_W, IMG_H), Image.Resampling.LANCZOS)
     bg = bg.filter(ImageFilter.GaussianBlur(radius=5))
@@ -36,9 +34,9 @@ def _render(bg_data: bytes, quote: str, author: str) -> bytes:
 
     draw = ImageDraw.Draw(img)
 
-    font_quote = ImageFont.truetype(FONT_PATH, 54)
-    font_author = ImageFont.truetype(FONT_PATH, 38)
-    font_deco = ImageFont.truetype(FONT_PATH, 220)
+    font_quote = ImageFont.truetype(font_path, 54)
+    font_author = ImageFont.truetype(font_path, 38)
+    font_deco = ImageFont.truetype(font_path, 220)
 
     # Decorative opening quote mark (faint, top-left)
     draw.text((50, -40), '\u201c', font=font_deco, fill=(255, 255, 255, 45))
@@ -67,8 +65,8 @@ def _render(bg_data: bytes, quote: str, author: str) -> bytes:
     return out.getvalue()
 
 
-async def generate_quote_image(quote: str, author: str) -> bytes:
+async def generate_quote_image(quote: str, author: str, font_path: str) -> bytes:
     async with aiohttp.ClientSession() as session:
         async with session.get(f'https://picsum.photos/{IMG_W}/{IMG_H}', allow_redirects=True) as resp:
             bg_data = await resp.read()
-    return _render(bg_data, quote, author)
+    return _render(bg_data, quote, author, font_path)

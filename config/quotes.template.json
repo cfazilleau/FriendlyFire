@@ -1,7 +1,8 @@
 {
     "global": {
         "captureChannelId": null,
-        "replyChannelId": null
+        "replyChannelId": null,
+        "fontPath": "assets/fonts/PlayfairDisplay-Italic.ttf"
     },
     "guilds": {
         "123456789": {
