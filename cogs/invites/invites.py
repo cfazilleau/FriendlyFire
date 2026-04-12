@@ -44,6 +44,9 @@ class Invites(commands.Cog):
         await ctx.defer(ephemeral=True)
         collection: AsyncCollection[Greeting] = await self.bot.mongo.get_collection(ctx.guild_id, "greetings")
         greetings = await collection.find({}).to_list()
+        if not greetings:
+            await ctx.respond("No greetings in the database.")
+            return
         view = PaginatorView(self, greetings, id)
         await ctx.respond(
             content=view.get_content(),
