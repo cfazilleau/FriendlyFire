@@ -88,6 +88,9 @@ class Topic(commands.Cog):
         color = discord.Color(int(type_descriptor["color"], 16))
 
         channel = self.bot.get_channel(int(topic["channelId"]))
+        if channel is None:
+            await ctx.respond("Could not find the topic's channel. It may have been deleted.")
+            return
         message = await channel.fetch_message(int(topic["messageId"]))
         prev_embed = message.embeds[0]
 
@@ -130,28 +133,38 @@ class Topic(commands.Cog):
             await ctx.respond("Topic not found in the database, you might need to delete this one manually")
             return
 
-        message = await ctx.fetch_message(int(topic["messageId"]))
+        message = await ctx.channel.fetch_message(int(topic["messageId"]))
         await message.delete()
         await role.delete()
         await ctx.respond("Removed topic successfully!")
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+        if str(payload.emoji) != '✅':
+            return
         collection: AsyncCollection[TopicEntry] = await self.bot.mongo.get_collection(payload.guild_id, "topics")
         topic = await collection.find_one(filter={"messageId": str(payload.message_id)})
         if topic:
             guild = self.bot.get_guild(payload.guild_id)
             role = guild.get_role(int(topic["roleId"]))
+            if role is None:
+                print(f"[Topic] Role {topic['roleId']} not found, skipping reaction.")
+                return
             await payload.member.add_roles(role)
             print(f"Added role {role.name} to user {payload.member.name}")
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
+        if str(payload.emoji) != '✅':
+            return
         collection: AsyncCollection[TopicEntry] = await self.bot.mongo.get_collection(payload.guild_id, "topics")
         topic = await collection.find_one(filter={"messageId": str(payload.message_id)})
         if topic:
             guild = self.bot.get_guild(payload.guild_id)
             role = guild.get_role(int(topic["roleId"]))
+            if role is None:
+                print(f"[Topic] Role {topic['roleId']} not found, skipping reaction.")
+                return
             member = await guild.fetch_member(payload.user_id)
             await member.remove_roles(role)
             print(f"Removed role {role.name} from user {member.name}")
