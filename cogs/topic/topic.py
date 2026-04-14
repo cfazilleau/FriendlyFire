@@ -87,7 +87,7 @@ class Topic(commands.Cog):
         type_descriptor = topic_types[topic_type]
         color = discord.Color(int(type_descriptor["color"], 16))
 
-        channel = self.bot.get_channel(int(topic["channelId"]))
+        channel = self.bot.get_channel(int(topic["channelId"])) or await self.bot.fetch_channel(int(topic["channelId"]))
         message = await channel.fetch_message(int(topic["messageId"]))
         prev_embed = message.embeds[0]
 
@@ -130,7 +130,8 @@ class Topic(commands.Cog):
             await ctx.respond("Topic not found in the database, you might need to delete this one manually")
             return
 
-        message = await ctx.fetch_message(int(topic["messageId"]))
+        channel = self.bot.get_channel(int(topic["channelId"])) or await self.bot.fetch_channel(int(topic["channelId"]))
+        message = await channel.fetch_message(int(topic["messageId"]))
         await message.delete()
         await role.delete()
         await ctx.respond("Removed topic successfully!")
@@ -142,6 +143,9 @@ class Topic(commands.Cog):
         if topic:
             guild = self.bot.get_guild(payload.guild_id)
             role = guild.get_role(int(topic["roleId"]))
+            if role is None:
+                print(f"Role {topic['roleId']} not found, skipping reaction add.")
+                return
             await payload.member.add_roles(role)
             print(f"Added role {role.name} to user {payload.member.name}")
 
@@ -152,6 +156,9 @@ class Topic(commands.Cog):
         if topic:
             guild = self.bot.get_guild(payload.guild_id)
             role = guild.get_role(int(topic["roleId"]))
+            if role is None:
+                print(f"Role {topic['roleId']} not found, skipping reaction remove.")
+                return
             member = await guild.fetch_member(payload.user_id)
             await member.remove_roles(role)
             print(f"Removed role {role.name} from user {member.name}")
