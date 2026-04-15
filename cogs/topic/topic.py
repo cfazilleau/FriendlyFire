@@ -84,10 +84,17 @@ class Topic(commands.Cog):
 
         collection: AsyncCollection[TopicEntry] = await self.bot.mongo.get_collection(ctx.guild_id, "topics")
         topic = await collection.find_one(filter={"roleId": str(role.id)})
+        if topic is None:
+            await ctx.respond("Topic not found in the database.")
+            return
+
         type_descriptor = topic_types[topic_type]
         color = discord.Color(int(type_descriptor["color"], 16))
 
         channel = self.bot.get_channel(int(topic["channelId"]))
+        if channel is None:
+            await ctx.respond("Topic channel not found — it may have been deleted.")
+            return
         message = await channel.fetch_message(int(topic["messageId"]))
         prev_embed = message.embeds[0]
 
@@ -130,9 +137,15 @@ class Topic(commands.Cog):
             await ctx.respond("Topic not found in the database, you might need to delete this one manually")
             return
 
-        message = await ctx.fetch_message(int(topic["messageId"]))
-        await message.delete()
+        channel = self.bot.get_channel(int(topic["channelId"]))
+        if channel is not None:
+            try:
+                message = await channel.fetch_message(int(topic["messageId"]))
+                await message.delete()
+            except discord.NotFound:
+                pass
         await role.delete()
+        await collection.delete_one({"_id": topic["_id"]})
         await ctx.respond("Removed topic successfully!")
 
     @commands.Cog.listener()

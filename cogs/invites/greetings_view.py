@@ -55,8 +55,12 @@ class PaginatorView(discord.ui.View):
     @discord.ui.button(label="Delete", style=ButtonStyle.red)
     async def delete_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         await self.delete_current_greeting(interaction)
-        if self.current_page == len(self.pages):
-            self.current_page -= 1
+        if not self.pages:
+            self.disable_all_items()
+            await interaction.response.edit_message(content="No greetings left.", embed=None, view=self)
+            return
+        if self.current_page >= len(self.pages):
+            self.current_page = len(self.pages) - 1
         await self.update_message(interaction)
 
     @discord.ui.button(label="Next", style=ButtonStyle.gray)
