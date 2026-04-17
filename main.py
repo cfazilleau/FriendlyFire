@@ -10,7 +10,8 @@ bot = FriendlyFire(mongo_uri=MONGO_URI)
 
 # load all cogs as extensions
 for cog in os.listdir('./cogs'):
-    bot.load_extension(f'cogs.{cog}.{cog}')
+    if os.path.isdir(f'./cogs/{cog}'):
+        bot.load_extension(f'cogs.{cog}.{cog}')
 
 # start the bot
 bot.run(TOKEN)

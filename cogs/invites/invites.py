@@ -99,8 +99,9 @@ class Invites(commands.Cog):
         for invite in recorded_invites:
             if invite['code'] not in [i.code for i in server_invites]:
                 inviter = member.guild.get_member(invite['author_id'])
-                print(f"{member.name} joined \"{member.guild.name}\" using the invite {invite['code']} by {inviter.name}")
-                inviter_id = inviter.id
+                inviter_name = inviter.name if inviter is not None else f"unknown({invite['author_id']})"
+                print(f"{member.name} joined \"{member.guild.name}\" using the invite {invite['code']} by {inviter_name}")
+                inviter_id = invite['author_id'] if inviter is None else inviter.id
                 await collection.delete_one({"code": invite['code']})
                 break
 
@@ -113,8 +114,8 @@ class Invites(commands.Cog):
             if announcement_channel is not None:
                 embed = discord.Embed(
                     title="Bienvenue!",
-                    thumbnail= member.avatar.url,
-                    color=member.accent_color,
+                    thumbnail=member.display_avatar.url,
+                    color=member.accent_color or discord.Color.default(),
                     description=f"Bienvenue a <@{member.id}>, {f"invité.e par <@{inviter_id}>" if inviter_id is not None else ""} sur le discord de [Phoenix Legacy](https://phxlgc.com)!"
                 )
                 await announcement_channel.send(embed=embed)
