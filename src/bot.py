@@ -3,10 +3,11 @@ from discord.ext import commands
 from src.mongo import Mongo
 
 class FriendlyFire(commands.Bot):
-    intents = discord.Intents.default()
-
     def __init__(self, mongo_uri: str = None):
-        super().__init__()
+        intents = discord.Intents.default()
+        intents.members = True
+        intents.message_content = True
+        super().__init__(intents=intents)
         self.mongo = Mongo(mongo_uri)
 
     async def on_ready(self):
