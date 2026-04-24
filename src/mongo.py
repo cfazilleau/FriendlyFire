@@ -1,5 +1,4 @@
-﻿import asyncio
-from pymongo import AsyncMongoClient
+﻿from pymongo import AsyncMongoClient
 from pymongo.asynchronous.collection import AsyncCollection
 
 
@@ -10,9 +9,4 @@ class Mongo:
 
     async def get_collection(self, guild_id: int, collection_name: str):
         database = self.client.get_database(str(guild_id))
-        collection = database[collection_name]
-
-        if collection is None:
-            collection = await database.create_collection(collection_name)
-
-        return collection
+        return database[collection_name]

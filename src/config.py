@@ -53,3 +53,6 @@ class Config:
             template_hint = f' See {self.template_file} for reference.' if os.path.exists(self.template_file) else ''
             print(f'[Config] {self.config_file} not found, using defaults.{template_hint}')
             return {}
+        except json.JSONDecodeError as e:
+            print(f'[Config] {self.config_file} is malformed ({e}), using defaults.')
+            return {}
