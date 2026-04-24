@@ -82,7 +82,12 @@ class Quotes(commands.Cog):
     @discord.option(name="id", parameter_name="quote_id", description="Id of the quote to send", required=False, input_type=int)
     async def quote(self, ctx: discord.ApplicationContext, quote_id: int = None):
         reply_channel_id = self.config.get('replyChannelId', ctx.guild_id)
-        reply_channel = await self.bot.fetch_channel(int(reply_channel_id)) if reply_channel_id else None
+        reply_channel = None
+        if reply_channel_id:
+            try:
+                reply_channel = await self.bot.fetch_channel(int(reply_channel_id))
+            except discord.NotFound:
+                pass
         use_reply_channel = reply_channel is not None and reply_channel.id != ctx.channel_id
 
         await ctx.defer(ephemeral=use_reply_channel)
