@@ -95,12 +95,16 @@ class Invites(commands.Cog):
 
         print(f"{len(server_invites)} invites server-side, {len(recorded_invites)} invites bot-side.")
 
+        server_invite_codes = {i.code for i in server_invites}
         inviter_id = None
         for invite in recorded_invites:
-            if invite['code'] not in [i.code for i in server_invites]:
+            if invite['code'] not in server_invite_codes:
                 inviter = member.guild.get_member(invite['author_id'])
-                print(f"{member.name} joined \"{member.guild.name}\" using the invite {invite['code']} by {inviter.name}")
-                inviter_id = inviter.id
+                if inviter:
+                    print(f"{member.name} joined \"{member.guild.name}\" using the invite {invite['code']} by {inviter.name}")
+                    inviter_id = inviter.id
+                else:
+                    print(f"{member.name} joined \"{member.guild.name}\" using invite {invite['code']} (inviter no longer in server)")
                 await collection.delete_one({"code": invite['code']})
                 break
 
@@ -113,9 +117,9 @@ class Invites(commands.Cog):
             if announcement_channel is not None:
                 embed = discord.Embed(
                     title="Bienvenue!",
-                    thumbnail= member.avatar.url,
+                    thumbnail=member.display_avatar.url,
                     color=member.accent_color,
-                    description=f"Bienvenue a <@{member.id}>, {f"invité.e par <@{inviter_id}>" if inviter_id is not None else ""} sur le discord de [Phoenix Legacy](https://phxlgc.com)!"
+                    description=f"Bienvenue a <@{member.id}>, {f'invité.e par <@{inviter_id}>' if inviter_id is not None else ''} sur le discord de [Phoenix Legacy](https://phxlgc.com)!"
                 )
                 await announcement_channel.send(embed=embed)
 
