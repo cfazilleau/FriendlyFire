@@ -50,7 +50,7 @@ class Topic(commands.Cog):
 
         # send a new embed message for users to react to
         embed = discord.Embed(
-            title=f"{name} {type_descriptor["emoji"]} {type_descriptor["text"]}",
+            title=f"{name} {type_descriptor['emoji']} {type_descriptor['text']}",
             color=color,
             footer=discord.embeds.EmbedFooter(text="Clique sur ✅ pour t'abonner à ce topic"),
             # TODO: maybe cache the picture before, so if the original link dies, we still have a reliable url
@@ -101,7 +101,7 @@ class Topic(commands.Cog):
 
         # create a new embed message to update
         embed = discord.Embed(
-            title=f"{name} {type_descriptor["emoji"]} {type_descriptor["text"]}",
+            title=f"{name} {type_descriptor['emoji']} {type_descriptor['text']}",
             color=color,
             footer=discord.embeds.EmbedFooter(text="Clique sur ✅ pour t'abonner à ce topic"),
             # TODO: maybe cache the picture before, so if the original link dies, we still have a reliable url
@@ -130,8 +130,15 @@ class Topic(commands.Cog):
             await ctx.respond("Topic not found in the database, you might need to delete this one manually")
             return
 
-        message = await ctx.fetch_message(int(topic["messageId"]))
-        await message.delete()
+        channel = self.bot.get_channel(int(topic["channelId"]))
+        if channel is not None:
+            try:
+                message = await channel.fetch_message(int(topic["messageId"]))
+                await message.delete()
+            except discord.NotFound:
+                pass
+
+        await collection.delete_one({"_id": topic["_id"]})
         await role.delete()
         await ctx.respond("Removed topic successfully!")
 
@@ -142,6 +149,8 @@ class Topic(commands.Cog):
         if topic:
             guild = self.bot.get_guild(payload.guild_id)
             role = guild.get_role(int(topic["roleId"]))
+            if role is None:
+                return
             await payload.member.add_roles(role)
             print(f"Added role {role.name} to user {payload.member.name}")
 
@@ -152,6 +161,8 @@ class Topic(commands.Cog):
         if topic:
             guild = self.bot.get_guild(payload.guild_id)
             role = guild.get_role(int(topic["roleId"]))
+            if role is None:
+                return
             member = await guild.fetch_member(payload.user_id)
             await member.remove_roles(role)
             print(f"Removed role {role.name} from user {member.name}")
