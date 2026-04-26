@@ -1,3 +1,4 @@
+import asyncio
 import io
 
 import aiohttp
@@ -6,6 +7,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 IMG_W = 800
 IMG_H = 800
 PADDING = 120
+_HTTP_TIMEOUT = aiohttp.ClientTimeout(total=10)
 
 
 def _wrap_text(draw: ImageDraw.ImageDraw, text: str, font, max_width: int) -> list[str]:
@@ -39,7 +41,7 @@ def _render(bg_data: bytes, quote: str, author: str, font_path: str) -> bytes:
     font_deco = ImageFont.truetype(font_path, 220)
 
     # Decorative opening quote mark (faint, top-left)
-    draw.text((50, -40), '\u201c', font=font_deco, fill=(255, 255, 255, 45))
+    draw.text((50, -40), '“', font=font_deco, fill=(255, 255, 255, 45))
 
     # Wrap and vertically center quote text
     lines = _wrap_text(draw, quote, font_quote, IMG_W - PADDING * 2)
@@ -54,7 +56,7 @@ def _render(bg_data: bytes, quote: str, author: str, font_path: str) -> bytes:
         y += line_h
 
     # Author centered near bottom
-    author_str = f'\u2014 {author}'
+    author_str = f'— {author}'
     ax = int((IMG_W - draw.textlength(author_str, font=font_author)) // 2)
     ay = IMG_H - 90
     draw.text((ax + 2, ay + 2), author_str, font=font_author, fill=(0, 0, 0, 180))
@@ -66,7 +68,7 @@ def _render(bg_data: bytes, quote: str, author: str, font_path: str) -> bytes:
 
 
 async def generate_quote_image(quote: str, author: str, font_path: str) -> bytes:
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=_HTTP_TIMEOUT) as session:
         async with session.get(f'https://picsum.photos/{IMG_W}/{IMG_H}', allow_redirects=True) as resp:
             bg_data = await resp.read()
     return _render(bg_data, quote, author, font_path)
