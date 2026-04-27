@@ -151,8 +151,15 @@ class Topic(commands.Cog):
         topic = await collection.find_one(filter={"messageId": str(payload.message_id)})
         if topic:
             guild = self.bot.get_guild(payload.guild_id)
+            if guild is None:
+                return
             role = guild.get_role(int(topic["roleId"]))
-            member = await guild.fetch_member(payload.user_id)
+            if role is None:
+                return
+            try:
+                member = await guild.fetch_member(payload.user_id)
+            except discord.NotFound:
+                return
             await member.remove_roles(role)
             print(f"Removed role {role.name} from user {member.name}")
 
