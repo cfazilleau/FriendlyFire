@@ -74,6 +74,9 @@ class Invites(commands.Cog):
     async def test_join(self, ctx: discord.ApplicationContext, user: discord.User):
         await ctx.defer(ephemeral=True)
         member = ctx.guild.get_member(user.id)
+        if member is None:
+            await ctx.respond(f"{user.mention} is not a member of this server.")
+            return
         await self.on_member_join(member)
         await ctx.respond("test_join succeeded!")
 
