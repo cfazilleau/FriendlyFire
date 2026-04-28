@@ -62,7 +62,7 @@ class Invites(commands.Cog):
         invite_entry = InviteEntry(
             author_id=author.id,
             code=invite.code,
-            expires=int(invite.expires_at.timestamp())
+            expires=int(invite.expires_at.timestamp()) if invite.expires_at else None
         )
         collection: AsyncCollection[InviteEntry] = await self.bot.mongo.get_collection(ctx.guild_id, "invites")
         await collection.insert_one(invite_entry)
@@ -129,7 +129,7 @@ class Invites(commands.Cog):
             invites_num = len(recorded_invites)
 
             for invite in recorded_invites:
-                if invite['expires'] - datetime.datetime.now().timestamp() < 0:
+                if invite['expires'] is not None and invite['expires'] - datetime.datetime.now().timestamp() < 0:
                     await collection.delete_one({"code": invite['code']})
                     invites_num -= 1
                     print(f"Deleted expired invite: {invite['code']}. {invites_num} remaining.")
