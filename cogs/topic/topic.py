@@ -1,5 +1,5 @@
 import io
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 import aiohttp
 import discord
@@ -15,7 +15,6 @@ class TopicEntry(TypedDict):
     channelId: str
     roleId: str
     roleName: str
-    imageData: Optional[bytes]
 
 class Topic(commands.Cog):
     def __init__(self, bot: FriendlyFire):
@@ -33,7 +32,7 @@ class Topic(commands.Cog):
     async def get_topic_types(self, ctx: discord.AutocompleteContext):
         return list(self.config.get('topicTypes').keys())
 
-    async def _fetch_image(self, url: str) -> Optional[bytes]:
+    async def _fetch_image(self, url: str) -> bytes | None:
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as resp:
                 if resp.status == 200:
@@ -58,18 +57,16 @@ class Topic(commands.Cog):
         color = discord.Color(int(type_descriptor["color"], 16))
         role = await ctx.guild.create_role(name=name, color=color, mentionable=True)
 
-        image_data = await self._fetch_image(image) if image else None
-
         embed = discord.Embed(
             title=f"{name} {type_descriptor['emoji']} {type_descriptor['text']}",
             color=color,
             footer=discord.embeds.EmbedFooter(text="Clique sur ✅ pour t'abonner à ce topic"),
         )
 
+        image_data = await self._fetch_image(image) if image else None
         if image_data:
             embed.set_image(url="attachment://topic.png")
-            file = discord.File(io.BytesIO(image_data), filename="topic.png")
-            message = await ctx.channel.send(file=file, embed=embed)
+            message = await ctx.channel.send(file=discord.File(io.BytesIO(image_data), filename="topic.png"), embed=embed)
         else:
             message = await ctx.channel.send(embed=embed)
 
@@ -80,8 +77,7 @@ class Topic(commands.Cog):
             messageId=str(message.id),
             channelId=str(message.channel.id),
             roleId=str(role.id),
-            roleName=role.name,
-            imageData=image_data
+            roleName=role.name
         ))
         await ctx.respond("Created topic successfully!")
 
@@ -111,11 +107,6 @@ class Topic(commands.Cog):
         else:
             await role.edit(name=name)
 
-        # Use newly downloaded image, fall back to previously cached bytes
-        image_data = topic.get("imageData")
-        if image is not None:
-            image_data = await self._fetch_image(image) or image_data
-
         embed = discord.Embed(
             title=f"{name} {type_descriptor['emoji']} {type_descriptor['text']}",
             color=color,
@@ -124,10 +115,17 @@ class Topic(commands.Cog):
 
         await role.edit(color=color)
 
-        if image_data:
-            embed.set_image(url="attachment://topic.png")
-            file = discord.File(io.BytesIO(image_data), filename="topic.png")
-            await message.edit(attachments=[], file=file, embed=embed)
+        if image is not None:
+            image_data = await self._fetch_image(image)
+            if image_data:
+                embed.set_image(url="attachment://topic.png")
+                await message.edit(attachments=[], file=discord.File(io.BytesIO(image_data), filename="topic.png"), embed=embed)
+            else:
+                await message.edit(embed=embed)
+        elif message.attachments:
+            # retain the previously uploaded image
+            embed.set_image(url=message.attachments[0].url)
+            await message.edit(attachments=message.attachments, embed=embed)
         else:
             await message.edit(embed=embed)
 
@@ -135,8 +133,7 @@ class Topic(commands.Cog):
             "messageId": str(message.id),
             "channelId": str(message.channel.id),
             "roleId": str(role.id),
-            "roleName": str(role.name),
-            "imageData": image_data
+            "roleName": str(role.name)
         }})
 
         await ctx.respond("Updated topic successfully!")
