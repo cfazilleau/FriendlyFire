@@ -49,8 +49,9 @@ class PaginatorView(discord.ui.View):
 
     @discord.ui.button(label="Prev", style=ButtonStyle.gray)
     async def prev_button(self, button: discord.ui.Button, interaction: discord.Interaction):
-        self.current_page -= 1
-        await self.update_message(interaction)
+        if self.current_page - 1 > 0:
+            self.current_page -= 1
+            await self.update_message(interaction)
 
     @discord.ui.button(label="Delete", style=ButtonStyle.red)
     async def delete_button(self, button: discord.ui.Button, interaction: discord.Interaction):
@@ -61,5 +62,6 @@ class PaginatorView(discord.ui.View):
 
     @discord.ui.button(label="Next", style=ButtonStyle.gray)
     async def next_button(self, button: discord.ui.Button, interaction: discord.Interaction):
-        self.current_page += 1
-        await self.update_message(interaction)
+        if self.current_page + 1 < len(self.pages):
+            self.current_page += 1
+            await self.update_message(interaction)

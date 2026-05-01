@@ -14,7 +14,7 @@ from cogs.quotes.check_quotes_view import CheckQuotesView
 from cogs.quotes.quote_image import generate_quote_image
 from src import FriendlyFire, BaseCog
 
-QUOTE_REGEX = re.compile(r'^"(.+?)"(?:\s*-*\s*(.*)$)', re.MULTILINE | re.DOTALL)
+QUOTE_REGEX = re.compile(r'\"(.+?)\"\s*-*\s*(.*)', re.MULTILINE | re.DOTALL)
 CONFIRMATION_COLOR = 0x2ea42a
 
 class QuoteView(discord.ui.View):
@@ -223,8 +223,6 @@ class Quotes(BaseCog):
         collection: AsyncCollection[QuoteEntry] = await self.bot.mongo.get_collection(message.guild.id, "quotes")
 
         ts = int(message.created_at.timestamp() * 1000)
-        if await collection.find_one({"timestamp": ts}):
-            return
 
         entry: QuoteEntry = {
             'quote': match.group(1),
@@ -235,7 +233,7 @@ class Quotes(BaseCog):
             'safe': True,
             'checked': False,
         }
-        await collection.insert_one(entry)
+        await collection.update_one({"timestamp": ts}, {"$set": entry}, upsert=True)
 
         all_quotes = await collection.find({}).sort('timestamp', 1).to_list()
         idx = next((i for i, q in enumerate(all_quotes) if q['timestamp'] == ts), -1)
