@@ -1,5 +1,7 @@
+import io
 from typing import TypedDict
 
+import aiohttp
 import discord
 from discord import option
 from discord.ext import commands
@@ -30,6 +32,13 @@ class Topic(commands.Cog):
     async def get_topic_types(self, ctx: discord.AutocompleteContext):
         return list(self.config.get('topicTypes').keys())
 
+    async def _fetch_image(self, url: str) -> bytes | None:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as resp:
+                if resp.status == 200:
+                    return await resp.read()
+        return None
+
     @topicGroup.command(name="create", description="create a topic", default_permission=False)
     @option(name="name", description="name of the new topic", required=True)
     @option(name="type", parameter_name="topic_type", description="type of topic", required=True, autocomplete=get_topic_types)
@@ -48,16 +57,19 @@ class Topic(commands.Cog):
         color = discord.Color(int(type_descriptor["color"], 16))
         role = await ctx.guild.create_role(name=name, color=color, mentionable=True)
 
-        # send a new embed message for users to react to
         embed = discord.Embed(
             title=f"{name} {type_descriptor['emoji']} {type_descriptor['text']}",
             color=color,
             footer=discord.embeds.EmbedFooter(text="Clique sur ✅ pour t'abonner à ce topic"),
-            # TODO: maybe cache the picture before, so if the original link dies, we still have a reliable url
-            image=image
         )
 
-        message = await ctx.channel.send(embed=embed)
+        image_data = await self._fetch_image(image) if image else None
+        if image_data:
+            embed.set_image(url="attachment://topic.png")
+            message = await ctx.channel.send(file=discord.File(io.BytesIO(image_data), filename="topic.png"), embed=embed)
+        else:
+            message = await ctx.channel.send(embed=embed)
+
         await message.add_reaction("✅")
 
         collection: AsyncCollection[TopicEntry] = await self.bot.mongo.get_collection(ctx.guild_id, "topics")
@@ -89,27 +101,34 @@ class Topic(commands.Cog):
 
         channel = self.bot.get_channel(int(topic["channelId"]))
         message = await channel.fetch_message(int(topic["messageId"]))
-        prev_embed = message.embeds[0]
 
         if name is None:
             name = topic["roleName"]
         else:
             await role.edit(name=name)
 
-        if image is None:
-            image = prev_embed.image
-
-        # create a new embed message to update
         embed = discord.Embed(
             title=f"{name} {type_descriptor['emoji']} {type_descriptor['text']}",
             color=color,
             footer=discord.embeds.EmbedFooter(text="Clique sur ✅ pour t'abonner à ce topic"),
-            # TODO: maybe cache the picture before, so if the original link dies, we still have a reliable url
-            image=image
         )
 
         await role.edit(color=color)
-        await message.edit(embed=embed)
+
+        if image is not None:
+            image_data = await self._fetch_image(image)
+            if image_data:
+                embed.set_image(url="attachment://topic.png")
+                await message.edit(attachments=[], file=discord.File(io.BytesIO(image_data), filename="topic.png"), embed=embed)
+            else:
+                await message.edit(embed=embed)
+        elif message.attachments:
+            # retain the previously uploaded image
+            embed.set_image(url=message.attachments[0].url)
+            await message.edit(attachments=message.attachments, embed=embed)
+        else:
+            await message.edit(embed=embed)
+
         await collection.update_one(filter={"_id": topic["_id"]}, update={"$set": {
             "messageId": str(message.id),
             "channelId": str(message.channel.id),
