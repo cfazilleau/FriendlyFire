@@ -9,24 +9,20 @@ from discord.utils import format_dt
 from pymongo.asynchronous.collection import AsyncCollection
 
 from cogs.invites.greetings_view import Greeting, PaginatorView
-from src import FriendlyFire
-from src.config import Config
+from src import FriendlyFire, BaseCog
 
 class InviteEntry(TypedDict):
     author_id: int
     code: str
     expires: int
 
-class Invites(commands.Cog):
+class Invites(BaseCog):
     def __init__(self, bot: FriendlyFire):
-        self.bot = bot
-
-        default_config = {
-            "inviteMaxAge": 20*60,   # time in seconds, so 20 minutes times 60 secs
-            "inviteRole": None,      # id of the role to add to new users (None to disable)
-            "invitesChannel": None,  # id of the channel to send notifications in (None to disable)
-        }
-        self.config = Config('invites', default_config)
+        super().__init__(bot, 'invites', {
+            "inviteMaxAge": 20*60,
+            "inviteRole": None,
+            "invitesChannel": None,
+        })
 
     greetingsGroup = discord.SlashCommandGroup(name="greetings", description="manage greetings")
 
@@ -90,7 +86,7 @@ class Invites(commands.Cog):
         if new_role_id is not None:
             role_to_add = member.guild.get_role(int(new_role_id))
             if role_to_add is None:
-                print("no role found, ignoring for new member.")
+                self.log("no role found, ignoring for new member.")
             else:
                 await member.add_roles(role_to_add)
 
@@ -99,20 +95,20 @@ class Invites(commands.Cog):
         collection: AsyncCollection[InviteEntry] = await self.bot.mongo.get_collection(member.guild.id, "invites")
         recorded_invites = await collection.find({}).to_list()
 
-        print(f"{len(server_invites)} invites server-side, {len(recorded_invites)} invites bot-side.")
+        self.log(f"{len(server_invites)} invites server-side, {len(recorded_invites)} invites bot-side.")
 
         inviter_id = None
         for invite in recorded_invites:
             if invite['code'] not in [i.code for i in server_invites]:
                 inviter = member.guild.get_member(invite['author_id'])
                 inviter_name = inviter.name if inviter else f"<unknown {invite['author_id']}>"
-                print(f"{member.name} joined \"{member.guild.name}\" using the invite {invite['code']} by {inviter_name}")
+                self.log(f"{member.name} joined \"{member.guild.name}\" using the invite {invite['code']} by {inviter_name}")
                 inviter_id = inviter.id if inviter else invite['author_id']
                 await collection.delete_one({"code": invite['code']})
                 break
 
         if inviter_id is None:
-            print(f"{member.name} joined using unknown invite code.")
+            self.log(f"{member.name} joined using unknown invite code.")
 
         announcement_channel_id = self.config.get('invitesChannel', member.guild.id)
         if announcement_channel_id:
@@ -128,7 +124,7 @@ class Invites(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f'clearing expired invites...')
+        self.log('clearing expired invites...')
         for guild in self.bot.guilds:
             collection: AsyncCollection[InviteEntry] = await self.bot.mongo.get_collection(guild.id, "invites")
             recorded_invites = await collection.find({}).to_list()
@@ -138,9 +134,7 @@ class Invites(commands.Cog):
                 if invite['expires'] is not None and invite['expires'] - datetime.datetime.now().timestamp() < 0:
                     await collection.delete_one({"code": invite['code']})
                     invites_num -= 1
-                    print(f"Deleted expired invite: {invite['code']}. {invites_num} remaining.")
-
-        print(f'Invites module ready')
+                    self.log(f"Deleted expired invite: {invite['code']}. {invites_num} remaining.")
 
 def setup(bot):
     bot.add_cog(Invites(bot))

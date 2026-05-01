@@ -12,8 +12,7 @@ from pymongo.asynchronous.collection import AsyncCollection
 
 from cogs.quotes.check_quotes_view import CheckQuotesView
 from cogs.quotes.quote_image import generate_quote_image
-from src import FriendlyFire
-from src.config import Config
+from src import FriendlyFire, BaseCog
 
 QUOTE_REGEX = re.compile(r'^"(.+?)"(?:\s*-*\s*(.*)$)', re.MULTILINE | re.DOTALL)
 CONFIRMATION_COLOR = 0x2ea42a
@@ -59,10 +58,9 @@ class QuoteEntry(TypedDict):
     safe: bool
     checked: bool
 
-class Quotes(commands.Cog):
+class Quotes(BaseCog):
     def __init__(self, bot: FriendlyFire):
-        self.bot = bot
-        self.config = Config('quotes', {
+        super().__init__(bot, 'quotes', {
             'captureChannelId': None,
             'replyChannelId': None,
             'fontPath': 'assets/fonts/PlayfairDisplay-Italic.ttf',
@@ -200,7 +198,7 @@ class Quotes(commands.Cog):
                 await collection.insert_one(entry)
                 existing.append(entry)
                 saved += 1
-                print(f'[Quotes] Found quote: "{entry["quote"]}" --{entry["author"]}')
+                self.log(f'Found quote: "{entry["quote"]}" --{entry["author"]}')
 
             await ctx.edit(content=f"Saving quotes...\n\n> {checked} messages checked\n> {saved} new quotes saved")
             last_id = batch[-1].id
@@ -208,7 +206,7 @@ class Quotes(commands.Cog):
             if len(batch) < batch_size:
                 break
 
-        print(f'[Quotes] Crawl done: {checked} checked, {saved} saved')
+        self.log(f'Crawl done: {checked} checked, {saved} saved')
         await ctx.edit(content=f"Done.\n\n> {checked} messages checked\n> {saved} new quotes saved")
 
     async def _try_capture_quote(self, message: discord.Message):
@@ -241,7 +239,7 @@ class Quotes(commands.Cog):
 
         all_quotes = await collection.find({}).sort('timestamp', 1).to_list()
         idx = next((i for i, q in enumerate(all_quotes) if q['timestamp'] == ts), -1)
-        print(f'[Quotes] Quote #{idx + 1}/{len(all_quotes)} saved')
+        self.log(f'Quote #{idx + 1}/{len(all_quotes)} saved')
 
         # delete previous bot confirmation in channel
         async for msg in message.channel.history(limit=20):
@@ -271,10 +269,6 @@ class Quotes(commands.Cog):
     @commands.Cog.listener()
     async def on_message_edit(self, _before: discord.Message, after: discord.Message):
         await self._try_capture_quote(after)
-
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print('Quotes module ready')
 
 def setup(bot):
     bot.add_cog(Quotes(bot))

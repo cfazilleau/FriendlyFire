@@ -1,15 +1,14 @@
 import discord
 from discord.ext import commands
 
-from src.config import Config
+from src import BaseCog
 
 
-class Presence(commands.Cog):
+class Presence(BaseCog):
     def __init__(self, bot: discord.Bot):
-        self.bot = bot
-        self.config = Config('presence', {
+        super().__init__(bot, 'presence', {
             'status': 'online',
-            'activity': None
+            'activity': None,
         })
 
         self.status = self.config.get('status')
@@ -23,7 +22,7 @@ class Presence(commands.Cog):
         try:
             status = discord.enums.Status[self.status]
         except KeyError:
-            print(f'[Presence] Unknown status "{self.status}", defaulting to online.')
+            self.log(f'Unknown status "{self.status}", defaulting to online.')
             status = discord.enums.Status.online
 
         activity = None
@@ -35,9 +34,9 @@ class Presence(commands.Cog):
                     url=self.activity['url'],
                 )
             except KeyError:
-                print(f'[Presence] Unknown activity type "{self.activity["type"]}", skipping activity.')
+                self.log(f'Unknown activity type "{self.activity["type"]}", skipping activity.')
 
-        print(f"Setting status to {status} and activity to {self.activity}")
+        self.log(f"Setting status to {status} and activity to {self.activity}")
         await self.bot.change_presence(status=status, activity=activity)
 
     @discord.slash_command(name="status", description="update current bot status", default_permission=False)
@@ -96,7 +95,6 @@ class Presence(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         await self.apply_status()
-        print(f'Presence module ready')
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):

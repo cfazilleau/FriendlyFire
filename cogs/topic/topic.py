@@ -7,8 +7,7 @@ from discord import option
 from discord.ext import commands
 from pymongo.asynchronous.collection import AsyncCollection
 
-from src import FriendlyFire
-from src.config import Config
+from src import FriendlyFire, BaseCog
 
 class TopicEntry(TypedDict):
     messageId: str
@@ -16,16 +15,14 @@ class TopicEntry(TypedDict):
     roleId: str
     roleName: str
 
-class Topic(commands.Cog):
+class Topic(BaseCog):
     def __init__(self, bot: FriendlyFire):
-        self.bot = bot
-        default_config = {
-            "topicTypes": {},
-        }
-        self.config = Config('topic', default_config)
+        super().__init__(bot, 'topic', {
+            "topicTypes": {}
+        })
 
         if not self.config.get('topicTypes'):
-            print('[Topic] No topic types configured in config/topic.json — topic commands will be unavailable.')
+            self.log('No topic types configured in config/topic.json — topic commands will be unavailable.')
 
     topicGroup = discord.SlashCommandGroup(name="topic", description="manage topics")
 
@@ -171,7 +168,7 @@ class Topic(commands.Cog):
             if role is None:
                 return
             await payload.member.add_roles(role)
-            print(f"Added role {role.name} to user {payload.member.name}")
+            self.log(f"Added role {role.name} to user {payload.member.name}")
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
@@ -187,7 +184,7 @@ class Topic(commands.Cog):
             except discord.NotFound:
                 return
             await member.remove_roles(role)
-            print(f"Removed role {role.name} from user {member.name}")
+            self.log(f"Removed role {role.name} from user {member.name}")
 
 def setup(bot):
     bot.add_cog(Topic(bot))

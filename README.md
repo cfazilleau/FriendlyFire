@@ -58,8 +58,8 @@ A Discord bot for the Phoenix Legacy community, built with [py-cord](https://git
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/cfazilleau/FriendlyFire_Py.git
-   cd FriendlyFire_Py
+   git clone https://github.com/cfazilleau/FriendlyFire.git
+   cd FriendlyFire
    ```
 
 2. Create a `.env` file:
@@ -83,8 +83,8 @@ A Discord bot for the Phoenix Legacy community, built with [py-cord](https://git
 
 1. Clone the repository and create a virtual environment:
    ```bash
-   git clone https://github.com/cfazilleau/FriendlyFire_Py.git
-   cd FriendlyFire_Py
+   git clone https://github.com/cfazilleau/FriendlyFire.git
+   cd FriendlyFire
    python -m venv .venv
    source .venv/bin/activate  # Windows: .venv\Scripts\activate
    ```
