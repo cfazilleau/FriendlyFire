@@ -88,7 +88,7 @@ class Invites(commands.Cog):
         # Add default role
         new_role_id = self.config.get('inviteRole', member.guild.id)
         if new_role_id is not None:
-            role_to_add = member.guild.get_role(new_role_id)
+            role_to_add = member.guild.get_role(int(new_role_id))
             if role_to_add is None:
                 print("no role found, ignoring for new member.")
             else:
@@ -115,7 +115,7 @@ class Invites(commands.Cog):
 
         announcement_channel_id = self.config.get('invitesChannel', member.guild.id)
         if announcement_channel_id:
-            announcement_channel = member.guild.get_channel(announcement_channel_id)
+            announcement_channel = member.guild.get_channel(int(announcement_channel_id))
             if announcement_channel is not None:
                 embed = discord.Embed(
                     title="Bienvenue!",
