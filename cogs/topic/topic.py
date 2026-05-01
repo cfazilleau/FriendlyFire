@@ -30,10 +30,13 @@ class Topic(BaseCog):
         return list(self.config.get('topicTypes').keys())
 
     async def _fetch_image(self, url: str) -> bytes | None:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as resp:
-                if resp.status == 200:
-                    return await resp.read()
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as resp:
+                    if resp.status == 200:
+                        return await resp.read()
+        except aiohttp.ClientError:
+            self.log(f'Failed to fetch image from {url}')
         return None
 
     @topicGroup.command(name="create", description="create a topic", default_permission=False)
