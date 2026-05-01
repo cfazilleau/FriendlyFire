@@ -1,9 +1,11 @@
+import asyncio
 import io
 import random
 import re
 from datetime import datetime
 from typing import TypedDict
 
+import aiohttp
 import discord
 from discord.ext import commands
 from pymongo.asynchronous.collection import AsyncCollection
@@ -37,7 +39,11 @@ class QuoteView(discord.ui.View):
         self.current_idx, quote = random.choice(safe_quotes)
         total = len(all_quotes)
 
-        image_bytes = await generate_quote_image(quote['quote'], quote.get('author', ''), self.quotes_cog.config.get('fontPath'))
+        try:
+            image_bytes = await generate_quote_image(quote['quote'], quote.get('author', ''), self.quotes_cog.config.get('fontPath'))
+        except (aiohttp.ClientError, asyncio.TimeoutError):
+            await interaction.response.send_message('Failed to fetch background image. Please try again.', ephemeral=True)
+            return
         file = discord.File(io.BytesIO(image_bytes), filename='quote.jpg')
         content = self.quotes_cog._quote_content(quote, self.current_idx + 1, total, notify=self.notify)
 
@@ -111,7 +117,11 @@ class Quotes(commands.Cog):
                 return
             idx, quote = random.choice(safe_quotes)
 
-        image_bytes = await generate_quote_image(quote['quote'], quote.get('author', ''), self.config.get('fontPath'))
+        try:
+            image_bytes = await generate_quote_image(quote['quote'], quote.get('author', ''), self.config.get('fontPath'))
+        except (aiohttp.ClientError, asyncio.TimeoutError):
+            await ctx.respond('Failed to fetch background image. Please try again.', ephemeral=True)
+            return
         file = discord.File(io.BytesIO(image_bytes), filename='quote.jpg')
         notify = ctx.author.mention if use_reply_channel else None
         view = QuoteView(self, ctx.guild_id, idx, notify)

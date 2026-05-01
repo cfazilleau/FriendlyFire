@@ -66,7 +66,8 @@ def _render(bg_data: bytes, quote: str, author: str, font_path: str) -> bytes:
 
 
 async def generate_quote_image(quote: str, author: str, font_path: str) -> bytes:
-    async with aiohttp.ClientSession() as session:
+    timeout = aiohttp.ClientTimeout(total=10)
+    async with aiohttp.ClientSession(timeout=timeout) as session:
         async with session.get(f'https://picsum.photos/{IMG_W}/{IMG_H}', allow_redirects=True) as resp:
             bg_data = await resp.read()
     return _render(bg_data, quote, author, font_path)
