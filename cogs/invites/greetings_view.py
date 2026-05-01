@@ -35,7 +35,7 @@ class PaginatorView(discord.ui.View):
     async def delete_current_greeting(self, interaction: discord.Interaction):
         greeting = self.pages[self.current_page]
         collection: AsyncCollection[Greeting] = await self.invites_cog.bot.mongo.get_collection(interaction.guild_id, "greetings")
-        await collection.delete_one({"greeting": greeting['greeting']})
+        await collection.delete_one({"_id": greeting['_id']})
         self.pages.remove(greeting)
 
     def update_buttons(self):
