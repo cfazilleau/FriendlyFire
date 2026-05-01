@@ -65,12 +65,12 @@ class Invites(commands.Cog):
         invite_entry = InviteEntry(
             author_id=author.id,
             code=invite.code,
-            expires=int(invite.expires_at.timestamp())
+            expires=int(invite.expires_at.timestamp()) if invite.expires_at else None,
         )
         collection: AsyncCollection[InviteEntry] = await self.bot.mongo.get_collection(ctx.guild_id, "invites")
         await collection.insert_one(invite_entry)
-        await ctx.respond(
-            f"Here is your invite link: {invite.url}, It will be valid until {format_dt(invite.expires_at)}.")
+        expiry_text = f", It will be valid until {format_dt(invite.expires_at)}" if invite.expires_at else " (permanent)"
+        await ctx.respond(f"Here is your invite link: {invite.url}{expiry_text}.")
 
     @discord.slash_command(name="test_join", description="Generates a temporary invite", default_permissions=False)
     @option(name="user", description="user to fake joining", required=True, input_type=discord.SlashCommandOptionType.user)
@@ -134,7 +134,7 @@ class Invites(commands.Cog):
             invites_num = len(recorded_invites)
 
             for invite in recorded_invites:
-                if invite['expires'] - datetime.datetime.now().timestamp() < 0:
+                if invite['expires'] is not None and invite['expires'] - datetime.datetime.now().timestamp() < 0:
                     await collection.delete_one({"code": invite['code']})
                     invites_num -= 1
                     print(f"Deleted expired invite: {invite['code']}. {invites_num} remaining.")
