@@ -182,7 +182,10 @@ class Topic(commands.Cog):
             role = guild.get_role(int(topic["roleId"]))
             if role is None:
                 return
-            member = await guild.fetch_member(payload.user_id)
+            try:
+                member = await guild.fetch_member(payload.user_id)
+            except discord.NotFound:
+                return
             await member.remove_roles(role)
             print(f"Removed role {role.name} from user {member.name}")
 
