@@ -20,11 +20,22 @@ class Presence(commands.Cog):
         self.config.set('activity', self.activity)
 
     async def apply_status(self):
-        status = discord.enums.Status[self.status]
-        activity = None
+        try:
+            status = discord.enums.Status[self.status]
+        except KeyError:
+            print(f'[Presence] Unknown status "{self.status}", defaulting to online.')
+            status = discord.enums.Status.online
 
+        activity = None
         if self.activity is not None:
-            activity = discord.Activity(type=discord.enums.ActivityType[self.activity['type']], name=self.activity['name'], url=self.activity['url'])
+            try:
+                activity = discord.Activity(
+                    type=discord.enums.ActivityType[self.activity['type']],
+                    name=self.activity['name'],
+                    url=self.activity['url'],
+                )
+            except KeyError:
+                print(f'[Presence] Unknown activity type "{self.activity["type"]}", skipping activity.')
 
         print(f"Setting status to {status} and activity to {self.activity}")
         await self.bot.change_presence(status=status, activity=activity)
@@ -62,7 +73,7 @@ class Presence(commands.Cog):
         self.save_config()
 
         await self.apply_status()
-        await ctx.respond(f"Bot activity set to: {activity} {text}{f" with {url}." if url else "."}")
+        await ctx.respond(f"Bot activity set to: {activity} {text}{f' with {url}.' if url else '.'}")
 
     @activity_group.command(name="clear", description="clear current bot activity", default_permission=False)
     async def clear_activity(self, ctx: discord.ApplicationContext):
@@ -91,7 +102,7 @@ class Presence(commands.Cog):
     async def on_message(self, message: discord.Message):
         # If the message mentions us and have not been sent by a bot, react with :eyes:
         if not message.author.bot and self.bot.user in message.mentions:
-            await message.add_reaction('👀')
+            await message.add_reaction('\U0001f440')
 
 def setup(bot):
     bot.add_cog(Presence(bot))
