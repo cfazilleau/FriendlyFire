@@ -9,8 +9,7 @@ class Config:
         loaded = self.load()
         self._global: dict = default_config | loaded.get('global', {})
         self._guilds: dict[str, dict] = loaded.get('guilds', {})
-        if loaded:
-            self.save()
+        self.save()
 
     @property
     def config(self) -> dict:
