@@ -67,10 +67,10 @@ class QuoteView(discord.ui.View):
             await interaction.response.send_message('Failed to fetch background image. Please try again.', ephemeral=True)
             return
         file = discord.File(io.BytesIO(image_bytes), filename='quote.jpg')
-        content = self.quotes_cog._quote_content(self.current_quote, self.current_idx + 1, total, notify=self.notify)
+        embed = self.quotes_cog._quote_embed(self.current_quote, self.current_idx + 1, total)
         self._update_vote_buttons()
 
-        await interaction.response.edit_message(content=content, attachments=[], file=file, view=self)
+        await interaction.response.edit_message(content=self.notify, attachments=[], file=file, embed=embed, view=self)
 
     @discord.ui.button(emoji='👍', style=discord.ButtonStyle.secondary, custom_id='upvote')
     async def upvote(self, button: discord.ui.Button, interaction: discord.Interaction):
@@ -176,13 +176,13 @@ class Quotes(BaseCog):
         file = discord.File(io.BytesIO(image_bytes), filename='quote.jpg')
         notify = ctx.author.mention if use_reply_channel else None
         view = QuoteView(self, ctx.guild_id, idx, ctx.author.id, quote, notify)
-        content = self._quote_content(quote, idx + 1, total, notify=notify)
+        embed = self._quote_embed(quote, idx + 1, total)
 
         if use_reply_channel:
-            await reply_channel.send(content=content, file=file, view=view)
+            await reply_channel.send(content=notify, file=file, embed=embed, view=view)
             await ctx.respond(f"Quote sent to {reply_channel.mention}.", ephemeral=True)
         else:
-            await ctx.respond(content=content, file=file, view=view)
+            await ctx.respond(file=file, embed=embed, view=view)
 
     @quotesGroup.command(name="paginate", description="Open the quote paginator/moderation view.")
     @discord.option(name="id", parameter_name="quote_id", description="Id of the quote to start at", required=False, input_type=int)
@@ -307,11 +307,16 @@ class Quotes(BaseCog):
         embed.set_footer(text=f'Saved by {entry["submitted_by"]}. Quote #{idx + 1}/{len(all_quotes)}')
         await message.channel.send(embed=embed)
 
-    def _quote_content(self, quote: dict, idx: int, total: int, notify: str = None) -> str:
-        submitter = f"<@{quote['submitted_by_id']}>" if quote.get('submitted_by_id') else quote.get('submitted_by', 'Unknown')
-        date = discord.utils.format_dt(datetime.fromtimestamp(quote['timestamp'] / 1000), style='D')
-        info = f"Quote #{idx}/{total} — submitted by {submitter} on {date}"
-        return f"{notify}\n{info}" if notify else info
+    def _quote_embed(self, quote: dict, idx: int, total: int) -> discord.Embed:
+        submitter = quote.get('submitted_by', 'Unknown')
+        embed = discord.Embed(
+            title=f"Quote #{idx}/{total}",
+            color=2326507,
+            timestamp=datetime.fromtimestamp(quote['timestamp'] / 1000),
+        )
+        embed.set_image(url='attachment://quote.jpg')
+        embed.set_footer(text=f"submitted by {submitter}")
+        return embed
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
