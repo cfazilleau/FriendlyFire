@@ -12,7 +12,7 @@ from pymongo.asynchronous.collection import AsyncCollection
 
 from cogs.quotes.quotes_paginate_view import QuotesPaginateView
 from cogs.quotes.quote_image import generate_quote_image
-from src import FriendlyFire, BaseCog
+from src import FriendlyFire, BaseCog, ADMIN_PERMS
 
 QUOTE_REGEX = re.compile(r'\"(.+?)\"\s*-*\s*(.*)', re.MULTILINE | re.DOTALL)
 CONFIRMATION_COLOR = 0x2ea42a
@@ -66,23 +66,23 @@ class Quotes(BaseCog):
             'fontPath': 'assets/fonts/PlayfairDisplay-Italic.ttf',
         })
 
-    quotesGroup = discord.SlashCommandGroup(name="quotes", description="manage quotes config")
+    quotesGroup = discord.SlashCommandGroup(name="quotes", description="manage quotes config", default_member_permissions=ADMIN_PERMS, guild_only=True)
 
-    @quotesGroup.command(name="set-capture-channel", description="Set the channel to listen for new quotes", default_permission=False)
+    @quotesGroup.command(name="set-capture-channel", description="Set the channel to listen for new quotes")
     @discord.option(name="channel", required=True, input_type=discord.SlashCommandOptionType.channel)
     async def set_capture_channel(self, ctx: discord.ApplicationContext, channel: discord.TextChannel):
         await ctx.defer(ephemeral=True)
         self.config.set('captureChannelId', str(channel.id), ctx.guild_id)
         await ctx.respond(f"Capture channel set to {channel.mention}")
 
-    @quotesGroup.command(name="set-reply-channel", description="Set the channel where /quote sends its output", default_permission=False)
+    @quotesGroup.command(name="set-reply-channel", description="Set the channel where /quote sends its output")
     @discord.option(name="channel", required=True, input_type=discord.SlashCommandOptionType.channel)
     async def set_reply_channel(self, ctx: discord.ApplicationContext, channel: discord.TextChannel):
         await ctx.defer(ephemeral=True)
         self.config.set('replyChannelId', str(channel.id), ctx.guild_id)
         await ctx.respond(f"Reply channel set to {channel.mention}")
 
-    @discord.slash_command(name="quote", description="Send a quote from the database.")
+    @discord.slash_command(name="quote", description="Send a quote from the database.", guild_only=True)
     @discord.option(name="id", parameter_name="quote_id", description="Id of the quote to send", required=False, input_type=int)
     async def quote(self, ctx: discord.ApplicationContext, quote_id: int = None):
         reply_channel_id = self.config.get('replyChannelId', ctx.guild_id)
@@ -131,7 +131,7 @@ class Quotes(BaseCog):
         else:
             await ctx.respond(content=content, file=file, view=view)
 
-    @quotesGroup.command(name="paginate", description="Open the quote paginator/moderation view.", default_permission=False)
+    @quotesGroup.command(name="paginate", description="Open the quote paginator/moderation view.")
     @discord.option(name="id", parameter_name="quote_id", description="Id of the quote to start at", required=False, input_type=int)
     async def paginate_quotes(self, ctx: discord.ApplicationContext, quote_id: int = None):
         await ctx.defer(ephemeral=True)
@@ -152,7 +152,7 @@ class Quotes(BaseCog):
         view = QuotesPaginateView(self, quotes, idx)
         await ctx.respond(embed=view.get_embed(), view=view)
 
-    @discord.slash_command(name="crawl-missing-quotes", description="Crawl the quote channel to backfill missing quotes.", default_permission=False)
+    @discord.slash_command(name="crawl-missing-quotes", description="Crawl the quote channel to backfill missing quotes.", default_member_permissions=ADMIN_PERMS, guild_only=True)
     async def crawl_missing_quotes(self, ctx: discord.ApplicationContext):
         capture_channel_id = self.config.get('captureChannelId', ctx.guild_id)
         if not capture_channel_id or str(ctx.channel_id) != capture_channel_id:

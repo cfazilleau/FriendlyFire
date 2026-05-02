@@ -1,2 +1,2 @@
 from .bot import FriendlyFire
-from .cog import BaseCog
+from .cog import BaseCog, ADMIN_PERMS

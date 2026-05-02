@@ -1,5 +1,8 @@
+import discord
 from discord.ext import commands
 from .config import Config
+
+ADMIN_PERMS = discord.Permissions(administrator=True)
 
 
 class BaseCog(commands.Cog):
