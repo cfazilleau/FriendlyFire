@@ -25,7 +25,7 @@ class Invites(BaseCog):
             "invitesChannel": None,
         })
 
-    greetingsGroup = discord.SlashCommandGroup(name="greetings", description="manage greetings", default_member_permissions=discord.Permissions(administrator=True), guild_only=True)
+    greetingsGroup = discord.SlashCommandGroup(name="greetings", description="manage greetings", default_member_permissions=discord.Permissions(administrator=True), contexts=[discord.InteractionContextType.guild])
 
     @greetingsGroup.command(name="create", description="create a greeting")
     @option(name="text", description="greeting text", required=True)
