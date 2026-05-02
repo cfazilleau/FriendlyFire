@@ -18,15 +18,19 @@ QUOTE_REGEX = re.compile(r'\"(.+?)\"\s*-*\s*(.*)', re.MULTILINE | re.DOTALL)
 CONFIRMATION_COLOR = 0x2ea42a
 
 class QuoteView(discord.ui.View):
-    def __init__(self, quotes_cog, guild_id: int, current_idx: int, notify: str = None):
+    def __init__(self, quotes_cog, guild_id: int, current_idx: int, requester_id: int, notify: str = None):
         super().__init__(timeout=60)
         self.quotes_cog = quotes_cog
         self.guild_id = guild_id
         self.current_idx = current_idx
+        self.requester_id = requester_id
         self.notify = notify  # persisted across rerolls
 
     @discord.ui.button(label='Reroll', style=discord.ButtonStyle.secondary, emoji='🎲')
     async def reroll(self, button: discord.ui.Button, interaction: discord.Interaction):
+        if interaction.user.id != self.requester_id:
+            await interaction.response.send_message('Only the user who requested this quote can reroll it.', ephemeral=True)
+            return
         collection: AsyncCollection = await self.quotes_cog.bot.mongo.get_collection(self.guild_id, 'quotes')
         all_quotes = await collection.find({}).sort('timestamp', 1).to_list()
 
@@ -122,7 +126,7 @@ class Quotes(BaseCog):
             return
         file = discord.File(io.BytesIO(image_bytes), filename='quote.jpg')
         notify = ctx.author.mention if use_reply_channel else None
-        view = QuoteView(self, ctx.guild_id, idx, notify)
+        view = QuoteView(self, ctx.guild_id, idx, ctx.author.id, notify)
         content = self._quote_content(quote, idx + 1, total, notify=notify)
 
         if use_reply_channel:
