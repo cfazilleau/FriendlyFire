@@ -1,3 +1,4 @@
+import asyncio
 import io
 from typing import TypedDict
 
@@ -31,11 +32,12 @@ class Topic(BaseCog):
 
     async def _fetch_image(self, url: str) -> bytes | None:
         try:
-            async with aiohttp.ClientSession() as session:
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.get(url) as resp:
                     if resp.status == 200:
                         return await resp.read()
-        except aiohttp.ClientError:
+        except (aiohttp.ClientError, asyncio.TimeoutError):
             self.log(f'Failed to fetch image from {url}')
         return None
 
@@ -96,6 +98,9 @@ class Topic(BaseCog):
 
         collection: AsyncCollection[TopicEntry] = await self.bot.mongo.get_collection(ctx.guild_id, "topics")
         topic = await collection.find_one(filter={"roleId": str(role.id)})
+        if topic is None:
+            await ctx.respond("Topic not found in the database, you might need to delete this one manually.")
+            return
         type_descriptor = topic_types[topic_type]
         color = discord.Color(int(type_descriptor["color"], 16))
 
