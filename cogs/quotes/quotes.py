@@ -18,13 +18,22 @@ QUOTE_REGEX = re.compile(r'\"(.+?)\"\s*-*\s*(.*)', re.MULTILINE | re.DOTALL)
 CONFIRMATION_COLOR = 0x2ea42a
 
 class QuoteView(discord.ui.View):
-    def __init__(self, quotes_cog, guild_id: int, current_idx: int, requester_id: int, notify: str = None):
+    def __init__(self, quotes_cog, guild_id: int, current_idx: int, requester_id: int, quote: dict, notify: str = None):
         super().__init__(timeout=60)
         self.quotes_cog = quotes_cog
         self.guild_id = guild_id
         self.current_idx = current_idx
         self.requester_id = requester_id
+        self.current_quote = quote
         self.notify = notify  # persisted across rerolls
+        self._update_star_button()
+
+    def _update_star_button(self):
+        for child in self.children:
+            if isinstance(child, discord.ui.Button) and child.custom_id == 'star':
+                stars = self.current_quote.get('stars', 0)
+                child.label = str(stars) if stars else None
+                break
 
     @discord.ui.button(label='Reroll', style=discord.ButtonStyle.secondary, emoji='🎲')
     async def reroll(self, button: discord.ui.Button, interaction: discord.Interaction):
@@ -39,18 +48,37 @@ class QuoteView(discord.ui.View):
             await interaction.response.send_message('No other safe quotes available.', ephemeral=True)
             return
 
-        self.current_idx, quote = random.choice(safe_quotes)
+        self.current_idx, self.current_quote = random.choice(safe_quotes)
         total = len(all_quotes)
 
         try:
-            image_bytes = await generate_quote_image(quote['quote'], quote.get('author', ''), self.quotes_cog.config.get('fontPath'))
+            image_bytes = await generate_quote_image(self.current_quote['quote'], self.current_quote.get('author', ''), self.quotes_cog.config.get('fontPath'))
         except (aiohttp.ClientError, asyncio.TimeoutError):
             await interaction.response.send_message('Failed to fetch background image. Please try again.', ephemeral=True)
             return
         file = discord.File(io.BytesIO(image_bytes), filename='quote.jpg')
-        content = self.quotes_cog._quote_content(quote, self.current_idx + 1, total, notify=self.notify)
+        content = self.quotes_cog._quote_content(self.current_quote, self.current_idx + 1, total, notify=self.notify)
+        self._update_star_button()
 
         await interaction.response.edit_message(content=content, attachments=[], file=file, view=self)
+
+    @discord.ui.button(emoji='⭐', style=discord.ButtonStyle.secondary, custom_id='star')
+    async def star(self, button: discord.ui.Button, interaction: discord.Interaction):
+        user_id = str(interaction.user.id)
+        if user_id in self.current_quote.get('starred_by', []):
+            await interaction.response.send_message('You already starred this quote.', ephemeral=True)
+            return
+
+        collection: AsyncCollection = await self.quotes_cog.bot.mongo.get_collection(self.guild_id, 'quotes')
+        await collection.update_one(
+            {'_id': self.current_quote['_id']},
+            {'$inc': {'stars': 1}, '$push': {'starred_by': user_id}},
+        )
+        self.current_quote.setdefault('starred_by', []).append(user_id)
+        self.current_quote['stars'] = self.current_quote.get('stars', 0) + 1
+        self._update_star_button()
+
+        await interaction.response.edit_message(view=self)
 
 
 class QuoteEntry(TypedDict):
@@ -61,6 +89,8 @@ class QuoteEntry(TypedDict):
     timestamp: int
     safe: bool
     checked: bool
+    stars: int
+    starred_by: list[str]
 
 class Quotes(BaseCog):
     def __init__(self, bot: FriendlyFire):
@@ -126,7 +156,7 @@ class Quotes(BaseCog):
             return
         file = discord.File(io.BytesIO(image_bytes), filename='quote.jpg')
         notify = ctx.author.mention if use_reply_channel else None
-        view = QuoteView(self, ctx.guild_id, idx, ctx.author.id, notify)
+        view = QuoteView(self, ctx.guild_id, idx, ctx.author.id, quote, notify)
         content = self._quote_content(quote, idx + 1, total, notify=notify)
 
         if use_reply_channel:
