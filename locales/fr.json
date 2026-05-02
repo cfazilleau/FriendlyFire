@@ -8,6 +8,21 @@
         },
         "topic": {
             "subscribe_footer": "Clique sur ✅ pour t'abonner à ce topic"
+        },
+        "quotes": {
+            "quote_title": "Citation n°%{idx}/%{total}",
+            "submitted_by": "soumis par %{submitter}",
+            "submitted_by_votes": "soumis par %{submitter}  •  👍 %{up}  👎 %{down}",
+            "saved_by": "Sauvegardé par %{submitter}. Citation n°%{idx}/%{total}",
+            "no_quotes": "Aucune citation dans la base de données.",
+            "no_safe_quotes": "Aucune citation approuvée dans la base de données.",
+            "invalid_id": "Identifiant invalide. Doit être entre 1 et %{total}.",
+            "unsafe_quote": "La citation n°%{quote_id} n'est pas approuvée, je préfère ne pas la partager...",
+            "quote_sent_to": "Citation envoyée dans %{channel}.",
+            "reroll_not_requester": "Seul l'utilisateur ayant demandé cette citation peut la relancer.",
+            "no_other_safe_quotes": "Aucune autre citation approuvée disponible.",
+            "image_error": "Impossible de charger l'image de fond. Veuillez réessayer.",
+            "already_voted": "Vous avez déjà voté pour cette citation."
         }
     }
 }

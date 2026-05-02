@@ -78,7 +78,7 @@ class QuoteView(discord.ui.View):
     async def on_timeout(self):
         if self.message:
             try:
-                embed = self.quotes_cog._quote_embed(self.current_quote, self.current_idx + 1, self.total, show_votes=True)
+                embed = self.quotes_cog._quote_embed(self.current_quote, self.current_idx + 1, self.total, guild_id=self.guild_id, show_votes=True)
                 await self.message.edit(embed=embed, view=None)
             except discord.NotFound:
                 pass
@@ -86,14 +86,14 @@ class QuoteView(discord.ui.View):
     @discord.ui.button(label='Reroll', style=discord.ButtonStyle.secondary, emoji='🎲', custom_id='reroll')
     async def reroll(self, button: discord.ui.Button, interaction: discord.Interaction):
         if interaction.user.id != self.requester_id:
-            await interaction.response.send_message('Only the user who requested this quote can reroll it.', ephemeral=True)
+            await interaction.response.send_message(self.quotes_cog.bot.t('quotes.reroll_not_requester', self.guild_id), ephemeral=True)
             return
         collection: AsyncCollection = await self.quotes_cog.bot.mongo.get_collection(self.guild_id, 'quotes')
         all_quotes = await collection.find({}).sort('timestamp', 1).to_list()
 
         safe_quotes = [(i, q) for i, q in enumerate(all_quotes) if q.get('safe', False) and i != self.current_idx]
         if not safe_quotes:
-            await interaction.response.send_message('No other safe quotes available.', ephemeral=True)
+            await interaction.response.send_message(self.quotes_cog.bot.t('quotes.no_other_safe_quotes', self.guild_id), ephemeral=True)
             return
 
         self.current_idx, self.current_quote = random.choice(safe_quotes)
@@ -105,10 +105,10 @@ class QuoteView(discord.ui.View):
         try:
             image_bytes = await generate_quote_image(resolved_quote, resolved_author, self.quotes_cog.config.get('fontPath'))
         except (aiohttp.ClientError, asyncio.TimeoutError):
-            await interaction.response.send_message('Failed to fetch background image. Please try again.', ephemeral=True)
+            await interaction.response.send_message(self.quotes_cog.bot.t('quotes.image_error', self.guild_id), ephemeral=True)
             return
         file = discord.File(io.BytesIO(image_bytes), filename='quote.jpg')
-        embed = self.quotes_cog._quote_embed(self.current_quote, self.current_idx + 1, self.total)
+        embed = self.quotes_cog._quote_embed(self.current_quote, self.current_idx + 1, self.total, guild_id=self.guild_id)
         self._update_vote_buttons()
 
         await interaction.response.edit_message(content=self.notify, attachments=[], file=file, embed=embed, view=self)
@@ -125,7 +125,7 @@ class QuoteView(discord.ui.View):
         user_id = str(interaction.user.id)
         collection: AsyncCollection = await self.quotes_cog.bot.mongo.get_collection(self.guild_id, 'quotes')
 
-        # Atomic check-and-update
+        # Atomic check-and-update: only matches if user hasn't already voted
         result = await collection.update_one(
             {'_id': self.current_quote['_id'], field: {'$ne': user_id}},
             {
@@ -135,10 +135,10 @@ class QuoteView(discord.ui.View):
         )
 
         if result.matched_count == 0:
-            await interaction.response.send_message('You already voted on this quote.', ephemeral=True)
+            await interaction.response.send_message(self.quotes_cog.bot.t('quotes.already_voted', self.guild_id), ephemeral=True)
             return
 
-        # Update in-memory state
+        # Update in-memory state to reflect the change
         if user_id in self.current_quote.get(opposite_field, []):
             self.current_quote[opposite_field].remove(user_id)
         self.current_quote.setdefault(field, []).append(user_id)
@@ -208,22 +208,22 @@ class Quotes(BaseCog):
         total = len(all_quotes)
 
         if total == 0:
-            await ctx.respond("No quotes in the database.")
+            await ctx.respond(self.bot.t('quotes.no_quotes', ctx.guild_id))
             return
 
         if quote_id is not None:
             idx = quote_id - 1
             if idx < 0 or idx >= total:
-                await ctx.respond(f"Invalid id. Must be between 1 and {total}.")
+                await ctx.respond(self.bot.t('quotes.invalid_id', ctx.guild_id, total=total))
                 return
             quote = all_quotes[idx]
             if not quote.get('safe', False):
-                await ctx.respond(f"Quote #{quote_id} is unsafe, I'd rather not share it...")
+                await ctx.respond(self.bot.t('quotes.unsafe_quote', ctx.guild_id, quote_id=quote_id))
                 return
         else:
             safe_quotes = [(i, q) for i, q in enumerate(all_quotes) if q.get('safe', False)]
             if not safe_quotes:
-                await ctx.respond("No safe quotes in the database.")
+                await ctx.respond(self.bot.t('quotes.no_safe_quotes', ctx.guild_id))
                 return
             idx, quote = random.choice(safe_quotes)
 
@@ -233,16 +233,16 @@ class Quotes(BaseCog):
         try:
             image_bytes = await generate_quote_image(resolved_quote, resolved_author, self.config.get('fontPath'))
         except (aiohttp.ClientError, asyncio.TimeoutError):
-            await ctx.respond('Failed to fetch background image. Please try again.', ephemeral=True)
+            await ctx.respond(self.bot.t('quotes.image_error', ctx.guild_id), ephemeral=True)
             return
         file = discord.File(io.BytesIO(image_bytes), filename='quote.jpg')
         notify = ctx.author.mention if use_reply_channel else None
         view = QuoteView(self, ctx.guild_id, idx, total, ctx.author.id, quote, notify)
-        embed = self._quote_embed(quote, idx + 1, total)
+        embed = self._quote_embed(quote, idx + 1, total, guild_id=ctx.guild_id)
 
         if use_reply_channel:
             view.message = await reply_channel.send(content=notify, file=file, embed=embed, view=view)
-            await ctx.respond(f"Quote sent to {reply_channel.mention}.", ephemeral=True)
+            await ctx.respond(self.bot.t('quotes.quote_sent_to', ctx.guild_id, channel=reply_channel.mention), ephemeral=True)
         else:
             await ctx.respond(file=file, embed=embed, view=view)
             view.message = await ctx.interaction.original_response()
@@ -370,13 +370,13 @@ class Quotes(BaseCog):
             description=display_quote,
             url=message.jump_url,
         )
-        embed.set_footer(text=f'Saved by {entry["submitted_by"]}. Quote #{idx + 1}/{len(all_quotes)}')
+        embed.set_footer(text=self.bot.t('quotes.saved_by', message.guild.id, submitter=entry['submitted_by'], idx=idx + 1, total=len(all_quotes)))
         await message.channel.send(embed=embed)
 
-    def _quote_embed(self, quote: dict, idx: int, total: int, show_votes: bool = False) -> discord.Embed:
+    def _quote_embed(self, quote: dict, idx: int, total: int, guild_id=None, show_votes: bool = False) -> discord.Embed:
         submitter = quote.get('submitted_by', 'Unknown')
         embed = discord.Embed(
-            title=f"Quote #{idx}/{total}",
+            title=self.bot.t('quotes.quote_title', guild_id, idx=idx, total=total),
             color=discord.Color.dark_theme(),
             timestamp=datetime.fromtimestamp(quote['timestamp'] / 1000),
         )
@@ -384,9 +384,9 @@ class Quotes(BaseCog):
         if show_votes:
             up = len(quote.get('upvoted_by', []))
             down = len(quote.get('downvoted_by', []))
-            embed.set_footer(text=f"submitted by {submitter}  •  👍 {up}  👎 {down}")
+            embed.set_footer(text=self.bot.t('quotes.submitted_by_votes', guild_id, submitter=submitter, up=up, down=down))
         else:
-            embed.set_footer(text=f"submitted by {submitter}")
+            embed.set_footer(text=self.bot.t('quotes.submitted_by', guild_id, submitter=submitter))
         return embed
 
     @commands.Cog.listener()
