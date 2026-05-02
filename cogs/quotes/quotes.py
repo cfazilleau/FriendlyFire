@@ -69,7 +69,7 @@ class QuoteView(discord.ui.View):
             return
 
         self.current_idx, self.current_quote = random.choice(safe_quotes)
-        total = len(all_quotes)
+        self.total = len(all_quotes)
 
         try:
             image_bytes = await generate_quote_image(self.current_quote['quote'], self.current_quote.get('author', ''), self.quotes_cog.config.get('fontPath'))
@@ -77,7 +77,7 @@ class QuoteView(discord.ui.View):
             await interaction.response.send_message('Failed to fetch background image. Please try again.', ephemeral=True)
             return
         file = discord.File(io.BytesIO(image_bytes), filename='quote.jpg')
-        embed = self.quotes_cog._quote_embed(self.current_quote, self.current_idx + 1, total)
+        embed = self.quotes_cog._quote_embed(self.current_quote, self.current_idx + 1, self.total)
         self._update_vote_buttons()
 
         await interaction.response.edit_message(content=self.notify, attachments=[], file=file, embed=embed, view=self)
