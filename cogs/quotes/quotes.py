@@ -10,7 +10,7 @@ import discord
 from discord.ext import commands
 from pymongo.asynchronous.collection import AsyncCollection
 
-from cogs.quotes.check_quotes_view import CheckQuotesView
+from cogs.quotes.quotes_paginate_view import QuotesPaginateView
 from cogs.quotes.quote_image import generate_quote_image
 from src import FriendlyFire, BaseCog
 
@@ -131,9 +131,9 @@ class Quotes(BaseCog):
         else:
             await ctx.respond(content=content, file=file, view=view)
 
-    @discord.slash_command(name="check-quotes", description="Open the quote moderation view.", default_permission=False)
+    @quotesGroup.command(name="paginate", description="Open the quote paginator/moderation view.", default_permission=False)
     @discord.option(name="id", parameter_name="quote_id", description="Id of the quote to start at", required=False, input_type=int)
-    async def check_quotes(self, ctx: discord.ApplicationContext, quote_id: int = None):
+    async def paginate_quotes(self, ctx: discord.ApplicationContext, quote_id: int = None):
         await ctx.defer(ephemeral=True)
 
         collection: AsyncCollection[QuoteEntry] = await self.bot.mongo.get_collection(ctx.guild_id, "quotes")
@@ -149,7 +149,7 @@ class Quotes(BaseCog):
         else:
             idx = next((i for i, q in enumerate(quotes) if not q.get('checked', False)), 0)
 
-        view = CheckQuotesView(self, quotes, idx)
+        view = QuotesPaginateView(self, quotes, idx)
         await ctx.respond(embed=view.get_embed(), view=view)
 
     @discord.slash_command(name="crawl-missing-quotes", description="Crawl the quote channel to backfill missing quotes.", default_permission=False)
