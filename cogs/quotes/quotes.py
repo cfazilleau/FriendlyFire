@@ -35,9 +35,9 @@ class QuoteView(discord.ui.View):
             if not isinstance(child, discord.ui.Button):
                 continue
             if child.custom_id == 'upvote':
-                child.label = str(up) if up else None
+                child.label = str(up)
             elif child.custom_id == 'downvote':
-                child.label = str(down) if down else None
+                child.label = str(down)
 
     def _remove_reroll(self):
         for child in list(self.children):
@@ -82,15 +82,17 @@ class QuoteView(discord.ui.View):
 
     async def _vote(self, interaction: discord.Interaction, field: str, opposite_field: str):
         user_id = str(interaction.user.id)
-        if user_id in self.current_quote.get(field, []) or user_id in self.current_quote.get(opposite_field, []):
+        if user_id in self.current_quote.get(field, []):
             await interaction.response.send_message('You already voted on this quote.', ephemeral=True)
             return
 
         collection: AsyncCollection = await self.quotes_cog.bot.mongo.get_collection(self.guild_id, 'quotes')
-        await collection.update_one(
-            {'_id': self.current_quote['_id']},
-            {'$push': {field: user_id}},
-        )
+        update: dict = {'$push': {field: user_id}}
+        if user_id in self.current_quote.get(opposite_field, []):
+            update['$pull'] = {opposite_field: user_id}
+            self.current_quote[opposite_field].remove(user_id)
+
+        await collection.update_one({'_id': self.current_quote['_id']}, update)
         self.current_quote.setdefault(field, []).append(user_id)
         self._remove_reroll()
         self._update_vote_buttons()
