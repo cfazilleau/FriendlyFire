@@ -91,22 +91,24 @@ class Invites(BaseCog):
             else:
                 await member.add_roles(role_to_add)
 
-        #remove existing invite
-        server_invites = await member.guild.invites()
-        collection: AsyncCollection[InviteEntry] = await self.bot.mongo.get_collection(member.guild.id, "invites")
-        recorded_invites = await collection.find({}).to_list()
-
-        self.log(f"{len(server_invites)} invites server-side, {len(recorded_invites)} invites bot-side.")
-
         inviter_id = None
-        for invite in recorded_invites:
-            if invite['code'] not in [i.code for i in server_invites]:
-                inviter = member.guild.get_member(invite['author_id'])
-                inviter_name = inviter.name if inviter else f"<unknown {invite['author_id']}>"
-                self.log(f"{member.name} joined \"{member.guild.name}\" using the invite {invite['code']} by {inviter_name}")
-                inviter_id = inviter.id if inviter else invite['author_id']
-                await collection.delete_one({"code": invite['code']})
-                break
+        try:
+            server_invites = await member.guild.invites()
+            collection: AsyncCollection[InviteEntry] = await self.bot.mongo.get_collection(member.guild.id, "invites")
+            recorded_invites = await collection.find({}).to_list()
+
+            self.log(f"{len(server_invites)} invites server-side, {len(recorded_invites)} invites bot-side.")
+
+            for invite in recorded_invites:
+                if invite['code'] not in [i.code for i in server_invites]:
+                    inviter = member.guild.get_member(invite['author_id'])
+                    inviter_name = inviter.name if inviter else f"<unknown {invite['author_id']}>"
+                    self.log(f"{member.name} joined \"{member.guild.name}\" using the invite {invite['code']} by {inviter_name}")
+                    inviter_id = inviter.id if inviter else invite['author_id']
+                    await collection.delete_one({"code": invite['code']})
+                    break
+        except discord.Forbidden:
+            self.log("Missing MANAGE_GUILD permission, skipping invite tracking.")
 
         if inviter_id is None:
             self.log(f"{member.name} joined using unknown invite code.")
