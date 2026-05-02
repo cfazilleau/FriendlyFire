@@ -8,6 +8,21 @@
         },
         "topic": {
             "subscribe_footer": "Click ✅ to subscribe to this topic"
+        },
+        "quotes": {
+            "quote_title": "Quote #%{idx}/%{total}",
+            "submitted_by": "submitted by %{submitter}",
+            "submitted_by_votes": "submitted by %{submitter}  •  👍 %{up}  👎 %{down}",
+            "saved_by": "Saved by %{submitter}. Quote #%{idx}/%{total}",
+            "no_quotes": "No quotes in the database.",
+            "no_safe_quotes": "No safe quotes in the database.",
+            "invalid_id": "Invalid id. Must be between 1 and %{total}.",
+            "unsafe_quote": "Quote #%{quote_id} is unsafe, I'd rather not share it...",
+            "quote_sent_to": "Quote sent to %{channel}.",
+            "reroll_not_requester": "Only the user who requested this quote can reroll it.",
+            "no_other_safe_quotes": "No other safe quotes available.",
+            "image_error": "Failed to fetch background image. Please try again.",
+            "already_voted": "You already voted on this quote."
         }
     }
 }
