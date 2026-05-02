@@ -129,7 +129,7 @@ class Quotes(BaseCog):
             'fontPath': 'assets/fonts/PlayfairDisplay-Italic.ttf',
         })
 
-    quotesGroup = discord.SlashCommandGroup(name="quotes", description="manage quotes config", default_member_permissions=discord.Permissions(administrator=True), guild_only=True)
+    quotesGroup = discord.SlashCommandGroup(name="quotes", description="manage quotes config", default_member_permissions=discord.Permissions(administrator=True), contexts=[discord.InteractionContextType.guild])
 
     @quotesGroup.command(name="set-capture-channel", description="Set the channel to listen for new quotes")
     @discord.option(name="channel", required=True, input_type=discord.SlashCommandOptionType.channel)
