@@ -141,14 +141,13 @@ class Invites(BaseCog):
                 greetings = await greetings_collection.find({}).to_list()
                 greeting_text = random.choice(greetings)['greeting'] if greetings else None
 
-                inviter_mention = f"invité.e par <@{inviter_id}>\n" if inviter_id is not None else ""
+                inviter_part = self.bot.t('invites.invited_by', member.guild.id, inviter_id=inviter_id) if inviter_id is not None else ""
                 greeting_suffix = f"\n\n{greeting_text}" if greeting_text else ""
-                description = f"Bienvenue a <@{member.id}>, {inviter_mention}sur le discord de [Phoenix Legacy](https://phxlgc.com)!{greeting_suffix}"
                 embed = discord.Embed(
-                    title="Bienvenue!",
-                    thumbnail=member.avatar.url if member.avatar else None,
+                    title=self.bot.t('invites.welcome_title', member.guild.id),
+                    thumbnail=member.display_avatar.url,
                     color=member.accent_color or discord.Color.default(),
-                    description=description,
+                    description=self.bot.t('invites.welcome_description', member.guild.id, member_id=member.id, inviter_part=inviter_part) + greeting_suffix,
                 )
                 await announcement_channel.send(content=f"Bienvenue <@{member.id}>!", embed=embed)
 

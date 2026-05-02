@@ -1,0 +1,10 @@
+{
+    "global": {
+        "language": "en"
+    },
+    "guilds": {
+        "123456789": {
+            "language": "fr"
+        }
+    }
+}

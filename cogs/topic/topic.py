@@ -62,7 +62,7 @@ class Topic(BaseCog):
         embed = discord.Embed(
             title=f"{name} {type_descriptor['emoji']} {type_descriptor['text']}",
             color=color,
-            footer=discord.embeds.EmbedFooter(text="Clique sur ✅ pour t'abonner à ce topic"),
+            footer=discord.embeds.EmbedFooter(text=self.bot.t('topic.subscribe_footer', ctx.guild_id)),
         )
 
         image_data = await self._fetch_image(image) if image else None
@@ -122,7 +122,7 @@ class Topic(BaseCog):
         embed = discord.Embed(
             title=f"{name} {type_descriptor['emoji']} {type_descriptor['text']}",
             color=color,
-            footer=discord.embeds.EmbedFooter(text="Clique sur ✅ pour t'abonner à ce topic"),
+            footer=discord.embeds.EmbedFooter(text=self.bot.t('topic.subscribe_footer', ctx.guild_id)),
         )
 
         await role.edit(color=color)
