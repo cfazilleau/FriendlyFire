@@ -1,4 +1,5 @@
 import datetime
+import random
 from typing import TypedDict
 
 import discord
@@ -90,22 +91,24 @@ class Invites(BaseCog):
             else:
                 await member.add_roles(role_to_add)
 
-        #remove existing invite
-        server_invites = await member.guild.invites()
-        collection: AsyncCollection[InviteEntry] = await self.bot.mongo.get_collection(member.guild.id, "invites")
-        recorded_invites = await collection.find({}).to_list()
-
-        self.log(f"{len(server_invites)} invites server-side, {len(recorded_invites)} invites bot-side.")
-
         inviter_id = None
-        for invite in recorded_invites:
-            if invite['code'] not in [i.code for i in server_invites]:
-                inviter = member.guild.get_member(invite['author_id'])
-                inviter_name = inviter.name if inviter else f"<unknown {invite['author_id']}>"
-                self.log(f"{member.name} joined \"{member.guild.name}\" using the invite {invite['code']} by {inviter_name}")
-                inviter_id = inviter.id if inviter else invite['author_id']
-                await collection.delete_one({"code": invite['code']})
-                break
+        try:
+            server_invites = await member.guild.invites()
+            collection: AsyncCollection[InviteEntry] = await self.bot.mongo.get_collection(member.guild.id, "invites")
+            recorded_invites = await collection.find({}).to_list()
+
+            self.log(f"{len(server_invites)} invites server-side, {len(recorded_invites)} invites bot-side.")
+
+            for invite in recorded_invites:
+                if invite['code'] not in [i.code for i in server_invites]:
+                    inviter = member.guild.get_member(invite['author_id'])
+                    inviter_name = inviter.name if inviter else f"<unknown {invite['author_id']}>"
+                    self.log(f"{member.name} joined \"{member.guild.name}\" using the invite {invite['code']} by {inviter_name}")
+                    inviter_id = inviter.id if inviter else invite['author_id']
+                    await collection.delete_one({"code": invite['code']})
+                    break
+        except discord.Forbidden:
+            self.log("Missing MANAGE_GUILD permission, skipping invite tracking.")
 
         if inviter_id is None:
             self.log(f"{member.name} joined using unknown invite code.")
@@ -114,13 +117,17 @@ class Invites(BaseCog):
         if announcement_channel_id:
             announcement_channel = member.guild.get_channel(int(announcement_channel_id))
             if announcement_channel is not None:
+                greetings_collection: AsyncCollection[Greeting] = await self.bot.mongo.get_collection(member.guild.id, "greetings")
+                greetings = await greetings_collection.find({}).to_list()
+                greeting_text = random.choice(greetings)['greeting'] if greetings else None
+
                 embed = discord.Embed(
                     title="Bienvenue!",
                     thumbnail=member.avatar.url if member.avatar else None,
                     color=member.accent_color or discord.Color.default(),
                     description=f"Bienvenue a <@{member.id}>, {f"invité.e par <@{inviter_id}>" if inviter_id is not None else ""} sur le discord de [Phoenix Legacy](https://phxlgc.com)!"
                 )
-                await announcement_channel.send(embed=embed)
+                await announcement_channel.send(content=greeting_text, embed=embed)
 
     @commands.Cog.listener()
     async def on_ready(self):
