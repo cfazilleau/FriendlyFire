@@ -50,7 +50,8 @@ class QuoteView(discord.ui.View):
     async def on_timeout(self):
         if self.message:
             try:
-                await self.message.edit(view=None)
+                embed = self.quotes_cog._quote_embed(self.current_quote, self.current_idx + 1, self.total, show_votes=True)
+                await self.message.edit(embed=embed, view=None)
             except discord.NotFound:
                 pass
 
@@ -105,9 +106,8 @@ class QuoteView(discord.ui.View):
         self.current_quote.setdefault(field, []).append(user_id)
         self._remove_reroll()
         self._update_vote_buttons()
-        embed = self.quotes_cog._quote_embed(self.current_quote, self.current_idx + 1, self.total)
 
-        await interaction.response.edit_message(embed=embed, view=self)
+        await interaction.response.edit_message(view=self)
 
 
 class QuoteEntry(TypedDict):
@@ -319,17 +319,20 @@ class Quotes(BaseCog):
         embed.set_footer(text=f'Saved by {entry["submitted_by"]}. Quote #{idx + 1}/{len(all_quotes)}')
         await message.channel.send(embed=embed)
 
-    def _quote_embed(self, quote: dict, idx: int, total: int) -> discord.Embed:
+    def _quote_embed(self, quote: dict, idx: int, total: int, show_votes: bool = False) -> discord.Embed:
         submitter = quote.get('submitted_by', 'Unknown')
-        up = len(quote.get('upvoted_by', []))
-        down = len(quote.get('downvoted_by', []))
         embed = discord.Embed(
             title=f"Quote #{idx}/{total}",
             color=discord.Color.dark_theme(),
             timestamp=datetime.fromtimestamp(quote['timestamp'] / 1000),
         )
         embed.set_image(url='attachment://quote.jpg')
-        embed.set_footer(text=f"submitted by {submitter}  •  👍 {up}  👎 {down}")
+        if show_votes:
+            up = len(quote.get('upvoted_by', []))
+            down = len(quote.get('downvoted_by', []))
+            embed.set_footer(text=f"submitted by {submitter}  •  👍 {up}  👎 {down}")
+        else:
+            embed.set_footer(text=f"submitted by {submitter}")
         return embed
 
     @commands.Cog.listener()
