@@ -3,6 +3,5 @@
         "inviteMaxAge": 1200,
         "inviteRole": null,
         "invitesChannel": null
-    },
-    "guilds": {}
+    }
 }

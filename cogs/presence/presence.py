@@ -39,7 +39,7 @@ class Presence(BaseCog):
         self.log(f"Setting status to {status} and activity to {self.activity}")
         await self.bot.change_presence(status=status, activity=activity)
 
-    @discord.slash_command(name="status", description="update current bot status", default_member_permissions=ADMIN_PERMS, guild_only=True)
+    @discord.slash_command(name="status", description="update current bot status", default_member_permissions=ADMIN_PERMS)
     @discord.option(name="status", parameter_name="new_status", description="status of the bot", required=True, choices=[
         discord.OptionChoice(name="online", value="online"),
         discord.OptionChoice(name="idle", value="idle"),
@@ -54,7 +54,7 @@ class Presence(BaseCog):
         await self.apply_status()
         await ctx.respond(f"Bot status set to: {new_status}")
 
-    activity_group = discord.SlashCommandGroup(name="activity", description="manage current bot activity", default_member_permissions=ADMIN_PERMS, guild_only=True)
+    activity_group = discord.SlashCommandGroup(name="activity", description="manage current bot activity", default_member_permissions=ADMIN_PERMS)
 
     @activity_group.command(name="set", description="set current bot activity")
     @discord.option(name="activity", description="activity of the bot", required=True, choices=[
@@ -84,7 +84,7 @@ class Presence(BaseCog):
         await self.apply_status()
         await ctx.respond(f"Bot activity cleared")
 
-    @discord.slash_command(name="avatar", description="set the bot's avatar", default_member_permissions=ADMIN_PERMS, guild_only=True)
+    @discord.slash_command(name="avatar", description="set the bot's avatar", default_member_permissions=ADMIN_PERMS)
     @discord.option(name="avatar", description="new bot avatar", required=True, input_type=discord.SlashCommandOptionType.attachment)
     async def avatar(self, ctx: discord.ApplicationContext, avatar: discord.Attachment):
         await ctx.defer(ephemeral=True)
