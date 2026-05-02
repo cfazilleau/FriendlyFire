@@ -8,7 +8,7 @@ from pymongo.asynchronous.collection import AsyncCollection
 
 class QuotesPaginateView(discord.ui.View):
     def __init__(self, quotes_cog, quotes: list, current_id: int):
-        super().__init__(timeout=300)
+        super().__init__(timeout=600)
         self.quotes_cog = quotes_cog
         self.quotes = quotes
         self.current_id = current_id

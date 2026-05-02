@@ -18,11 +18,12 @@ QUOTE_REGEX = re.compile(r'\"(.+?)\"\s*-*\s*(.*)', re.MULTILINE | re.DOTALL)
 CONFIRMATION_COLOR = 0x2ea42a
 
 class QuoteView(discord.ui.View):
-    def __init__(self, quotes_cog, guild_id: int, current_idx: int, requester_id: int, quote: dict, notify: str = None):
-        super().__init__(timeout=300)
+    def __init__(self, quotes_cog, guild_id: int, current_idx: int, total: int, requester_id: int, quote: dict, notify: str = None):
+        super().__init__(timeout=600)
         self.quotes_cog = quotes_cog
         self.guild_id = guild_id
         self.current_idx = current_idx
+        self.total = total
         self.requester_id = requester_id
         self.current_quote = quote
         self.notify = notify  # persisted across rerolls
@@ -104,8 +105,9 @@ class QuoteView(discord.ui.View):
         self.current_quote.setdefault(field, []).append(user_id)
         self._remove_reroll()
         self._update_vote_buttons()
+        embed = self.quotes_cog._quote_embed(self.current_quote, self.current_idx + 1, self.total)
 
-        await interaction.response.edit_message(view=self)
+        await interaction.response.edit_message(embed=embed, view=self)
 
 
 class QuoteEntry(TypedDict):
@@ -183,7 +185,7 @@ class Quotes(BaseCog):
             return
         file = discord.File(io.BytesIO(image_bytes), filename='quote.jpg')
         notify = ctx.author.mention if use_reply_channel else None
-        view = QuoteView(self, ctx.guild_id, idx, ctx.author.id, quote, notify)
+        view = QuoteView(self, ctx.guild_id, idx, total, ctx.author.id, quote, notify)
         embed = self._quote_embed(quote, idx + 1, total)
 
         if use_reply_channel:
@@ -319,13 +321,15 @@ class Quotes(BaseCog):
 
     def _quote_embed(self, quote: dict, idx: int, total: int) -> discord.Embed:
         submitter = quote.get('submitted_by', 'Unknown')
+        up = len(quote.get('upvoted_by', []))
+        down = len(quote.get('downvoted_by', []))
         embed = discord.Embed(
             title=f"Quote #{idx}/{total}",
             color=discord.Color.dark_theme(),
             timestamp=datetime.fromtimestamp(quote['timestamp'] / 1000),
         )
         embed.set_image(url='attachment://quote.jpg')
-        embed.set_footer(text=f"submitted by {submitter}")
+        embed.set_footer(text=f"submitted by {submitter}  •  👍 {up}  👎 {down}")
         return embed
 
     @commands.Cog.listener()
