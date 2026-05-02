@@ -1,0 +1,11 @@
+{
+    "global": {
+        "minStars": 3
+    },
+    "guilds": {
+        "123456789": {
+            "starboardChannel": "channel_id_here",
+            "minStars": 3
+        }
+    }
+}
