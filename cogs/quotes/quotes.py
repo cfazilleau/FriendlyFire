@@ -12,7 +12,7 @@ from pymongo.asynchronous.collection import AsyncCollection
 
 from cogs.quotes.quotes_paginate_view import QuotesPaginateView
 from cogs.quotes.quote_image import generate_quote_image
-from src import FriendlyFire, BaseCog, ADMIN_PERMS
+from src import FriendlyFire, BaseCog
 
 QUOTE_REGEX = re.compile(r'\"(.+?)\"\s*-*\s*(.*)', re.MULTILINE | re.DOTALL)
 CONFIRMATION_COLOR = 0x2ea42a
@@ -66,7 +66,7 @@ class Quotes(BaseCog):
             'fontPath': 'assets/fonts/PlayfairDisplay-Italic.ttf',
         })
 
-    quotesGroup = discord.SlashCommandGroup(name="quotes", description="manage quotes config", default_member_permissions=ADMIN_PERMS, guild_only=True)
+    quotesGroup = discord.SlashCommandGroup(name="quotes", description="manage quotes config", default_member_permissions=discord.Permissions(administrator=True), guild_only=True)
 
     @quotesGroup.command(name="set-capture-channel", description="Set the channel to listen for new quotes")
     @discord.option(name="channel", required=True, input_type=discord.SlashCommandOptionType.channel)
@@ -152,7 +152,7 @@ class Quotes(BaseCog):
         view = QuotesPaginateView(self, quotes, idx)
         await ctx.respond(embed=view.get_embed(), view=view)
 
-    @discord.slash_command(name="crawl-missing-quotes", description="Crawl the quote channel to backfill missing quotes.", default_member_permissions=ADMIN_PERMS, guild_only=True)
+    @discord.slash_command(name="crawl-missing-quotes", description="Crawl the quote channel to backfill missing quotes.", default_member_permissions=discord.Permissions(administrator=True), guild_only=True)
     async def crawl_missing_quotes(self, ctx: discord.ApplicationContext):
         capture_channel_id = self.config.get('captureChannelId', ctx.guild_id)
         if not capture_channel_id or str(ctx.channel_id) != capture_channel_id:
