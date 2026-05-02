@@ -1,5 +1,7 @@
+import asyncio
 import io
 import traceback
+import warnings
 
 import discord
 from discord.ext import commands
@@ -10,6 +12,20 @@ class FriendlyFire(commands.Bot):
         super().__init__(intents=discord.Intents.all())
         self.mongo = Mongo(mongo_uri)
         self._owner: discord.User = None
+        self._pending_warnings: list[tuple[str, str]] = []
+        self._setup_warning_hook()
+
+    def _setup_warning_hook(self):
+        original = warnings.showwarning
+        def hook(message, category, filename, lineno, file=None, line=None):
+            original(message, category, filename, lineno, file, line)
+            header = f'**Warning: `{category.__name__}`**'
+            text = f'{filename}:{lineno}: {category.__name__}: {message}'
+            if self._owner is not None:
+                asyncio.ensure_future(self._dm_owner(header, text))
+            else:
+                self._pending_warnings.append((header, text))
+        warnings.showwarning = hook
 
     async def on_ready(self):
         print(f'Logged in as {self.user.name} ({self.user.id})')
@@ -21,6 +37,10 @@ class FriendlyFire(commands.Bot):
 
         app_info = await self.application_info()
         self._owner = app_info.owner
+
+        for header, text in self._pending_warnings:
+            await self._dm_owner(header, text)
+        self._pending_warnings.clear()
 
     async def _dm_owner(self, header: str, tb: str):
         if self._owner is None:
