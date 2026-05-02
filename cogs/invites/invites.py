@@ -1,4 +1,5 @@
 import datetime
+import random
 from typing import TypedDict
 
 import discord
@@ -114,13 +115,17 @@ class Invites(BaseCog):
         if announcement_channel_id:
             announcement_channel = member.guild.get_channel(int(announcement_channel_id))
             if announcement_channel is not None:
+                greetings_collection: AsyncCollection[Greeting] = await self.bot.mongo.get_collection(member.guild.id, "greetings")
+                greetings = await greetings_collection.find({}).to_list()
+                greeting_text = random.choice(greetings)['greeting'] if greetings else None
+
                 embed = discord.Embed(
                     title="Bienvenue!",
                     thumbnail=member.avatar.url if member.avatar else None,
                     color=member.accent_color or discord.Color.default(),
                     description=f"Bienvenue a <@{member.id}>, {f"invité.e par <@{inviter_id}>" if inviter_id is not None else ""} sur le discord de [Phoenix Legacy](https://phxlgc.com)!"
                 )
-                await announcement_channel.send(embed=embed)
+                await announcement_channel.send(content=greeting_text, embed=embed)
 
     @commands.Cog.listener()
     async def on_ready(self):
