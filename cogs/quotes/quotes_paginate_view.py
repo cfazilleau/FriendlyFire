@@ -60,7 +60,7 @@ class QuotesPaginateView(discord.ui.View):
             except discord.NotFound:
                 pass
 
-    async def _respond(self, interaction: discord.Interaction):
+    async def _refresh_embed(self, interaction: discord.Interaction):
         self.update_buttons()
         await interaction.response.edit_message(embed=self.get_embed(), view=self)
 
@@ -71,7 +71,7 @@ class QuotesPaginateView(discord.ui.View):
         await collection.update_one({'_id': quote['_id']}, {'$set': {'safe': True, 'checked': True}})
         quote['safe'] = True
         quote['checked'] = True
-        await self._respond(interaction)
+        await self._refresh_embed(interaction)
 
     @discord.ui.button(label='Unsafe', style=ButtonStyle.secondary, row=0)
     async def unsafe_button(self, button: discord.ui.Button, interaction: discord.Interaction):
@@ -80,24 +80,24 @@ class QuotesPaginateView(discord.ui.View):
         await collection.update_one({'_id': quote['_id']}, {'$set': {'safe': False, 'checked': True}})
         quote['safe'] = False
         quote['checked'] = True
-        await self._respond(interaction)
+        await self._refresh_embed(interaction)
 
     @discord.ui.button(label='Prev', style=ButtonStyle.gray, row=1)
     async def prev_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.current_id = (self.current_id - 1) % len(self.quotes)
         self.show_payload = False
-        await self._respond(interaction)
+        await self._refresh_embed(interaction)
 
     @discord.ui.button(label='Next', style=ButtonStyle.gray, row=1)
     async def next_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.current_id = (self.current_id + 1) % len(self.quotes)
         self.show_payload = False
-        await self._respond(interaction)
+        await self._refresh_embed(interaction)
 
     @discord.ui.button(label='Show Payload', style=ButtonStyle.gray, row=1)
     async def toggle_payload(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.show_payload = not self.show_payload
-        await self._respond(interaction)
+        await self._refresh_embed(interaction)
 
     @discord.ui.button(label='Delete', style=ButtonStyle.red, row=2)
     async def delete_button(self, button: discord.ui.Button, interaction: discord.Interaction):
@@ -114,4 +114,4 @@ class QuotesPaginateView(discord.ui.View):
         if self.current_id >= len(self.quotes):
             self.current_id = len(self.quotes) - 1
         self.show_payload = False
-        await self._respond(interaction)
+        await self._refresh_embed(interaction)
