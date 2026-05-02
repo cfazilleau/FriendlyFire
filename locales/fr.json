@@ -1,0 +1,11 @@
+{
+    "invites": {
+        "welcome_title": "Bienvenue!",
+        "welcome_description": "Bienvenue a <@{member_id}>{inviter_part} sur le discord de [Phoenix Legacy](https://phxlgc.com)!",
+        "invited_by": ", invité.e par <@{inviter_id}>",
+        "server_link_text": "le serveur"
+    },
+    "topic": {
+        "subscribe_footer": "Clique sur ✅ pour t'abonner à ce topic"
+    }
+}
