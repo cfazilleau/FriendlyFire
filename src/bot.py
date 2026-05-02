@@ -1,10 +1,11 @@
 import io
 import traceback
 
+import i18n
 import discord
 from discord.ext import commands
 from src.mongo import Mongo
-from src.locale import LocaleManager
+from src.locale import setup_i18n
 from src.config import Config
 
 class FriendlyFire(commands.Bot):
@@ -12,12 +13,12 @@ class FriendlyFire(commands.Bot):
         super().__init__(intents=discord.Intents.all())
         self.mongo = Mongo(mongo_uri)
         self._owner: discord.User = None
-        self.locale_manager = LocaleManager()
+        self.available_locales = setup_i18n()
         self.locale_config = Config('locale', {'language': 'en'})
 
     def t(self, key: str, guild_id=None, **kwargs) -> str:
         lang = self.locale_config.get('language', guild_id) or 'en'
-        return self.locale_manager.t(key, lang, **kwargs)
+        return i18n.t(key, locale=lang, **kwargs)
 
     async def on_ready(self):
         print(f'Logged in as {self.user.name} ({self.user.id})')
