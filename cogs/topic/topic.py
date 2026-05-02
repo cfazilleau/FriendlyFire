@@ -25,7 +25,7 @@ class Topic(BaseCog):
         if not self.config.get('topicTypes'):
             self.log('No topic types configured in config/topic.json — topic commands will be unavailable.')
 
-    topicGroup = discord.SlashCommandGroup(name="topic", description="manage topics")
+    topicGroup = discord.SlashCommandGroup(name="topic", description="manage topics", default_member_permissions=discord.Permissions(administrator=True), guild_only=True)
 
     async def get_topic_types(self, ctx: discord.AutocompleteContext):
         return list(self.config.get('topicTypes').keys())
@@ -41,7 +41,7 @@ class Topic(BaseCog):
             self.log(f'Failed to fetch image from {url}')
         return None
 
-    @topicGroup.command(name="create", description="create a topic", default_permission=False)
+    @topicGroup.command(name="create", description="create a topic")
     @option(name="name", description="name of the new topic", required=True)
     @option(name="type", parameter_name="topic_type", description="type of topic", required=True, autocomplete=get_topic_types)
     @option(name="image", description="URL of an image for this topic", required=False)
@@ -83,7 +83,7 @@ class Topic(BaseCog):
         ))
         await ctx.respond("Created topic successfully!")
 
-    @topicGroup.command(name="edit", description="edit a topic", default_permission=False)
+    @topicGroup.command(name="edit", description="edit a topic")
     @option(name="role", description="current role of the topic", required=True, input_type=discord.SlashCommandOptionType.role)
     @option(name="type", parameter_name="topic_type", description="type of topic", required=True, autocomplete=get_topic_types)
     @option(name="name", description="name of the new topic", required=False)
@@ -143,7 +143,7 @@ class Topic(BaseCog):
 
         await ctx.respond("Updated topic successfully!")
 
-    @topicGroup.command(name="delete", description="delete a topic", default_permission=False)
+    @topicGroup.command(name="delete", description="delete a topic")
     @option(name="role", description="role of the topic", required=True)
     async def delete_topic(self, ctx: discord.ApplicationContext, role: discord.Role):
         await ctx.defer(ephemeral=True)
