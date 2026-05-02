@@ -311,7 +311,7 @@ class Quotes(BaseCog):
         submitter = quote.get('submitted_by', 'Unknown')
         embed = discord.Embed(
             title=f"Quote #{idx}/{total}",
-            color=2326507,
+            color=discord.Color.dark_theme(),
             timestamp=datetime.fromtimestamp(quote['timestamp'] / 1000),
         )
         embed.set_image(url='attachment://quote.jpg')
