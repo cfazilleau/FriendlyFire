@@ -1,9 +1,18 @@
 services:
   bot:
-    build: .
+    container_name: friendlyfire
+    image: ghcr.io/cfazilleau/friendlyfire:main
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       - TOKEN=${TOKEN}
       - MONGO_URI=${MONGO_URI}
     volumes:
       - ./config:/app/config
+    networks:
+      - friendlyfire
+
+networks:
+  friendlyfire:
+    name: friendlyfire
