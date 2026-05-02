@@ -6,7 +6,7 @@ from discord import ButtonStyle
 from pymongo.asynchronous.collection import AsyncCollection
 
 
-class CheckQuotesView(discord.ui.View):
+class QuotesPaginateView(discord.ui.View):
     def __init__(self, quotes_cog, quotes: list, current_id: int):
         super().__init__(timeout=300)
         self.quotes_cog = quotes_cog
@@ -34,9 +34,9 @@ class CheckQuotesView(discord.ui.View):
 
         if self.show_payload:
             payload = {k: v for k, v in quote.items() if k != '_id'}
-            embed.add_field(name='\u200b', value=f'```json\n{json.dumps(payload, indent=2)}\n```', inline=False)
+            embed.add_field(name='​', value=f'```json\n{json.dumps(payload, indent=2)}\n```', inline=False)
 
-        embed.add_field(name='\u200b', value=quote['quote'], inline=False)
+        embed.add_field(name='​', value=quote['quote'], inline=False)
 
         return embed
 
@@ -89,4 +89,21 @@ class CheckQuotesView(discord.ui.View):
     @discord.ui.button(label='Show Payload', style=ButtonStyle.gray, row=1)
     async def toggle_payload(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.show_payload = not self.show_payload
+        await self.refresh(interaction)
+
+    @discord.ui.button(label='Delete', style=ButtonStyle.red, row=2)
+    async def delete_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        quote = self.quotes[self.current_id]
+        collection: AsyncCollection = await self.quotes_cog.bot.mongo.get_collection(interaction.guild_id, 'quotes')
+        await collection.delete_one({'_id': quote['_id']})
+        self.quotes.pop(self.current_id)
+
+        if not self.quotes:
+            self.disable_all_items()
+            await interaction.response.edit_message(content='No quotes remaining.', embed=None, view=self)
+            return
+
+        if self.current_id >= len(self.quotes):
+            self.current_id = len(self.quotes) - 1
+        self.show_payload = False
         await self.refresh(interaction)
