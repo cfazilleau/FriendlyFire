@@ -19,13 +19,14 @@ CONFIRMATION_COLOR = 0x2ea42a
 
 class QuoteView(discord.ui.View):
     def __init__(self, quotes_cog, guild_id: int, current_idx: int, requester_id: int, quote: dict, notify: str = None):
-        super().__init__(timeout=60)
+        super().__init__(timeout=300)
         self.quotes_cog = quotes_cog
         self.guild_id = guild_id
         self.current_idx = current_idx
         self.requester_id = requester_id
         self.current_quote = quote
         self.notify = notify  # persisted across rerolls
+        self.message: discord.Message = None
         self._update_vote_buttons()
 
     def _update_vote_buttons(self):
@@ -44,6 +45,13 @@ class QuoteView(discord.ui.View):
             if isinstance(child, discord.ui.Button) and child.custom_id == 'reroll':
                 self.remove_item(child)
                 break
+
+    async def on_timeout(self):
+        if self.message:
+            try:
+                await self.message.edit(view=None)
+            except discord.NotFound:
+                pass
 
     @discord.ui.button(label='Reroll', style=discord.ButtonStyle.secondary, emoji='🎲', custom_id='reroll')
     async def reroll(self, button: discord.ui.Button, interaction: discord.Interaction):
@@ -179,10 +187,11 @@ class Quotes(BaseCog):
         embed = self._quote_embed(quote, idx + 1, total)
 
         if use_reply_channel:
-            await reply_channel.send(content=notify, file=file, embed=embed, view=view)
+            view.message = await reply_channel.send(content=notify, file=file, embed=embed, view=view)
             await ctx.respond(f"Quote sent to {reply_channel.mention}.", ephemeral=True)
         else:
             await ctx.respond(file=file, embed=embed, view=view)
+            view.message = await ctx.interaction.original_response()
 
     @quotesGroup.command(name="paginate", description="Open the quote paginator/moderation view.")
     @discord.option(name="id", parameter_name="quote_id", description="Id of the quote to start at", required=False, input_type=int)
@@ -204,6 +213,7 @@ class Quotes(BaseCog):
 
         view = QuotesPaginateView(self, quotes, idx)
         await ctx.respond(embed=view.get_embed(), view=view)
+        view.message = await ctx.interaction.original_response()
 
     @discord.slash_command(name="crawl-missing-quotes", description="Crawl the quote channel to backfill missing quotes.", default_member_permissions=discord.Permissions(administrator=True), guild_only=True)
     async def crawl_missing_quotes(self, ctx: discord.ApplicationContext):

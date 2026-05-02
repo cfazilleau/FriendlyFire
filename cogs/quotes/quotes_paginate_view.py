@@ -13,6 +13,7 @@ class QuotesPaginateView(discord.ui.View):
         self.quotes = quotes
         self.current_id = current_id
         self.show_payload = False
+        self.message: discord.Message = None
         self.update_buttons()
 
     def get_embed(self) -> discord.Embed:
@@ -51,6 +52,13 @@ class QuotesPaginateView(discord.ui.View):
                 child.style = ButtonStyle.primary if not quote.get('safe') else ButtonStyle.secondary
             elif child.label in ('Show Payload', 'Hide Payload'):
                 child.label = 'Hide Payload' if self.show_payload else 'Show Payload'
+
+    async def on_timeout(self):
+        if self.message:
+            try:
+                await self.message.edit(view=None)
+            except discord.NotFound:
+                pass
 
     async def refresh(self, interaction: discord.Interaction):
         self.update_buttons()
