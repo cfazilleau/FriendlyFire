@@ -19,7 +19,7 @@ CONFIRMATION_COLOR = 0x2ea42a
 
 class QuoteView(discord.ui.View):
     def __init__(self, quotes_cog, guild_id: int, current_idx: int, total: int, requester_id: int, quote: dict, notify: str = None):
-        super().__init__(timeout=600)
+        super().__init__(timeout=86400)
         self.quotes_cog = quotes_cog
         self.guild_id = guild_id
         self.current_idx = current_idx
