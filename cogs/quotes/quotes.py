@@ -26,16 +26,26 @@ class QuoteView(discord.ui.View):
         self.requester_id = requester_id
         self.current_quote = quote
         self.notify = notify  # persisted across rerolls
-        self._update_star_button()
+        self._update_vote_buttons()
 
-    def _update_star_button(self):
+    def _update_vote_buttons(self):
+        up = len(self.current_quote.get('upvoted_by', []))
+        down = len(self.current_quote.get('downvoted_by', []))
         for child in self.children:
-            if isinstance(child, discord.ui.Button) and child.custom_id == 'star':
-                stars = len(self.current_quote.get('starred_by', []))
-                child.label = str(stars) if stars else None
+            if not isinstance(child, discord.ui.Button):
+                continue
+            if child.custom_id == 'upvote':
+                child.label = str(up) if up else None
+            elif child.custom_id == 'downvote':
+                child.label = str(down) if down else None
+
+    def _remove_reroll(self):
+        for child in list(self.children):
+            if isinstance(child, discord.ui.Button) and child.custom_id == 'reroll':
+                self.remove_item(child)
                 break
 
-    @discord.ui.button(label='Reroll', style=discord.ButtonStyle.secondary, emoji='🎲')
+    @discord.ui.button(label='Reroll', style=discord.ButtonStyle.secondary, emoji='🎲', custom_id='reroll')
     async def reroll(self, button: discord.ui.Button, interaction: discord.Interaction):
         if interaction.user.id != self.requester_id:
             await interaction.response.send_message('Only the user who requested this quote can reroll it.', ephemeral=True)
@@ -58,24 +68,32 @@ class QuoteView(discord.ui.View):
             return
         file = discord.File(io.BytesIO(image_bytes), filename='quote.jpg')
         content = self.quotes_cog._quote_content(self.current_quote, self.current_idx + 1, total, notify=self.notify)
-        self._update_star_button()
+        self._update_vote_buttons()
 
         await interaction.response.edit_message(content=content, attachments=[], file=file, view=self)
 
-    @discord.ui.button(emoji='⭐', style=discord.ButtonStyle.secondary, custom_id='star')
-    async def star(self, button: discord.ui.Button, interaction: discord.Interaction):
+    @discord.ui.button(emoji='👍', style=discord.ButtonStyle.secondary, custom_id='upvote')
+    async def upvote(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await self._vote(interaction, 'upvoted_by', 'downvoted_by')
+
+    @discord.ui.button(emoji='👎', style=discord.ButtonStyle.secondary, custom_id='downvote')
+    async def downvote(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await self._vote(interaction, 'downvoted_by', 'upvoted_by')
+
+    async def _vote(self, interaction: discord.Interaction, field: str, opposite_field: str):
         user_id = str(interaction.user.id)
-        if user_id in self.current_quote.get('starred_by', []):
-            await interaction.response.send_message('You already starred this quote.', ephemeral=True)
+        if user_id in self.current_quote.get(field, []) or user_id in self.current_quote.get(opposite_field, []):
+            await interaction.response.send_message('You already voted on this quote.', ephemeral=True)
             return
 
         collection: AsyncCollection = await self.quotes_cog.bot.mongo.get_collection(self.guild_id, 'quotes')
         await collection.update_one(
             {'_id': self.current_quote['_id']},
-            {'$push': {'starred_by': user_id}},
+            {'$push': {field: user_id}},
         )
-        self.current_quote.setdefault('starred_by', []).append(user_id)
-        self._update_star_button()
+        self.current_quote.setdefault(field, []).append(user_id)
+        self._remove_reroll()
+        self._update_vote_buttons()
 
         await interaction.response.edit_message(view=self)
 
@@ -88,7 +106,8 @@ class QuoteEntry(TypedDict):
     timestamp: int
     safe: bool
     checked: bool
-    starred_by: list[str]
+    upvoted_by: list[str]
+    downvoted_by: list[str]
 
 class Quotes(BaseCog):
     def __init__(self, bot: FriendlyFire):
