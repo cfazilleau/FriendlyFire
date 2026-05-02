@@ -17,13 +17,13 @@ class Locale(commands.Cog):
     )
 
     async def _get_available_locales(self, ctx: discord.AutocompleteContext):
-        return self.bot.locale_manager.available_locales()
+        return self.bot.available_locales
 
     @localeGroup.command(name="set", description="Set the language for this server")
     @option(name="language", description="Language code (e.g. en, fr)", required=True, autocomplete=_get_available_locales)
     async def locale_set(self, ctx: discord.ApplicationContext, language: str):
         await ctx.defer(ephemeral=True)
-        available = self.bot.locale_manager.available_locales()
+        available = self.bot.available_locales
         if language not in available:
             await ctx.respond(f"Unknown language `{language}`. Available: {', '.join(f'`{l}`' for l in available)}")
             return

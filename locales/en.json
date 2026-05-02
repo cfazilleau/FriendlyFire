@@ -1,11 +1,13 @@
 {
-    "invites": {
-        "welcome_title": "Welcome!",
-        "welcome_description": "Welcome <@{member_id}>{inviter_part} to the server!",
-        "invited_by": ", invited by <@{inviter_id}>",
-        "server_link_text": "the server"
-    },
-    "topic": {
-        "subscribe_footer": "Click ✅ to subscribe to this topic"
+    "en": {
+        "invites": {
+            "welcome_title": "Welcome!",
+            "welcome_description": "Welcome <@%{member_id}>%{inviter_part} to the server!",
+            "invited_by": ", invited by <@%{inviter_id}>",
+            "server_link_text": "the server"
+        },
+        "topic": {
+            "subscribe_footer": "Click ✅ to subscribe to this topic"
+        }
     }
 }
