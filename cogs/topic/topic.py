@@ -25,7 +25,7 @@ class Topic(BaseCog):
         if not self.config.get('topicTypes'):
             self.log('No topic types configured in config/topic.json — topic commands will be unavailable.')
 
-    topicGroup = discord.SlashCommandGroup(name="topic", description="manage topics", default_member_permissions=discord.Permissions(administrator=True), guild_only=True)
+    topicGroup = discord.SlashCommandGroup(name="topic", description="manage topics", default_member_permissions=discord.Permissions(administrator=True), contexts=[discord.InteractionContextType.guild])
 
     async def get_topic_types(self, ctx: discord.AutocompleteContext):
         return list(self.config.get('topicTypes').keys())
