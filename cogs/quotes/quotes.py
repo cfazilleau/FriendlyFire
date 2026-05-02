@@ -31,7 +31,7 @@ class QuoteView(discord.ui.View):
     def _update_star_button(self):
         for child in self.children:
             if isinstance(child, discord.ui.Button) and child.custom_id == 'star':
-                stars = self.current_quote.get('stars', 0)
+                stars = len(self.current_quote.get('starred_by', []))
                 child.label = str(stars) if stars else None
                 break
 
@@ -72,10 +72,9 @@ class QuoteView(discord.ui.View):
         collection: AsyncCollection = await self.quotes_cog.bot.mongo.get_collection(self.guild_id, 'quotes')
         await collection.update_one(
             {'_id': self.current_quote['_id']},
-            {'$inc': {'stars': 1}, '$push': {'starred_by': user_id}},
+            {'$push': {'starred_by': user_id}},
         )
         self.current_quote.setdefault('starred_by', []).append(user_id)
-        self.current_quote['stars'] = self.current_quote.get('stars', 0) + 1
         self._update_star_button()
 
         await interaction.response.edit_message(view=self)
@@ -89,7 +88,6 @@ class QuoteEntry(TypedDict):
     timestamp: int
     safe: bool
     checked: bool
-    stars: int
     starred_by: list[str]
 
 class Quotes(BaseCog):
