@@ -18,14 +18,16 @@ QUOTE_REGEX = re.compile(r'\"(.+?)\"\s*-*\s*(.*)', re.MULTILINE | re.DOTALL)
 CONFIRMATION_COLOR = 0x2ea42a
 
 class QuoteView(discord.ui.View):
-    def __init__(self, quotes_cog, guild_id: int, current_idx: int, requester_id: int, quote: dict, notify: str = None):
-        super().__init__(timeout=60)
+    def __init__(self, quotes_cog, guild_id: int, current_idx: int, total: int, requester_id: int, quote: dict, notify: str = None):
+        super().__init__(timeout=600)
         self.quotes_cog = quotes_cog
         self.guild_id = guild_id
         self.current_idx = current_idx
+        self.total = total
         self.requester_id = requester_id
         self.current_quote = quote
         self.notify = notify  # persisted across rerolls
+        self.message: discord.Message = None
         self._update_vote_buttons()
 
     def _update_vote_buttons(self):
@@ -45,6 +47,14 @@ class QuoteView(discord.ui.View):
                 self.remove_item(child)
                 break
 
+    async def on_timeout(self):
+        if self.message:
+            try:
+                embed = self.quotes_cog._quote_embed(self.current_quote, self.current_idx + 1, self.total, show_votes=True)
+                await self.message.edit(embed=embed, view=None)
+            except discord.NotFound:
+                pass
+
     @discord.ui.button(label='Reroll', style=discord.ButtonStyle.secondary, emoji='🎲', custom_id='reroll')
     async def reroll(self, button: discord.ui.Button, interaction: discord.Interaction):
         if interaction.user.id != self.requester_id:
@@ -59,7 +69,7 @@ class QuoteView(discord.ui.View):
             return
 
         self.current_idx, self.current_quote = random.choice(safe_quotes)
-        total = len(all_quotes)
+        self.total = len(all_quotes)
 
         try:
             image_bytes = await generate_quote_image(self.current_quote['quote'], self.current_quote.get('author', ''), self.quotes_cog.config.get('fontPath'))
@@ -67,7 +77,7 @@ class QuoteView(discord.ui.View):
             await interaction.response.send_message('Failed to fetch background image. Please try again.', ephemeral=True)
             return
         file = discord.File(io.BytesIO(image_bytes), filename='quote.jpg')
-        embed = self.quotes_cog._quote_embed(self.current_quote, self.current_idx + 1, total)
+        embed = self.quotes_cog._quote_embed(self.current_quote, self.current_idx + 1, self.total)
         self._update_vote_buttons()
 
         await interaction.response.edit_message(content=self.notify, attachments=[], file=file, embed=embed, view=self)
@@ -175,14 +185,15 @@ class Quotes(BaseCog):
             return
         file = discord.File(io.BytesIO(image_bytes), filename='quote.jpg')
         notify = ctx.author.mention if use_reply_channel else None
-        view = QuoteView(self, ctx.guild_id, idx, ctx.author.id, quote, notify)
+        view = QuoteView(self, ctx.guild_id, idx, total, ctx.author.id, quote, notify)
         embed = self._quote_embed(quote, idx + 1, total)
 
         if use_reply_channel:
-            await reply_channel.send(content=notify, file=file, embed=embed, view=view)
+            view.message = await reply_channel.send(content=notify, file=file, embed=embed, view=view)
             await ctx.respond(f"Quote sent to {reply_channel.mention}.", ephemeral=True)
         else:
             await ctx.respond(file=file, embed=embed, view=view)
+            view.message = await ctx.interaction.original_response()
 
     @quotesGroup.command(name="paginate", description="Open the quote paginator/moderation view.")
     @discord.option(name="id", parameter_name="quote_id", description="Id of the quote to start at", required=False, input_type=int)
@@ -204,6 +215,7 @@ class Quotes(BaseCog):
 
         view = QuotesPaginateView(self, quotes, idx)
         await ctx.respond(embed=view.get_embed(), view=view)
+        view.message = await ctx.interaction.original_response()
 
     @discord.slash_command(name="crawl-missing-quotes", description="Crawl the quote channel to backfill missing quotes.", default_member_permissions=discord.Permissions(administrator=True), guild_only=True)
     async def crawl_missing_quotes(self, ctx: discord.ApplicationContext):
@@ -307,7 +319,7 @@ class Quotes(BaseCog):
         embed.set_footer(text=f'Saved by {entry["submitted_by"]}. Quote #{idx + 1}/{len(all_quotes)}')
         await message.channel.send(embed=embed)
 
-    def _quote_embed(self, quote: dict, idx: int, total: int) -> discord.Embed:
+    def _quote_embed(self, quote: dict, idx: int, total: int, show_votes: bool = False) -> discord.Embed:
         submitter = quote.get('submitted_by', 'Unknown')
         embed = discord.Embed(
             title=f"Quote #{idx}/{total}",
@@ -315,7 +327,12 @@ class Quotes(BaseCog):
             timestamp=datetime.fromtimestamp(quote['timestamp'] / 1000),
         )
         embed.set_image(url='attachment://quote.jpg')
-        embed.set_footer(text=f"submitted by {submitter}")
+        if show_votes:
+            up = len(quote.get('upvoted_by', []))
+            down = len(quote.get('downvoted_by', []))
+            embed.set_footer(text=f"submitted by {submitter}  •  👍 {up}  👎 {down}")
+        else:
+            embed.set_footer(text=f"submitted by {submitter}")
         return embed
 
     @commands.Cog.listener()
