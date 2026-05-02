@@ -1,6 +1,7 @@
 services:
   bot:
-    build: .
+    container_name: friendlyfire
+    image: ghcr.io/cfazilleau/friendlyfire:main
     restart: unless-stopped
     env_file:
       - .env
@@ -9,10 +10,9 @@ services:
       - MONGO_URI=${MONGO_URI}
     volumes:
       - ./config:/app/config
-      - ./assets:/app/assets
-    healthcheck:
-      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+    networks:
+      - friendlyfire
+
+networks:
+  friendlyfire:
+    name: friendlyfire
