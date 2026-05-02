@@ -18,15 +18,38 @@ QUOTE_REGEX = re.compile(r'\"(.+?)\"\s*-*\s*(.*)', re.MULTILINE | re.DOTALL)
 CONFIRMATION_COLOR = 0x2ea42a
 
 class QuoteView(discord.ui.View):
-    def __init__(self, quotes_cog, guild_id: int, current_idx: int, notify: str = None):
+    def __init__(self, quotes_cog, guild_id: int, current_idx: int, requester_id: int, quote: dict, notify: str = None):
         super().__init__(timeout=60)
         self.quotes_cog = quotes_cog
         self.guild_id = guild_id
         self.current_idx = current_idx
+        self.requester_id = requester_id
+        self.current_quote = quote
         self.notify = notify  # persisted across rerolls
+        self._update_vote_buttons()
 
-    @discord.ui.button(label='Reroll', style=discord.ButtonStyle.secondary, emoji='🎲')
+    def _update_vote_buttons(self):
+        up = len(self.current_quote.get('upvoted_by', []))
+        down = len(self.current_quote.get('downvoted_by', []))
+        for child in self.children:
+            if not isinstance(child, discord.ui.Button):
+                continue
+            if child.custom_id == 'upvote':
+                child.label = str(up)
+            elif child.custom_id == 'downvote':
+                child.label = str(down)
+
+    def _remove_reroll(self):
+        for child in list(self.children):
+            if isinstance(child, discord.ui.Button) and child.custom_id == 'reroll':
+                self.remove_item(child)
+                break
+
+    @discord.ui.button(label='Reroll', style=discord.ButtonStyle.secondary, emoji='🎲', custom_id='reroll')
     async def reroll(self, button: discord.ui.Button, interaction: discord.Interaction):
+        if interaction.user.id != self.requester_id:
+            await interaction.response.send_message('Only the user who requested this quote can reroll it.', ephemeral=True)
+            return
         collection: AsyncCollection = await self.quotes_cog.bot.mongo.get_collection(self.guild_id, 'quotes')
         all_quotes = await collection.find({}).sort('timestamp', 1).to_list()
 
@@ -35,18 +58,46 @@ class QuoteView(discord.ui.View):
             await interaction.response.send_message('No other safe quotes available.', ephemeral=True)
             return
 
-        self.current_idx, quote = random.choice(safe_quotes)
+        self.current_idx, self.current_quote = random.choice(safe_quotes)
         total = len(all_quotes)
 
         try:
-            image_bytes = await generate_quote_image(quote['quote'], quote.get('author', ''), self.quotes_cog.config.get('fontPath'))
+            image_bytes = await generate_quote_image(self.current_quote['quote'], self.current_quote.get('author', ''), self.quotes_cog.config.get('fontPath'))
         except (aiohttp.ClientError, asyncio.TimeoutError):
             await interaction.response.send_message('Failed to fetch background image. Please try again.', ephemeral=True)
             return
         file = discord.File(io.BytesIO(image_bytes), filename='quote.jpg')
-        content = self.quotes_cog._quote_content(quote, self.current_idx + 1, total, notify=self.notify)
+        embed = self.quotes_cog._quote_embed(self.current_quote, self.current_idx + 1, total)
+        self._update_vote_buttons()
 
-        await interaction.response.edit_message(content=content, attachments=[], file=file, view=self)
+        await interaction.response.edit_message(content=self.notify, attachments=[], file=file, embed=embed, view=self)
+
+    @discord.ui.button(emoji='👍', style=discord.ButtonStyle.secondary, custom_id='upvote')
+    async def upvote(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await self._vote(interaction, 'upvoted_by', 'downvoted_by')
+
+    @discord.ui.button(emoji='👎', style=discord.ButtonStyle.secondary, custom_id='downvote')
+    async def downvote(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await self._vote(interaction, 'downvoted_by', 'upvoted_by')
+
+    async def _vote(self, interaction: discord.Interaction, field: str, opposite_field: str):
+        user_id = str(interaction.user.id)
+        if user_id in self.current_quote.get(field, []):
+            await interaction.response.send_message('You already voted on this quote.', ephemeral=True)
+            return
+
+        collection: AsyncCollection = await self.quotes_cog.bot.mongo.get_collection(self.guild_id, 'quotes')
+        update: dict = {'$push': {field: user_id}}
+        if user_id in self.current_quote.get(opposite_field, []):
+            update['$pull'] = {opposite_field: user_id}
+            self.current_quote[opposite_field].remove(user_id)
+
+        await collection.update_one({'_id': self.current_quote['_id']}, update)
+        self.current_quote.setdefault(field, []).append(user_id)
+        self._remove_reroll()
+        self._update_vote_buttons()
+
+        await interaction.response.edit_message(view=self)
 
 
 class QuoteEntry(TypedDict):
@@ -57,6 +108,8 @@ class QuoteEntry(TypedDict):
     timestamp: int
     safe: bool
     checked: bool
+    upvoted_by: list[str]
+    downvoted_by: list[str]
 
 class Quotes(BaseCog):
     def __init__(self, bot: FriendlyFire):
@@ -122,14 +175,14 @@ class Quotes(BaseCog):
             return
         file = discord.File(io.BytesIO(image_bytes), filename='quote.jpg')
         notify = ctx.author.mention if use_reply_channel else None
-        view = QuoteView(self, ctx.guild_id, idx, notify)
-        content = self._quote_content(quote, idx + 1, total, notify=notify)
+        view = QuoteView(self, ctx.guild_id, idx, ctx.author.id, quote, notify)
+        embed = self._quote_embed(quote, idx + 1, total)
 
         if use_reply_channel:
-            await reply_channel.send(content=content, file=file, view=view)
+            await reply_channel.send(content=notify, file=file, embed=embed, view=view)
             await ctx.respond(f"Quote sent to {reply_channel.mention}.", ephemeral=True)
         else:
-            await ctx.respond(content=content, file=file, view=view)
+            await ctx.respond(file=file, embed=embed, view=view)
 
     @quotesGroup.command(name="paginate", description="Open the quote paginator/moderation view.")
     @discord.option(name="id", parameter_name="quote_id", description="Id of the quote to start at", required=False, input_type=int)
@@ -254,11 +307,16 @@ class Quotes(BaseCog):
         embed.set_footer(text=f'Saved by {entry["submitted_by"]}. Quote #{idx + 1}/{len(all_quotes)}')
         await message.channel.send(embed=embed)
 
-    def _quote_content(self, quote: dict, idx: int, total: int, notify: str = None) -> str:
-        submitter = f"<@{quote['submitted_by_id']}>" if quote.get('submitted_by_id') else quote.get('submitted_by', 'Unknown')
-        date = discord.utils.format_dt(datetime.fromtimestamp(quote['timestamp'] / 1000), style='D')
-        info = f"Quote #{idx}/{total} — submitted by {submitter} on {date}"
-        return f"{notify}\n{info}" if notify else info
+    def _quote_embed(self, quote: dict, idx: int, total: int) -> discord.Embed:
+        submitter = quote.get('submitted_by', 'Unknown')
+        embed = discord.Embed(
+            title=f"Quote #{idx}/{total}",
+            color=discord.Color.dark_theme(),
+            timestamp=datetime.fromtimestamp(quote['timestamp'] / 1000),
+        )
+        embed.set_image(url='attachment://quote.jpg')
+        embed.set_footer(text=f"submitted by {submitter}")
+        return embed
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
