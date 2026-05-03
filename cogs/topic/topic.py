@@ -105,7 +105,14 @@ class Topic(BaseCog):
         color = discord.Color(int(type_descriptor["color"], 16))
 
         channel = self.bot.get_channel(int(topic["channelId"]))
-        message = await channel.fetch_message(int(topic["messageId"]))
+        if channel is None:
+            await ctx.respond("The topic's channel no longer exists. Please delete and recreate the topic.")
+            return
+        try:
+            message = await channel.fetch_message(int(topic["messageId"]))
+        except discord.NotFound:
+            await ctx.respond("The topic's message no longer exists. Please delete and recreate the topic.")
+            return
 
         if name is None:
             name = topic["roleName"]
