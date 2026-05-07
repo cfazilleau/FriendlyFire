@@ -145,7 +145,7 @@ class Quotes(BaseCog):
         self.config.set('replyChannelId', str(channel.id), ctx.guild_id)
         await ctx.respond(f"Reply channel set to {channel.mention}")
 
-    @discord.slash_command(name="quote", description="Send a quote from the database.", guild_only=True)
+    @discord.slash_command(name="quote", description="Send a quote from the database.", contexts=[discord.InteractionContextType.guild])
     @discord.option(name="id", parameter_name="quote_id", description="Id of the quote to send", required=False, input_type=int)
     async def quote(self, ctx: discord.ApplicationContext, quote_id: int = None):
         reply_channel_id = self.config.get('replyChannelId', ctx.guild_id)
@@ -217,7 +217,7 @@ class Quotes(BaseCog):
         await ctx.respond(embed=view.get_embed(), view=view)
         view.message = await ctx.interaction.original_response()
 
-    @discord.slash_command(name="crawl-missing-quotes", description="Crawl the quote channel to backfill missing quotes.", default_member_permissions=discord.Permissions(administrator=True), guild_only=True)
+    @discord.slash_command(name="crawl-missing-quotes", description="Crawl the quote channel to backfill missing quotes.", default_member_permissions=discord.Permissions(administrator=True), contexts=[discord.InteractionContextType.guild])
     async def crawl_missing_quotes(self, ctx: discord.ApplicationContext):
         capture_channel_id = self.config.get('captureChannelId', ctx.guild_id)
         if not capture_channel_id or str(ctx.channel_id) != capture_channel_id:
