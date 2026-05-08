@@ -55,7 +55,7 @@ class QuoteView(discord.ui.View):
             except discord.NotFound:
                 pass
 
-    @discord.ui.button(label='Reroll', style=discord.ButtonStyle.secondary, emoji='🎲', custom_id='reroll')
+    @discord.ui.button(label='Reroll', style=discord.ButtonStyle.secondary, emoji='\U0001f3b2', custom_id='reroll')
     async def reroll(self, button: discord.ui.Button, interaction: discord.Interaction):
         if interaction.user.id != self.requester_id:
             await interaction.response.send_message('Only the user who requested this quote can reroll it.', ephemeral=True)
@@ -82,11 +82,11 @@ class QuoteView(discord.ui.View):
 
         await interaction.response.edit_message(content=self.notify, attachments=[], file=file, embed=embed, view=self)
 
-    @discord.ui.button(emoji='👍', style=discord.ButtonStyle.secondary, custom_id='upvote')
+    @discord.ui.button(emoji='\U0001f44d', style=discord.ButtonStyle.secondary, custom_id='upvote')
     async def upvote(self, button: discord.ui.Button, interaction: discord.Interaction):
         await self._vote(interaction, 'upvoted_by', 'downvoted_by')
 
-    @discord.ui.button(emoji='👎', style=discord.ButtonStyle.secondary, custom_id='downvote')
+    @discord.ui.button(emoji='\U0001f44e', style=discord.ButtonStyle.secondary, custom_id='downvote')
     async def downvote(self, button: discord.ui.Button, interaction: discord.Interaction):
         await self._vote(interaction, 'downvoted_by', 'upvoted_by')
 
@@ -149,7 +149,12 @@ class Quotes(BaseCog):
     @discord.option(name="id", parameter_name="quote_id", description="Id of the quote to send", required=False, input_type=int)
     async def quote(self, ctx: discord.ApplicationContext, quote_id: int = None):
         reply_channel_id = self.config.get('replyChannelId', ctx.guild_id)
-        reply_channel = await self.bot.fetch_channel(int(reply_channel_id)) if reply_channel_id else None
+        reply_channel = None
+        if reply_channel_id:
+            try:
+                reply_channel = await self.bot.fetch_channel(int(reply_channel_id))
+            except discord.HTTPException:
+                pass
         use_reply_channel = reply_channel is not None and reply_channel.id != ctx.channel_id
 
         await ctx.defer(ephemeral=use_reply_channel)
@@ -330,7 +335,7 @@ class Quotes(BaseCog):
         if show_votes:
             up = len(quote.get('upvoted_by', []))
             down = len(quote.get('downvoted_by', []))
-            embed.set_footer(text=f"submitted by {submitter}  •  👍 {up}  👎 {down}")
+            embed.set_footer(text=f"submitted by {submitter}  •  \U0001f44d {up}  \U0001f44e {down}")
         else:
             embed.set_footer(text=f"submitted by {submitter}")
         return embed
