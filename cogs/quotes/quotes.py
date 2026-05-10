@@ -41,7 +41,7 @@ async def _resolve_discord_mentions(text: str, guild: discord.Guild) -> str:
             except (discord.NotFound, discord.HTTPException):
                 pass
         if member:
-            members[uid] = member.display_name
+            members[uid] = member.name
 
     return re.sub(r'<@!?(\d+)>', lambda m: members.get(int(m.group(1)), m.group(0)), text)
 
