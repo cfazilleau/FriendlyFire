@@ -17,6 +17,34 @@ from src import FriendlyFire, BaseCog
 QUOTE_REGEX = re.compile(r'\"(.+?)\"\s*-*\s*(.*)', re.MULTILINE | re.DOTALL)
 CONFIRMATION_COLOR = 0x2ea42a
 
+
+async def _resolve_discord_mentions(text: str, guild: discord.Guild) -> str:
+    # Replace raw Discord mention tags with human-readable names.
+    def replace_role(match):
+        role = guild.get_role(int(match.group(1)))
+        return f'@{role.name}' if role else match.group(0)
+
+    def replace_channel(match):
+        channel = guild.get_channel(int(match.group(1)))
+        return f'#{channel.name}' if channel else match.group(0)
+
+    text = re.sub(r'<@&(\d+)>', replace_role, text)
+    text = re.sub(r'<#(\d+)>', replace_channel, text)
+
+    user_ids = {int(m.group(1)) for m in re.finditer(r'<@!?(\d+)>', text)}
+    members: dict[int, str] = {}
+    for uid in user_ids:
+        member = guild.get_member(uid)
+        if member is None:
+            try:
+                member = await guild.fetch_member(uid)
+            except (discord.NotFound, discord.HTTPException):
+                pass
+        if member:
+            members[uid] = member.name
+
+    return re.sub(r'<@!?(\d+)>', lambda m: members.get(int(m.group(1)), m.group(0)), text)
+
 class QuoteView(discord.ui.View):
     def __init__(self, quotes_cog, guild_id: int, current_idx: int, total: int, requester_id: int, quote: dict, notify: str = None):
         super().__init__(timeout=86400)
@@ -71,8 +99,11 @@ class QuoteView(discord.ui.View):
         self.current_idx, self.current_quote = random.choice(safe_quotes)
         self.total = len(all_quotes)
 
+        resolved_quote = await _resolve_discord_mentions(self.current_quote['quote'], interaction.guild)
+        resolved_author = await _resolve_discord_mentions(self.current_quote.get('author', ''), interaction.guild)
+
         try:
-            image_bytes = await generate_quote_image(self.current_quote['quote'], self.current_quote.get('author', ''), self.quotes_cog.config.get('fontPath'))
+            image_bytes = await generate_quote_image(resolved_quote, resolved_author, self.quotes_cog.config.get('fontPath'))
         except (aiohttp.ClientError, asyncio.TimeoutError):
             await interaction.response.send_message('Failed to fetch background image. Please try again.', ephemeral=True)
             return
@@ -92,18 +123,26 @@ class QuoteView(discord.ui.View):
 
     async def _vote(self, interaction: discord.Interaction, field: str, opposite_field: str):
         user_id = str(interaction.user.id)
-        if user_id in self.current_quote.get(field, []):
+        collection: AsyncCollection = await self.quotes_cog.bot.mongo.get_collection(self.guild_id, 'quotes')
+
+        # Atomic check-and-update
+        result = await collection.update_one(
+            {'_id': self.current_quote['_id'], field: {'$ne': user_id}},
+            {
+                '$addToSet': {field: user_id},
+                '$pull': {opposite_field: user_id}
+            }
+        )
+
+        if result.matched_count == 0:
             await interaction.response.send_message('You already voted on this quote.', ephemeral=True)
             return
 
-        collection: AsyncCollection = await self.quotes_cog.bot.mongo.get_collection(self.guild_id, 'quotes')
-        update: dict = {'$push': {field: user_id}}
+        # Update in-memory state
         if user_id in self.current_quote.get(opposite_field, []):
-            update['$pull'] = {opposite_field: user_id}
             self.current_quote[opposite_field].remove(user_id)
-
-        await collection.update_one({'_id': self.current_quote['_id']}, update)
         self.current_quote.setdefault(field, []).append(user_id)
+
         self._remove_reroll()
         self._update_vote_buttons()
 
@@ -145,7 +184,7 @@ class Quotes(BaseCog):
         self.config.set('replyChannelId', str(channel.id), ctx.guild_id)
         await ctx.respond(f"Reply channel set to {channel.mention}")
 
-    @discord.slash_command(name="quote", description="Send a quote from the database.", guild_only=True)
+    @discord.slash_command(name="quote", description="Send a quote from the database.", contexts=[discord.InteractionContextType.guild])
     @discord.option(name="id", parameter_name="quote_id", description="Id of the quote to send", required=False, input_type=int)
     async def quote(self, ctx: discord.ApplicationContext, quote_id: int = None):
         reply_channel_id = self.config.get('replyChannelId', ctx.guild_id)
@@ -183,8 +222,11 @@ class Quotes(BaseCog):
                 return
             idx, quote = random.choice(safe_quotes)
 
+        resolved_quote = await _resolve_discord_mentions(quote['quote'], ctx.guild)
+        resolved_author = await _resolve_discord_mentions(quote.get('author', ''), ctx.guild)
+
         try:
-            image_bytes = await generate_quote_image(quote['quote'], quote.get('author', ''), self.config.get('fontPath'))
+            image_bytes = await generate_quote_image(resolved_quote, resolved_author, self.config.get('fontPath'))
         except (aiohttp.ClientError, asyncio.TimeoutError):
             await ctx.respond('Failed to fetch background image. Please try again.', ephemeral=True)
             return
@@ -222,7 +264,7 @@ class Quotes(BaseCog):
         await ctx.respond(embed=view.get_embed(), view=view)
         view.message = await ctx.interaction.original_response()
 
-    @discord.slash_command(name="crawl-missing-quotes", description="Crawl the quote channel to backfill missing quotes.", default_member_permissions=discord.Permissions(administrator=True), guild_only=True)
+    @discord.slash_command(name="crawl-missing-quotes", description="Crawl the quote channel to backfill missing quotes.", default_member_permissions=discord.Permissions(administrator=True), contexts=[discord.InteractionContextType.guild])
     async def crawl_missing_quotes(self, ctx: discord.ApplicationContext):
         capture_channel_id = self.config.get('captureChannelId', ctx.guild_id)
         if not capture_channel_id or str(ctx.channel_id) != capture_channel_id:
@@ -315,10 +357,12 @@ class Quotes(BaseCog):
                 await msg.delete()
                 break
 
+        display_author = await _resolve_discord_mentions(entry['author'], message.guild)
+        display_quote = await _resolve_discord_mentions(entry['quote'], message.guild)
         embed = discord.Embed(
             color=CONFIRMATION_COLOR,
-            title=entry['author'],
-            description=entry['quote'],
+            title=display_author,
+            description=display_quote,
             url=message.jump_url,
         )
         embed.set_footer(text=f'Saved by {entry["submitted_by"]}. Quote #{idx + 1}/{len(all_quotes)}')
