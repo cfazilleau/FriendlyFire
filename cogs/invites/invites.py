@@ -104,21 +104,13 @@ class Invites(BaseCog):
             server_invites_map = {i.code: i for i in server_invites}
             for invite in recorded_invites:
                 code = invite['code']
-                if code in server_invites_map:
-                    active_invite = server_invites_map[code]
-                    recorded_uses = invite.get('uses', 0)
-                    if active_invite.uses > recorded_uses:
+                if code not in server_invites_map:
+                    # Invite disappeared from server — if it hasn't expired it was consumed
+                    expires = invite.get('expires')
+                    if expires is None or expires > datetime.datetime.now().timestamp():
                         inviter = member.guild.get_member(invite['author_id'])
                         inviter_name = inviter.name if inviter else f"<unknown {invite['author_id']}>"
-                        self.log(f"{member.name} joined \"{member.guild.name}\" using the invite {code} by {inviter_name} (uses: {recorded_uses} -> {active_invite.uses})")
-                        inviter_id = invite['author_id']
-                        await collection.update_one({"code": code}, {"$set": {"uses": active_invite.uses}})
-                        break
-                else:
-                    if invite['expires'] is None or invite['expires'] > datetime.datetime.now().timestamp():
-                        inviter = member.guild.get_member(invite['author_id'])
-                        inviter_name = inviter.name if inviter else f"<unknown {invite['author_id']}>"
-                        self.log(f"{member.name} joined \"{member.guild.name}\" using deleted/expired invite {code} by {inviter_name}")
+                        self.log(f"{member.name} joined \"{member.guild.name}\" using one-time invite {code} by {inviter_name}")
                         inviter_id = invite['author_id']
                         await collection.delete_one({"code": code})
                         break
@@ -136,13 +128,16 @@ class Invites(BaseCog):
                 greetings = await greetings_collection.find({}).to_list()
                 greeting_text = random.choice(greetings)['greeting'] if greetings else None
 
+                inviter_mention = f"invité.e par <@{inviter_id}>\n" if inviter_id is not None else ""
+                description = f"{greeting_text}\n\n" if greeting_text else ""
+                description += f"Bienvenue a <@{member.id}>, {inviter_mention}sur le discord de [Phoenix Legacy](https://phxlgc.com)!"
                 embed = discord.Embed(
                     title="Bienvenue!",
                     thumbnail=member.avatar.url if member.avatar else None,
                     color=member.accent_color or discord.Color.default(),
-                    description=f"Bienvenue a <@{member.id}>, {f"invité.e par <@{inviter_id}>" if inviter_id is not None else ""} sur le discord de [Phoenix Legacy](https://phxlgc.com)!"
+                    description=description,
                 )
-                await announcement_channel.send(content=greeting_text, embed=embed)
+                await announcement_channel.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_ready(self):
