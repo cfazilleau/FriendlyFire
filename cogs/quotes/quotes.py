@@ -17,6 +17,34 @@ from src import FriendlyFire, BaseCog
 QUOTE_REGEX = re.compile(r'\"(.+?)\"\s*-*\s*(.*)', re.MULTILINE | re.DOTALL)
 CONFIRMATION_COLOR = 0x2ea42a
 
+
+async def _resolve_discord_mentions(text: str, guild: discord.Guild) -> str:
+    # Replace raw Discord mention tags with human-readable names.
+    def replace_role(match):
+        role = guild.get_role(int(match.group(1)))
+        return f'@{role.name}' if role else match.group(0)
+
+    def replace_channel(match):
+        channel = guild.get_channel(int(match.group(1)))
+        return f'#{channel.name}' if channel else match.group(0)
+
+    text = re.sub(r'<@&(\d+)>', replace_role, text)
+    text = re.sub(r'<#(\d+)>', replace_channel, text)
+
+    user_ids = {int(m.group(1)) for m in re.finditer(r'<@!?(\d+)>', text)}
+    members: dict[int, str] = {}
+    for uid in user_ids:
+        member = guild.get_member(uid)
+        if member is None:
+            try:
+                member = await guild.fetch_member(uid)
+            except (discord.NotFound, discord.HTTPException):
+                pass
+        if member:
+            members[uid] = member.name
+
+    return re.sub(r'<@!?(\d+)>', lambda m: members.get(int(m.group(1)), m.group(0)), text)
+
 class QuoteView(discord.ui.View):
     def __init__(self, quotes_cog, guild_id: int, current_idx: int, total: int, requester_id: int, quote: dict, notify: str = None):
         super().__init__(timeout=86400)
@@ -71,8 +99,11 @@ class QuoteView(discord.ui.View):
         self.current_idx, self.current_quote = random.choice(safe_quotes)
         self.total = len(all_quotes)
 
+        resolved_quote = await _resolve_discord_mentions(self.current_quote['quote'], interaction.guild)
+        resolved_author = await _resolve_discord_mentions(self.current_quote.get('author', ''), interaction.guild)
+
         try:
-            image_bytes = await generate_quote_image(self.current_quote['quote'], self.current_quote.get('author', ''), self.quotes_cog.config.get('fontPath'))
+            image_bytes = await generate_quote_image(resolved_quote, resolved_author, self.quotes_cog.config.get('fontPath'))
         except (aiohttp.ClientError, asyncio.TimeoutError):
             await interaction.response.send_message('Failed to fetch background image. Please try again.', ephemeral=True)
             return
@@ -178,8 +209,11 @@ class Quotes(BaseCog):
                 return
             idx, quote = random.choice(safe_quotes)
 
+        resolved_quote = await _resolve_discord_mentions(quote['quote'], ctx.guild)
+        resolved_author = await _resolve_discord_mentions(quote.get('author', ''), ctx.guild)
+
         try:
-            image_bytes = await generate_quote_image(quote['quote'], quote.get('author', ''), self.config.get('fontPath'))
+            image_bytes = await generate_quote_image(resolved_quote, resolved_author, self.config.get('fontPath'))
         except (aiohttp.ClientError, asyncio.TimeoutError):
             await ctx.respond('Failed to fetch background image. Please try again.', ephemeral=True)
             return
@@ -310,10 +344,12 @@ class Quotes(BaseCog):
                 await msg.delete()
                 break
 
+        display_author = await _resolve_discord_mentions(entry['author'], message.guild)
+        display_quote = await _resolve_discord_mentions(entry['quote'], message.guild)
         embed = discord.Embed(
             color=CONFIRMATION_COLOR,
-            title=entry['author'],
-            description=entry['quote'],
+            title=display_author,
+            description=display_quote,
             url=message.jump_url,
         )
         embed.set_footer(text=f'Saved by {entry["submitted_by"]}. Quote #{idx + 1}/{len(all_quotes)}')
