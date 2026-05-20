@@ -16,6 +16,7 @@ class InviteEntry(TypedDict):
     author_id: int
     code: str
     expires: int
+    uses: int
 
 class Invites(BaseCog):
     def __init__(self, bot: FriendlyFire):
@@ -63,6 +64,7 @@ class Invites(BaseCog):
             author_id=author.id,
             code=invite.code,
             expires=int(invite.expires_at.timestamp()) if invite.expires_at else None,
+            uses=invite.uses,
         )
         collection: AsyncCollection[InviteEntry] = await self.bot.mongo.get_collection(ctx.guild_id, "invites")
         await collection.insert_one(invite_entry)
@@ -99,14 +101,27 @@ class Invites(BaseCog):
 
             self.log(f"{len(server_invites)} invites server-side, {len(recorded_invites)} invites bot-side.")
 
+            server_invites_map = {i.code: i for i in server_invites}
             for invite in recorded_invites:
-                if invite['code'] not in [i.code for i in server_invites]:
-                    inviter = member.guild.get_member(invite['author_id'])
-                    inviter_name = inviter.name if inviter else f"<unknown {invite['author_id']}>"
-                    self.log(f"{member.name} joined \"{member.guild.name}\" using the invite {invite['code']} by {inviter_name}")
-                    inviter_id = inviter.id if inviter else invite['author_id']
-                    await collection.delete_one({"code": invite['code']})
-                    break
+                code = invite['code']
+                if code in server_invites_map:
+                    active_invite = server_invites_map[code]
+                    recorded_uses = invite.get('uses', 0)
+                    if active_invite.uses > recorded_uses:
+                        inviter = member.guild.get_member(invite['author_id'])
+                        inviter_name = inviter.name if inviter else f"<unknown {invite['author_id']}>"
+                        self.log(f"{member.name} joined \"{member.guild.name}\" using the invite {code} by {inviter_name} (uses: {recorded_uses} -> {active_invite.uses})")
+                        inviter_id = invite['author_id']
+                        await collection.update_one({"code": code}, {"$set": {"uses": active_invite.uses}})
+                        break
+                else:
+                    if invite['expires'] is None or invite['expires'] > datetime.datetime.now().timestamp():
+                        inviter = member.guild.get_member(invite['author_id'])
+                        inviter_name = inviter.name if inviter else f"<unknown {invite['author_id']}>"
+                        self.log(f"{member.name} joined \"{member.guild.name}\" using deleted/expired invite {code} by {inviter_name}")
+                        inviter_id = invite['author_id']
+                        await collection.delete_one({"code": code})
+                        break
         except discord.Forbidden:
             self.log("Missing MANAGE_GUILD permission, skipping invite tracking.")
 
