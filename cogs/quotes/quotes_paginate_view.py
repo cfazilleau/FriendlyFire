@@ -27,7 +27,7 @@ class QuotesPaginateView(discord.ui.View):
 
         embed = discord.Embed(
             title=f"Quote #{self.current_id + 1}/{count} ({checked_str})",
-            description=f"Submitted by {submitter}",
+            description=f"Submitted by {submitter}\n\n{quote['quote']}",
             color=color,
             timestamp=datetime.fromtimestamp(quote['timestamp'] / 1000),
         )
@@ -36,8 +36,6 @@ class QuotesPaginateView(discord.ui.View):
         if self.show_payload:
             payload = {k: v for k, v in quote.items() if k != '_id'}
             embed.add_field(name='​', value=f'```json\n{json.dumps(payload, indent=2)}\n```', inline=False)
-
-        embed.add_field(name='​', value=quote['quote'], inline=False)
 
         return embed
 
