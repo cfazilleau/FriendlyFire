@@ -16,7 +16,6 @@ class InviteEntry(TypedDict):
     author_id: int
     code: str
     expires: int
-    uses: int
 
 class Invites(BaseCog):
     def __init__(self, bot: FriendlyFire):
@@ -64,7 +63,6 @@ class Invites(BaseCog):
             author_id=author.id,
             code=invite.code,
             expires=int(invite.expires_at.timestamp()) if invite.expires_at else None,
-            uses=invite.uses,
         )
         collection: AsyncCollection[InviteEntry] = await self.bot.mongo.get_collection(ctx.guild_id, "invites")
         await collection.insert_one(invite_entry)
@@ -129,8 +127,8 @@ class Invites(BaseCog):
                 greeting_text = random.choice(greetings)['greeting'] if greetings else None
 
                 inviter_mention = f"invité.e par <@{inviter_id}>\n" if inviter_id is not None else ""
-                description = f"{greeting_text}\n\n" if greeting_text else ""
-                description += f"Bienvenue a <@{member.id}>, {inviter_mention}sur le discord de [Phoenix Legacy](https://phxlgc.com)!"
+                greeting_suffix = f"\n\n{greeting_text}" if greeting_text else ""
+                description = f"Bienvenue a <@{member.id}>, {inviter_mention}sur le discord de [Phoenix Legacy](https://phxlgc.com)!{greeting_suffix}"
                 embed = discord.Embed(
                     title="Bienvenue!",
                     thumbnail=member.avatar.url if member.avatar else None,
