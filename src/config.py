@@ -48,7 +48,7 @@ class Config:
             if 'global' not in data and 'guilds' not in data:
                 return {'global': data, 'guilds': {}}
             return data
-        except FileNotFoundError:
+        except (FileNotFoundError, json.JSONDecodeError):
             template_hint = f' See {self.template_file} for reference.' if os.path.exists(self.template_file) else ''
-            print(f'[Config] {self.config_file} not found, using defaults.{template_hint}')
+            print(f'[Config] {self.config_file} not found or malformed, using defaults.{template_hint}')
             return {}
