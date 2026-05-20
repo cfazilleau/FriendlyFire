@@ -188,8 +188,18 @@ class Quotes(BaseCog):
     @discord.option(name="id", parameter_name="quote_id", description="Id of the quote to send", required=False, input_type=int)
     async def quote(self, ctx: discord.ApplicationContext, quote_id: int = None):
         reply_channel_id = self.config.get('replyChannelId', ctx.guild_id)
-        reply_channel = await self.bot.fetch_channel(int(reply_channel_id)) if reply_channel_id else None
-        use_reply_channel = reply_channel is not None and reply_channel.id != ctx.channel_id
+        if not reply_channel_id:
+            await ctx.respond("Error: No reply channel is configured. Please configure one first using `/quotes set-reply-channel`.", ephemeral=True)
+            return
+
+        try:
+            reply_channel = await self.bot.fetch_channel(int(reply_channel_id))
+        except (discord.HTTPException, discord.Forbidden) as e:
+            self.log(f"Failed to fetch configured reply channel {reply_channel_id}: {e}")
+            await ctx.respond("Error: The configured reply channel could not be found or accessed. Please re-configure it.", ephemeral=True)
+            return
+
+        use_reply_channel = reply_channel.id != ctx.channel_id
 
         await ctx.defer(ephemeral=use_reply_channel)
 
