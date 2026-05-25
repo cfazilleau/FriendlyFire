@@ -1,27 +1,45 @@
 import io
-
+import re
 import aiohttp
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from pilmoji import Pilmoji
+import emoji
 
 IMG_W = 800
 IMG_H = 800
 PADDING = 120
 
+DISCORD_EMOJI_REGEX = re.compile(r'<a?:[a-zA-Z0-9_]+:\d+>')
+
+
+def get_text_length(draw: ImageDraw.ImageDraw, text: str, font) -> float:
+    # Replace Discord custom emojis and Unicode emojis with 'M' (standard proxy width)
+    text_without_custom = DISCORD_EMOJI_REGEX.sub('M', text)
+    clean_text = ''.join('M' if emoji.is_emoji(c) else c for c in text_without_custom)
+    return draw.textlength(clean_text, font=font)
+
 
 def _wrap_text(draw: ImageDraw.ImageDraw, text: str, font, max_width: int) -> list[str]:
-    words = text.split()
+    paragraphs = text.split('\n')
     lines = []
-    current = ''
-    for word in words:
-        candidate = (current + ' ' + word).strip()
-        if draw.textlength(candidate, font=font) <= max_width:
-            current = candidate
-        else:
-            if current:
-                lines.append(current)
-            current = word
-    if current:
-        lines.append(current)
+    for paragraph in paragraphs:
+        if not paragraph:
+            lines.append('')
+            continue
+        words = paragraph.split(' ')
+        current = ''
+        for word in words:
+            if not word:
+                continue
+            candidate = (current + ' ' + word).strip()
+            if get_text_length(draw, candidate, font=font) <= max_width:
+                current = candidate
+            else:
+                if current:
+                    lines.append(current)
+                current = word
+        if current:
+            lines.append(current)
     return lines
 
 
@@ -47,18 +65,20 @@ def _render(bg_data: bytes, quote: str, author: str, font_path: str) -> bytes:
     line_h += 14
     y = (IMG_H - line_h * len(lines)) // 2 - 20
 
-    for line in lines:
-        x = int((IMG_W - draw.textlength(line, font=font_quote)) // 2)
-        draw.text((x + 2, y + 2), line, font=font_quote, fill=(0, 0, 0, 180))
-        draw.text((x, y), line, font=font_quote, fill=(255, 255, 255, 255))
-        y += line_h
+    with Pilmoji(img) as pilmoji:
+        for line in lines:
+            if line:
+                x = int((IMG_W - get_text_length(draw, line, font_quote)) // 2)
+                pilmoji.text((x + 2, y + 2), line, font=font_quote, fill=(0, 0, 0, 180))
+                pilmoji.text((x, y), line, font=font_quote, fill=(255, 255, 255, 255))
+            y += line_h
 
-    # Author centered near bottom
-    author_str = f'\u2014 {author}'
-    ax = int((IMG_W - draw.textlength(author_str, font=font_author)) // 2)
-    ay = IMG_H - 90
-    draw.text((ax + 2, ay + 2), author_str, font=font_author, fill=(0, 0, 0, 180))
-    draw.text((ax, ay), author_str, font=font_author, fill=(200, 200, 200, 255))
+        # Author centered near bottom
+        author_str = f'\u2014 {author}'
+        ax = int((IMG_W - get_text_length(draw, author_str, font_author)) // 2)
+        ay = IMG_H - 90
+        pilmoji.text((ax + 2, ay + 2), author_str, font=font_author, fill=(0, 0, 0, 180))
+        pilmoji.text((ax, ay), author_str, font=font_author, fill=(200, 200, 200, 255))
 
     out = io.BytesIO()
     img.convert('RGB').save(out, format='JPEG', quality=92)
