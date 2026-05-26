@@ -104,10 +104,10 @@ class Invites(BaseCog):
 
             self.log(f"{len(server_invites)} invites server-side, {len(recorded_invites)} invites bot-side.")
 
-            server_invites_map = {i.code: i for i in server_invites}
+            server_invites_set = {i.code for i in server_invites}
             for invite in recorded_invites:
                 code = invite['code']
-                if code not in server_invites_map:
+                if code not in server_invites_set:
                     # Invite disappeared from server — if it hasn't expired it was consumed
                     expires = invite.get('expires')
                     if expires is None or expires > datetime.datetime.now().timestamp():
