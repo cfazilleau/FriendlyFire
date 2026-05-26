@@ -131,10 +131,6 @@ class Invites(BaseCog):
 
         # Retrieve inviter
         inviter_id = await self.retrieve_inviter_id(member)
-        inviter_name = None
-        if inviter_id is not None:
-            inviter = member.guild.get_member(inviter_id)
-            inviter_name = inviter.name if inviter else f"<unknown {inviter_id}>"
         
         # Send announcement
         announcement_channel_id = self.config.get('invitesChannel', member.guild.id)
@@ -145,16 +141,16 @@ class Invites(BaseCog):
                 greetings = await greetings_collection.find({}).to_list()
                 greeting_text = random.choice(greetings)['greeting'] if greetings else None
 
-                inviter_mention = f"invité.e par **@{inviter_name}**\n" if inviter_name is not None else ""
+                inviter_mention = f"invité.e par <@{inviter_id}>\n" if inviter_id is not None else ""
                 greeting_suffix = f"\n\n{greeting_text}" if greeting_text else ""
-                description = f"Bienvenue a **@{member.name}**, {inviter_mention}sur le discord de [Phoenix Legacy](https://phxlgc.com)!{greeting_suffix}"
+                description = f"Bienvenue a <@{member.id}>, {inviter_mention}sur le discord de [Phoenix Legacy](https://phxlgc.com)!{greeting_suffix}"
                 embed = discord.Embed(
                     title="Bienvenue!",
                     thumbnail=member.avatar.url if member.avatar else None,
                     color=member.accent_color or discord.Color.default(),
                     description=description,
                 )
-                await announcement_channel.send(embed=embed)
+                await announcement_channel.send(content=f"Bienvenue <@{member.id}>!", embed=embed)
 
     @commands.Cog.listener()
     async def on_ready(self):
