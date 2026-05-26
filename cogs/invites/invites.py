@@ -56,9 +56,9 @@ class Invites(BaseCog):
         await ctx.defer(ephemeral=True)
 
         author = ctx.author
-        invite_max_age = self.config.get('inviteMaxAge')
+        invite_max_age = self.config.get('inviteMaxAge', ctx.guild_id)
 
-        invite = await ctx.channel.create_invite(temporary=True, max_age=invite_max_age)
+        invite = await ctx.channel.create_invite(temporary=True, max_age=invite_max_age, max_uses=1)
         invite_entry = InviteEntry(
             author_id=author.id,
             code=invite.code,
@@ -69,7 +69,7 @@ class Invites(BaseCog):
         expiry_text = f", It will be valid until {format_dt(invite.expires_at)}" if invite.expires_at else " (permanent)"
         await ctx.respond(f"Here is your invite link: {invite.url}{expiry_text}.")
 
-    @discord.slash_command(name="test_join", description="Generates a temporary invite", default_member_permissions=discord.Permissions(administrator=True), contexts=[discord.InteractionContextType.guild])
+    @discord.slash_command(name="test_join", description="Fakes a member joining the server to test greetings and roles", default_member_permissions=discord.Permissions(administrator=True), contexts=[discord.InteractionContextType.guild])
     @option(name="user", description="user to fake joining", required=True, input_type=discord.SlashCommandOptionType.user)
     async def test_join(self, ctx: discord.ApplicationContext, user: discord.User):
         await ctx.defer(ephemeral=True)
@@ -89,7 +89,12 @@ class Invites(BaseCog):
             if role_to_add is None:
                 self.log("no role found, ignoring for new member.")
             else:
-                await member.add_roles(role_to_add)
+                try:
+                    await member.add_roles(role_to_add)
+                except discord.Forbidden:
+                    self.log(f"Failed to add role {role_to_add.name} due to missing permissions.")
+                except discord.HTTPException as e:
+                    self.log(f"HTTPException while adding role: {e}")
 
         inviter_id = None
         try:
@@ -112,6 +117,9 @@ class Invites(BaseCog):
                         inviter_id = invite['author_id']
                         await collection.delete_one({"code": code})
                         break
+                    else:
+                        # Clean up expired invite code from MongoDB on-the-fly
+                        await collection.delete_one({"code": code})
         except discord.Forbidden:
             self.log("Missing MANAGE_GUILD permission, skipping invite tracking.")
 

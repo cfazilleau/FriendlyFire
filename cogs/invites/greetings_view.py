@@ -1,4 +1,4 @@
-﻿from typing import TypedDict
+from typing import TypedDict
 
 import discord
 from discord import ButtonStyle
@@ -13,6 +13,7 @@ class PaginatorView(discord.ui.View):
         self.invites_cog = invites_cog
         self.pages = pages
         self.current_page = max(1, min(start_id, len(self.pages))) - 1
+        self.update_buttons()
 
     @staticmethod
     def greeting_to_embed(greeting: Greeting) -> discord.Embed:
