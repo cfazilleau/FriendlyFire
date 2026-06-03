@@ -1,7 +1,7 @@
 {
     "global": {
         "modChannel": null,
-        "timeFrame": 1800,
+        "timeFrame": 60,
         "slowmodeDelay": 15
     },
     "guilds": {}

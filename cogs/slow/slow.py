@@ -9,7 +9,7 @@ class Slow(BaseCog):
     def __init__(self, bot: FriendlyFire):
         super().__init__(bot, 'slow', {
             "modChannel": None,
-            "timeFrame": 1800,
+            "timeFrame": 60,
             "slowmodeDelay": 15
         })
         # Track active requests in memory: channel_id -> (user_id, timestamp)
@@ -23,7 +23,7 @@ class Slow(BaseCog):
 
         # Retrieve settings
         mod_channel_id = self.config.get('modChannel', ctx.guild_id)
-        time_frame = self.config.get('timeFrame', ctx.guild_id) or 1800
+        time_frame = self.config.get('timeFrame', ctx.guild_id) or 60
         slowmode_delay = self.config.get('slowmodeDelay', ctx.guild_id) or 15
 
         # Check if slowmode is already active
