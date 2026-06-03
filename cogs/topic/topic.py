@@ -47,6 +47,7 @@ class Topic(BaseCog):
     @option(name="image", description="URL of an image for this topic", required=False)
     async def create_topic(self, ctx: discord.ApplicationContext, name: str, topic_type: str, image: str = None):
         await ctx.defer(ephemeral=True)
+        self.log(f"Topic create command issued by {ctx.author.name}. Name: '{name}', Type: '{topic_type}', Image: {image}", ctx.guild)
 
         topic_types = self.config.get('topicTypes') or {}
         if topic_type not in topic_types:
@@ -82,6 +83,7 @@ class Topic(BaseCog):
             roleId=str(role.id),
             roleName=role.name
         ))
+        self.log(f"Successfully created role '{role.name}' and message for topic '{name}'", ctx.guild)
         await ctx.respond(self.bot.t('topic.create_success', ctx.guild_id))
 
     @topicGroup.command(name="edit", description="edit a topic")
@@ -91,6 +93,7 @@ class Topic(BaseCog):
     @option(name="image", description="URL of an image for this topic", required=False)
     async def edit_topic(self, ctx: discord.ApplicationContext, role: discord.Role, topic_type: str, name: str = None, image: str = None):
         await ctx.defer(ephemeral=True)
+        self.log(f"Topic edit command issued by {ctx.author.name}. Target Role: {role.name}, Type: '{topic_type}', New Name: '{name}', New Image: {image}", ctx.guild)
 
         topic_types = self.config.get('topicTypes') or {}
         if topic_type not in topic_types:
@@ -156,6 +159,7 @@ class Topic(BaseCog):
     @option(name="role", description="role of the topic", required=True)
     async def delete_topic(self, ctx: discord.ApplicationContext, role: discord.Role):
         await ctx.defer(ephemeral=True)
+        self.log(f"Topic delete command issued by {ctx.author.name}. Target Role: {role.name}", ctx.guild)
         collection: AsyncCollection[TopicEntry] = await self.bot.mongo.get_collection(ctx.guild_id, "topics")
         topic = await collection.find_one(filter={"roleId": str(role.id)})
 

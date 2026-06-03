@@ -22,6 +22,7 @@ class Threads(BaseCog):
     @commands.message_command(name="Move to Thread")
     @default_permissions(manage_messages=True)
     async def move_to_thread(self, ctx: discord.ApplicationContext, message: discord.Message):
+        self.log(f"Message command 'Move to Thread' triggered by {ctx.author.name} on message {message.id} in #{message.channel.name}.", ctx.guild)
         # Safety checks
         if not ctx.guild:
             await ctx.respond(self.bot.t('threads.non_guild', ctx.guild_id), ephemeral=True)

@@ -2,12 +2,12 @@ import discord
 from discord import option
 from discord.ext import commands
 
-from src import FriendlyFire
+from src import FriendlyFire, BaseCog
 
 
-class Locale(commands.Cog):
+class Locale(BaseCog):
     def __init__(self, bot: FriendlyFire):
-        self.bot = bot
+        super().__init__(bot, 'locale')
 
     localeGroup = discord.SlashCommandGroup(
         name="locale",
@@ -29,12 +29,14 @@ class Locale(commands.Cog):
             await ctx.respond(self.bot.t('locale.unknown_lang', ctx.guild_id, language=language, available=available_str))
             return
         self.bot.locale_config.set('language', language, guild_id=ctx.guild_id)
+        self.log(f"Language set to '{language}' by user {ctx.author.name}", ctx.guild)
         await ctx.respond(self.bot.t('locale.set_success', ctx.guild_id, language=language))
 
     @localeGroup.command(name="get", description="Show the current language for this server")
     async def locale_get(self, ctx: discord.ApplicationContext):
         await ctx.defer(ephemeral=True)
         lang = self.bot.locale_config.get('language', ctx.guild_id) or 'en'
+        self.log(f"Language query by user {ctx.author.name}: '{lang}'", ctx.guild)
         await ctx.respond(self.bot.t('locale.current_lang', ctx.guild_id, lang=lang))
 
 

@@ -22,6 +22,7 @@ class ConfirmCopyView(discord.ui.View):
         if interaction.user.id != self.requester_id:
             await interaction.response.send_message(self.cog.bot.t('threads.requester_lock_confirm', self.guild_id), ephemeral=True)
             return
+        self.cog.log(f"ConfirmCopyView: Confirm Copy clicked by {interaction.user.name}.", interaction.guild)
         await interaction.response.defer(ephemeral=True)
         self.value = True
         self.stop()
@@ -31,6 +32,7 @@ class ConfirmCopyView(discord.ui.View):
         if interaction.user.id != self.requester_id:
             await interaction.response.send_message(self.cog.bot.t('threads.requester_lock_cancel', self.guild_id), ephemeral=True)
             return
+        self.cog.log(f"ConfirmCopyView: Cancel clicked by {interaction.user.name}.", interaction.guild)
         await interaction.response.defer(ephemeral=True)
         self.value = False
         self.stop()
@@ -116,6 +118,7 @@ class ConfirmMoveView(discord.ui.View):
                 return
 
         # Clean up database
+        self.cog.log(f"ConfirmMoveView: Finalize Move clicked in #{interaction.channel.name} by {interaction.user.name}. Deleting {len(original_ids_to_delete)} original messages.", interaction.guild)
         await collection.delete_one({"_id": transaction["_id"]})
 
         # Try to delete the confirmation message
@@ -163,6 +166,7 @@ class ConfirmMoveView(discord.ui.View):
         await collection.delete_one({"_id": transaction["_id"]})
 
         # Delete the thread
+        self.cog.log(f"ConfirmMoveView: Cancel Move clicked in #{interaction.channel.name} by {interaction.user.name}. Deleting the thread.", interaction.guild)
         thread = interaction.channel
         try:
             await thread.delete(reason=f"Move cancelled by {interaction.user}")

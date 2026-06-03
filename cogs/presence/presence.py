@@ -47,6 +47,7 @@ class Presence(BaseCog):
         discord.OptionChoice(name="invisible", value="invisible")])
     async def status(self, ctx: discord.ApplicationContext, new_status: str):
         await ctx.defer(ephemeral=True)
+        self.log(f"Status command issued by {ctx.author.name}. New status: {new_status}", ctx.guild)
 
         self.status = new_status
         self.save_config()
@@ -67,6 +68,7 @@ class Presence(BaseCog):
     @discord.option(name="url", description="twitch.tv or youtube only link (to use with 'streaming' type)", required=False)
     async def set_activity(self, ctx: discord.ApplicationContext, activity: str, text: str, url: str):
         await ctx.defer(ephemeral=True)
+        self.log(f"Activity set command issued by {ctx.author.name}. Type: {activity}, Name: {text}, URL: {url}", ctx.guild)
 
         self.activity = { 'type':activity, 'name':text, 'url':url }
         self.save_config()
@@ -78,6 +80,7 @@ class Presence(BaseCog):
     @activity_group.command(name="clear", description="clear current bot activity")
     async def clear_activity(self, ctx: discord.ApplicationContext):
         await ctx.defer(ephemeral=True)
+        self.log(f"Activity clear command issued by {ctx.author.name}", ctx.guild)
 
         self.activity = None
         self.save_config()
@@ -89,6 +92,7 @@ class Presence(BaseCog):
     @discord.option(name="avatar", description="new bot avatar", required=True, input_type=discord.SlashCommandOptionType.attachment)
     async def avatar(self, ctx: discord.ApplicationContext, avatar: discord.Attachment):
         await ctx.defer(ephemeral=True)
+        self.log(f"Avatar set command issued by {ctx.author.name}. Filename: {avatar.filename}", ctx.guild)
         data = await avatar.read()
         await self.bot.user.edit(avatar=data)
         await ctx.respond(self.bot.t('presence.avatar_set', ctx.guild_id, filename=avatar.filename))
@@ -97,18 +101,21 @@ class Presence(BaseCog):
     @discord.option(name="message", description="The message for the bot to send", required=True)
     @discord.option(name="channel", description="The channel to send the message to (defaults to current)", required=False, input_type=discord.SlashCommandOptionType.channel)
     async def say(self, ctx: discord.ApplicationContext, message: str, channel: discord.abc.GuildChannel = None):
+        await ctx.defer(ephemeral=True)
         target_channel = channel or ctx.channel
+        channel_name = target_channel.name if hasattr(target_channel, 'name') else str(target_channel.id)
+        self.log(f"Say command issued by {ctx.author.name}. Target channel: #{channel_name}, message: '{message}'", ctx.guild)
         if not isinstance(target_channel, (discord.TextChannel, discord.Thread)):
-            await ctx.respond(self.bot.t('presence.say.non_text_channel', ctx.guild_id), ephemeral=True)
+            await ctx.respond(self.bot.t('presence.say.non_text_channel', ctx.guild_id))
             return
 
         try:
             await target_channel.send(message)
-            await ctx.respond(self.bot.t('presence.say.success', ctx.guild_id, channel=target_channel.mention), ephemeral=True)
+            await ctx.interaction.delete_original_response()
         except discord.Forbidden:
-            await ctx.respond(self.bot.t('presence.say.no_permission', ctx.guild_id, channel=target_channel.mention), ephemeral=True)
+            await ctx.respond(self.bot.t('presence.say.no_permission', ctx.guild_id, channel=target_channel.mention))
         except discord.HTTPException as e:
-            await ctx.respond(self.bot.t('presence.say.failed', ctx.guild_id, error=str(e)), ephemeral=True)
+            await ctx.respond(self.bot.t('presence.say.failed', ctx.guild_id, error=str(e)))
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -118,6 +125,7 @@ class Presence(BaseCog):
     async def on_message(self, message: discord.Message):
         # If the message mentions us and have not been sent by a bot, react with :eyes:
         if not message.author.bot and self.bot.user in message.mentions:
+            self.log(f"Mentioned in message by {message.author.name} in #{message.channel.name}. Reacting with eyes.", message.guild)
             await message.add_reaction('\U0001f440')
 
 def setup(bot):

@@ -95,6 +95,7 @@ class QuoteView(discord.ui.View):
         if interaction.user.id != self.requester_id:
             await interaction.response.send_message(self.quotes_cog.bot.t('quotes.reroll_not_requester', self.guild_id), ephemeral=True)
             return
+        self.quotes_cog.log(f"Quote reroll clicked by {interaction.user.name}", interaction.guild)
         collection: AsyncCollection = await self.quotes_cog.bot.mongo.get_collection(self.guild_id, 'quotes')
         all_quotes = await collection.find({}).sort('timestamp', 1).to_list()
 
@@ -129,6 +130,7 @@ class QuoteView(discord.ui.View):
         await self._vote(interaction, 'downvoted_by', 'upvoted_by')
 
     async def _vote(self, interaction: discord.Interaction, field: str, opposite_field: str):
+        self.quotes_cog.log(f"Quote vote ({field}) clicked by {interaction.user.name} for quote ID {self.current_quote['_id']}", interaction.guild)
         user_id = str(interaction.user.id)
         collection: AsyncCollection = await self.quotes_cog.bot.mongo.get_collection(self.guild_id, 'quotes')
 
@@ -181,6 +183,7 @@ class Quotes(BaseCog):
     @discord.option(name="channel", required=True, input_type=discord.SlashCommandOptionType.channel)
     async def set_capture_channel(self, ctx: discord.ApplicationContext, channel: discord.TextChannel):
         await ctx.defer(ephemeral=True)
+        self.log(f"Quotes set-capture-channel command issued by {ctx.author.name}. Channel: #{channel.name}", ctx.guild)
         self.config.set('captureChannelId', str(channel.id), ctx.guild_id)
         await ctx.respond(self.bot.t('quotes.set_capture_success', ctx.guild_id, channel=channel.mention))
 
@@ -188,12 +191,14 @@ class Quotes(BaseCog):
     @discord.option(name="channel", required=True, input_type=discord.SlashCommandOptionType.channel)
     async def set_reply_channel(self, ctx: discord.ApplicationContext, channel: discord.TextChannel):
         await ctx.defer(ephemeral=True)
+        self.log(f"Quotes set-reply-channel command issued by {ctx.author.name}. Channel: #{channel.name}", ctx.guild)
         self.config.set('replyChannelId', str(channel.id), ctx.guild_id)
         await ctx.respond(self.bot.t('quotes.set_reply_success', ctx.guild_id, channel=channel.mention))
 
     @discord.slash_command(name="quote", description="Send a quote from the database.", contexts=[discord.InteractionContextType.guild])
     @discord.option(name="id", parameter_name="quote_id", description="Id of the quote to send", required=False, input_type=int)
     async def quote(self, ctx: discord.ApplicationContext, quote_id: int = None):
+        self.log(f"Quote command issued by {ctx.author.name}. Parameter quote_id: {quote_id}", ctx.guild)
         reply_channel_id = self.config.get('replyChannelId', ctx.guild_id)
         if not reply_channel_id:
             await ctx.respond(self.bot.t('quotes.no_reply_channel', ctx.guild_id), ephemeral=True)
@@ -202,7 +207,7 @@ class Quotes(BaseCog):
         try:
             reply_channel = await self.bot.fetch_channel(int(reply_channel_id))
         except (discord.HTTPException, discord.Forbidden) as e:
-            self.log(f"Failed to fetch configured reply channel {reply_channel_id}: {e}")
+            self.log(f"Failed to fetch configured reply channel: {e}", ctx.guild)
             await ctx.respond(self.bot.t('quotes.reply_channel_not_found', ctx.guild_id), ephemeral=True)
             return
 
@@ -247,6 +252,7 @@ class Quotes(BaseCog):
         view = QuoteView(self, ctx.guild_id, idx, total, ctx.author.id, quote, notify)
         embed = self._quote_embed(quote, idx + 1, total, guild_id=ctx.guild_id)
 
+        self.log(f"Displaying quote #{idx + 1}/{total} (Safe: {quote.get('safe')}) to channel (reply channel: {use_reply_channel})", ctx.guild)
         if use_reply_channel:
             view.message = await reply_channel.send(content=notify, file=file, embed=embed, view=view)
             await ctx.respond(self.bot.t('quotes.quote_sent_to', ctx.guild_id, channel=reply_channel.mention), ephemeral=True)
@@ -258,6 +264,7 @@ class Quotes(BaseCog):
     @discord.option(name="id", parameter_name="quote_id", description="Id of the quote to start at", required=False, input_type=int)
     async def paginate_quotes(self, ctx: discord.ApplicationContext, quote_id: int = None):
         await ctx.defer(ephemeral=True)
+        self.log(f"Quotes paginate command issued by {ctx.author.name}. Starting ID: {quote_id}", ctx.guild)
 
         collection: AsyncCollection[QuoteEntry] = await self.bot.mongo.get_collection(ctx.guild_id, "quotes")
         await collection.update_many({"checked": {"$exists": False}}, {"$set": {"checked": False}})
@@ -278,6 +285,7 @@ class Quotes(BaseCog):
 
     @discord.slash_command(name="crawl-missing-quotes", description="Crawl the quote channel to backfill missing quotes.", default_member_permissions=discord.Permissions(administrator=True), contexts=[discord.InteractionContextType.guild])
     async def crawl_missing_quotes(self, ctx: discord.ApplicationContext):
+        self.log(f"Crawl-missing-quotes command issued by {ctx.author.name} in #{ctx.channel.name}", ctx.guild)
         capture_channel_id = self.config.get('captureChannelId', ctx.guild_id)
         if not capture_channel_id or str(ctx.channel_id) != capture_channel_id:
             await ctx.respond(self.bot.t('quotes.crawl_not_capture_channel', ctx.guild_id), ephemeral=True)
@@ -322,7 +330,7 @@ class Quotes(BaseCog):
                 await collection.insert_one(entry)
                 existing.append(entry)
                 saved += 1
-                self.log(f'Found quote: "{entry["quote"]}" --{entry["author"]}')
+                self.log(f'Found quote: "{entry["quote"]}" --{entry["author"]}', ctx.guild)
 
             await ctx.edit(content=self.bot.t('quotes.crawl_saving', ctx.guild_id, checked=checked, saved=saved))
             last_id = batch[-1].id
@@ -330,7 +338,7 @@ class Quotes(BaseCog):
             if len(batch) < batch_size:
                 break
 
-        self.log(f'Crawl done: {checked} checked, {saved} saved')
+        self.log(f'Crawl done: {checked} checked, {saved} saved', ctx.guild)
         await ctx.edit(content=self.bot.t('quotes.crawl_done', ctx.guild_id, checked=checked, saved=saved))
 
     async def _try_capture_quote(self, message: discord.Message):
@@ -343,6 +351,8 @@ class Quotes(BaseCog):
         match = QUOTE_REGEX.match(message.content)
         if not match:
             return
+
+        self.log(f"Message in #{message.channel.name} matched quote format. Author: '{match.group(2).strip()}', Quote: '{match.group(1)}'. Submitter: {message.author.name}", message.guild)
 
         collection: AsyncCollection[QuoteEntry] = await self.bot.mongo.get_collection(message.guild.id, "quotes")
 
@@ -361,7 +371,7 @@ class Quotes(BaseCog):
 
         all_quotes = await collection.find({}).sort('timestamp', 1).to_list()
         idx = next((i for i, q in enumerate(all_quotes) if q['timestamp'] == ts), -1)
-        self.log(f'Quote #{idx + 1}/{len(all_quotes)} saved')
+        self.log(f'Quote #{idx + 1}/{len(all_quotes)} saved', message.guild)
 
         # delete previous bot confirmation in channel
         async for msg in message.channel.history(limit=20):

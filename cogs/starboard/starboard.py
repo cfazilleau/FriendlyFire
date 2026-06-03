@@ -32,6 +32,7 @@ class Starboard(BaseCog):
     @option(name="channel", description="Channel to post starred messages in", required=True, input_type=discord.SlashCommandOptionType.channel)
     async def set_channel(self, ctx: discord.ApplicationContext, channel: discord.TextChannel):
         await ctx.defer(ephemeral=True)
+        self.log(f"Starboard setchannel command issued by {ctx.author.name}. Channel: #{channel.name}", ctx.guild)
         self.config.set('starboardChannel', str(channel.id), guild_id=ctx.guild_id)
         await ctx.respond(self.bot.t('starboard.set_channel_success', ctx.guild_id, channel=channel.mention))
 
@@ -39,6 +40,7 @@ class Starboard(BaseCog):
     @option(name="count", description="Minimum number of stars", required=True, input_type=int)
     async def set_stars(self, ctx: discord.ApplicationContext, count: int):
         await ctx.defer(ephemeral=True)
+        self.log(f"Starboard setstars command issued by {ctx.author.name}. Count: {count}", ctx.guild)
         if count < 1:
             await ctx.respond(self.bot.t('starboard.min_stars_error', ctx.guild_id))
             return
@@ -91,6 +93,7 @@ class Starboard(BaseCog):
 
         star_count = self._star_count(message)
         min_stars = self.config.get('minStars', payload.guild_id) or 3
+        self.log(f"Reaction change detected for message {message.id} in #{channel.name}. Star count: {star_count}, Minimum stars required: {min_stars}", message.guild)
 
         collection: AsyncCollection[StarboardEntry] = await self.bot.mongo.get_collection(payload.guild_id, "starboard")
         existing = await collection.find_one({"original_message_id": str(payload.message_id)})
@@ -104,6 +107,7 @@ class Starboard(BaseCog):
                 try:
                     sb_msg = await starboard_channel.fetch_message(int(existing['starboard_message_id']))
                     await sb_msg.delete()
+                    self.log(f"Message {message.id} fell below minStars ({min_stars}) with {star_count} stars. Deleted starboard entry.", message.guild)
                 except discord.HTTPException:
                     pass
                 await collection.delete_one({"original_message_id": str(payload.message_id)})
@@ -116,6 +120,7 @@ class Starboard(BaseCog):
             try:
                 sb_msg = await starboard_channel.fetch_message(int(existing['starboard_message_id']))
                 await sb_msg.edit(content=content, embed=embed)
+                self.log(f"Updated starboard entry for message {message.id} in #{channel.name} to {star_count} stars.", message.guild)
             except discord.HTTPException:
                 try:
                     sb_msg = await starboard_channel.send(content=content, embed=embed)
@@ -123,6 +128,7 @@ class Starboard(BaseCog):
                         {"original_message_id": str(payload.message_id)},
                         {"$set": {"starboard_message_id": str(sb_msg.id)}},
                     )
+                    self.log(f"Re-posted starboard entry for message {message.id} in #{channel.name} with {star_count} stars (previous message not found/deleted).", message.guild)
                 except discord.HTTPException:
                     pass
         else:
@@ -134,7 +140,7 @@ class Starboard(BaseCog):
                     channel_id=str(payload.channel_id),
                     author_id=message.author.id,
                 ))
-                self.log(f"Posted message {payload.message_id} to starboard with {star_count} stars.")
+                self.log(f"Posted message {message.id} in #{channel.name} to starboard with {star_count} stars.", message.guild)
             except discord.HTTPException:
                 pass
 

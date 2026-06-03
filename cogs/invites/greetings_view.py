@@ -64,10 +64,13 @@ class PaginatorView(discord.ui.View):
     async def prev_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         if self.current_page > 0:
             self.current_page -= 1
+            self.invites_cog.log(f"Greeting paginator Prev clicked by {interaction.user.name}. New page: {self.current_page + 1}", interaction.guild)
             await self.update_message(interaction)
 
     @discord.ui.button(label="Delete", style=ButtonStyle.red, custom_id="delete_greeting_btn")
     async def delete_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        greeting = self.pages[self.current_page]
+        self.invites_cog.log(f"Greeting paginator Delete clicked by {interaction.user.name}. Deleted greeting ID {greeting['_id']}", interaction.guild)
         await self.delete_current_greeting(interaction)
         if not self.pages:
             self.disable_all_items()
@@ -81,4 +84,5 @@ class PaginatorView(discord.ui.View):
     async def next_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         if self.current_page + 1 < len(self.pages):
             self.current_page += 1
+            self.invites_cog.log(f"Greeting paginator Next clicked by {interaction.user.name}. New page: {self.current_page + 1}", interaction.guild)
             await self.update_message(interaction)

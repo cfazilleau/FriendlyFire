@@ -83,6 +83,7 @@ class QuotesPaginateView(discord.ui.View):
     @discord.ui.button(label='Safe', style=ButtonStyle.secondary, row=0, custom_id='quotes_safe_btn')
     async def safe_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         quote = self.quotes[self.current_id]
+        self.quotes_cog.log(f"Quote paginate Safe clicked by {interaction.user.name} for quote ID {quote['_id']}.", interaction.guild)
         collection: AsyncCollection = await self.quotes_cog.bot.mongo.get_collection(interaction.guild_id, 'quotes')
         await collection.update_one({'_id': quote['_id']}, {'$set': {'safe': True, 'checked': True}})
         quote['safe'] = True
@@ -92,6 +93,7 @@ class QuotesPaginateView(discord.ui.View):
     @discord.ui.button(label='Unsafe', style=ButtonStyle.secondary, row=0, custom_id='quotes_unsafe_btn')
     async def unsafe_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         quote = self.quotes[self.current_id]
+        self.quotes_cog.log(f"Quote paginate Unsafe clicked by {interaction.user.name} for quote ID {quote['_id']}.", interaction.guild)
         collection: AsyncCollection = await self.quotes_cog.bot.mongo.get_collection(interaction.guild_id, 'quotes')
         await collection.update_one({'_id': quote['_id']}, {'$set': {'safe': False, 'checked': True}})
         quote['safe'] = False
@@ -101,23 +103,27 @@ class QuotesPaginateView(discord.ui.View):
     @discord.ui.button(label='Prev', style=ButtonStyle.gray, row=1, custom_id='quotes_prev_btn')
     async def prev_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.current_id = (self.current_id - 1) % len(self.quotes)
+        self.quotes_cog.log(f"Quote paginate Prev clicked by {interaction.user.name}. Current index is now {self.current_id}.", interaction.guild)
         self.show_payload = False
         await self.refresh_view(interaction)
 
     @discord.ui.button(label='Next', style=ButtonStyle.gray, row=1, custom_id='quotes_next_btn')
     async def next_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.current_id = (self.current_id + 1) % len(self.quotes)
+        self.quotes_cog.log(f"Quote paginate Next clicked by {interaction.user.name}. Current index is now {self.current_id}.", interaction.guild)
         self.show_payload = False
         await self.refresh_view(interaction)
 
     @discord.ui.button(label='Show Payload', style=ButtonStyle.gray, row=1, custom_id='quotes_payload_btn')
     async def toggle_payload(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.show_payload = not self.show_payload
+        self.quotes_cog.log(f"Quote paginate Toggle Payload clicked by {interaction.user.name}. Show payload: {self.show_payload}.", interaction.guild)
         await self.refresh_view(interaction)
 
     @discord.ui.button(label='Delete', style=ButtonStyle.red, row=2, custom_id='quotes_delete_btn')
     async def delete_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         quote = self.quotes[self.current_id]
+        self.quotes_cog.log(f"Quote paginate Delete clicked by {interaction.user.name} for quote ID {quote['_id']}.", interaction.guild)
         collection: AsyncCollection = await self.quotes_cog.bot.mongo.get_collection(interaction.guild_id, 'quotes')
         await collection.delete_one({'_id': quote['_id']})
         self.quotes.pop(self.current_id)

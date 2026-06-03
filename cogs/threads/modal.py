@@ -32,6 +32,7 @@ class MoveToThreadModal(discord.ui.Modal):
         await interaction.response.defer(ephemeral=True)
         thread_name = self.children[0].value
         channel = self.message.channel
+        self.cog.log(f"MoveToThreadModal submitted by {interaction.user.name}. Thread name: '{thread_name}'", interaction.guild)
 
         # Retrieve configurations
         max_messages = self.cog.config.get('maxMessages', interaction.guild_id)
@@ -193,6 +194,7 @@ class MoveToThreadModal(discord.ui.Modal):
             "requester_id": str(interaction.user.id),
             "mappings": mappings
         })
+        self.cog.log(f"Thread '{thread_name}' created and {len(mappings)} messages copied.", interaction.guild)
 
         await interaction.followup.send(
             self.cog.bot.t('threads.success_copied', interaction.guild_id, thread=f"<#{thread.id}>"),

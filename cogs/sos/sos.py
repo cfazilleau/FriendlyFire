@@ -17,6 +17,7 @@ class Sos(BaseCog):
 
     @discord.slash_command(name="sos", description="Request assistance or report a situation in this channel", contexts=[discord.InteractionContextType.guild])
     async def sos(self, ctx: discord.ApplicationContext):
+        self.log(f"SOS command issued by {ctx.author.name} in #{ctx.channel.name}", ctx.guild)
         if not isinstance(ctx.channel, (discord.TextChannel, discord.Thread)):
             await ctx.respond(self.bot.t('sos.non_text_channel', ctx.guild_id), ephemeral=True)
             return
@@ -45,6 +46,7 @@ class Sos(BaseCog):
             # Trigger slowmode
             try:
                 await ctx.channel.edit(slowmode_delay=slowmode_delay)
+                self.log(f"SOS second request triggered in #{ctx.channel.name} by {ctx.author.name}. Slowmode of {slowmode_delay}s applied.", ctx.guild)
             except discord.Forbidden:
                 await ctx.respond(self.bot.t('sos.no_permission', ctx.guild_id), ephemeral=True)
                 return
@@ -72,7 +74,7 @@ class Sos(BaseCog):
                             self.bot.t('sos.activated_mod', ctx.guild_id, user=ctx.author.mention, msg_url=public_msg.jump_url)
                         )
                     except discord.HTTPException as e:
-                        self.log(f"Failed to send alert to modChannel: {e}")
+                        self.log(f"Failed to send alert to modChannel: {e}", ctx.guild)
 
             # Clear the request window
             self.active_requests.pop(ctx.channel.id, None)
@@ -80,6 +82,7 @@ class Sos(BaseCog):
         else:
             # First request
             self.active_requests[ctx.channel.id] = (ctx.author.id, now)
+            self.log(f"SOS first request recorded in #{ctx.channel.name} by {ctx.author.name}.", ctx.guild)
 
             # Ephemeral response to the reporter
             await ctx.respond(
@@ -101,16 +104,17 @@ class Sos(BaseCog):
                             self.bot.t('sos.first_request_mod', ctx.guild_id, user=ctx.author.mention, msg_url=public_msg.jump_url)
                         )
                     except discord.HTTPException as e:
-                        self.log(f"Failed to send alert to modChannel: {e}")
+                        self.log(f"Failed to send alert to modChannel: {e}", ctx.guild)
                 else:
-                    self.log(f"Mod channel with ID {mod_channel_id} not found in guild.")
+                    self.log(f"Mod channel with ID {mod_channel_id} not found in guild.", ctx.guild)
             else:
-                self.log("No modChannel configured. Staff could not be alerted.")
+                self.log("No modChannel configured. Staff could not be alerted.", ctx.guild)
 
 
     @discord.slash_command(name="unslow", description="Turn off slowmode in this channel", contexts=[discord.InteractionContextType.guild])
     @default_permissions(manage_messages=True)
     async def unslow(self, ctx: discord.ApplicationContext):
+        self.log(f"Unslow command issued by {ctx.author.name} in #{ctx.channel.name}", ctx.guild)
         if not isinstance(ctx.channel, (discord.TextChannel, discord.Thread)):
             await ctx.respond(self.bot.t('sos.non_text_channel', ctx.guild_id), ephemeral=True)
             return
@@ -143,6 +147,7 @@ class Sos(BaseCog):
     @option(name="channel", description="Moderation channel", required=True, input_type=discord.SlashCommandOptionType.channel)
     async def set_channel(self, ctx: discord.ApplicationContext, channel: discord.TextChannel):
         await ctx.defer(ephemeral=True)
+        self.log(f"Sosconfig setchannel command issued by {ctx.author.name}. Channel: #{channel.name}", ctx.guild)
         self.config.set('modChannel', str(channel.id), guild_id=ctx.guild_id)
         await ctx.respond(self.bot.t('sos.config.channel_success', ctx.guild_id, channel=channel.mention))
 
@@ -150,6 +155,7 @@ class Sos(BaseCog):
     @option(name="minutes", description="Timeframe in minutes (default 30)", required=True, input_type=int)
     async def set_time(self, ctx: discord.ApplicationContext, minutes: int):
         await ctx.defer(ephemeral=True)
+        self.log(f"Sosconfig settime command issued by {ctx.author.name}. Time window: {minutes} minutes", ctx.guild)
         if minutes < 1:
             await ctx.respond(self.bot.t('sos.config.time_error', ctx.guild_id))
             return
@@ -160,6 +166,7 @@ class Sos(BaseCog):
     @option(name="seconds", description="Slowmode delay in seconds (default 15)", required=True, input_type=int)
     async def set_delay(self, ctx: discord.ApplicationContext, seconds: int):
         await ctx.defer(ephemeral=True)
+        self.log(f"Sosconfig setdelay command issued by {ctx.author.name}. Slowmode delay: {seconds} seconds", ctx.guild)
         if seconds < 1:
             await ctx.respond(self.bot.t('sos.config.delay_error', ctx.guild_id))
             return

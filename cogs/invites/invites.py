@@ -31,6 +31,7 @@ class Invites(BaseCog):
     @option(name="text", description="greeting text", required=True)
     async def greetings_create(self, ctx: discord.ApplicationContext, text: str):
         await ctx.defer(ephemeral=True)
+        self.log(f"Greetings create command issued by {ctx.author.name}. Text: '{text}'", ctx.guild)
         collection: AsyncCollection[Greeting] = await self.bot.mongo.get_collection(ctx.guild_id, "greetings")
         await collection.insert_one(Greeting(greeting=text))
         await ctx.respond(self.bot.t('invites.created', ctx.guild_id, text=text))
@@ -39,6 +40,7 @@ class Invites(BaseCog):
     @option(name="id", description="id of the greeting to look for", required=False, input_type=int, default=0)
     async def paginate(self, ctx: discord.ApplicationContext, id: int):
         await ctx.defer(ephemeral=True)
+        self.log(f"Greetings paginate command issued by {ctx.author.name}. Initial ID: {id}", ctx.guild)
         collection: AsyncCollection[Greeting] = await self.bot.mongo.get_collection(ctx.guild_id, "greetings")
         greetings = await collection.find({}).to_list()
         if not greetings:
@@ -54,11 +56,13 @@ class Invites(BaseCog):
     @discord.slash_command(name="invite", description="Generates a temporary invite", default_member_permissions=discord.Permissions(administrator=True), contexts=[discord.InteractionContextType.guild])
     async def invite(self, ctx: discord.ApplicationContext):
         await ctx.defer(ephemeral=True)
+        self.log(f"Invite command issued by {ctx.author.name}", ctx.guild)
 
         author = ctx.author
         invite_max_age = self.config.get('inviteMaxAge', ctx.guild_id)
 
         invite = await ctx.channel.create_invite(temporary=True, max_age=invite_max_age, max_uses=1)
+        self.log(f"Created temporary invite {invite.code} in #{ctx.channel.name}", ctx.guild)
         invite_entry = InviteEntry(
             author_id=author.id,
             code=invite.code,
@@ -73,6 +77,7 @@ class Invites(BaseCog):
     @option(name="user", description="user to fake joining", required=True, input_type=discord.SlashCommandOptionType.user)
     async def test_join(self, ctx: discord.ApplicationContext, user: discord.User):
         await ctx.defer(ephemeral=True)
+        self.log(f"Test_join command issued by {ctx.author.name}. Target user: {user.name}", ctx.guild)
         member = ctx.guild.get_member(user.id)
         if member is None:
             await ctx.respond(self.bot.t('invites.not_member', ctx.guild_id, user=user.mention))
@@ -88,7 +93,7 @@ class Invites(BaseCog):
             collection: AsyncCollection[InviteEntry] = await self.bot.mongo.get_collection(member.guild.id, "invites")
             saved_invites = await collection.find({}).to_list()
 
-            self.log(f"{len(server_invites)} invites server-side, {len(saved_invites)} invites bot-side.")
+            self.log(f"{len(server_invites)} invites server-side, {len(saved_invites)} invites bot-side.", member.guild)
 
             server_invites_set = {i.code for i in server_invites}
             for invite in saved_invites:
@@ -99,7 +104,7 @@ class Invites(BaseCog):
                     if expires is None or expires > datetime.datetime.now().timestamp():
                         inviter = member.guild.get_member(invite['author_id'])
                         inviter_name = inviter.name if inviter else f"<unknown {invite['author_id']}>"
-                        self.log(f"{member.name} joined \"{member.guild.name}\" using one-time invite {code} by {inviter_name}")
+                        self.log(f"{member.name} joined using one-time invite {code} by {inviter_name}", member.guild)
                         await collection.delete_one({"code": code})
                         return invite['author_id']
                     else:
@@ -107,27 +112,29 @@ class Invites(BaseCog):
                         await collection.delete_one({"code": code})
 
         except discord.Forbidden:
-            self.log("Missing MANAGE_GUILD permission, skipping invite tracking.")
+            self.log("Missing MANAGE_GUILD permission, skipping invite tracking.", member.guild)
 
-        self.log(f"{member.name} joined using unknown invite code.")
+        self.log(f"{member.name} joined using unknown invite code.", member.guild)
         return None
 
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
+        self.log(f"Member join event triggered for {member.name}", member.guild)
         # Add default role
         new_role_id = self.config.get('inviteRole', member.guild.id)
         if new_role_id is not None:
             role_to_add = member.guild.get_role(int(new_role_id))
             if role_to_add is None:
-                self.log("no role found, ignoring for new member.")
+                self.log("no role found, ignoring for new member.", member.guild)
             else:
                 try:
                     await member.add_roles(role_to_add)
+                    self.log(f"Successfully added default role '{role_to_add.name}' to joined member {member.name}", member.guild)
                 except discord.Forbidden:
-                    self.log(f"Failed to add role {role_to_add.name} due to missing permissions.")
+                    self.log(f"Failed to add role {role_to_add.name} due to missing permissions.", member.guild)
                 except discord.HTTPException as e:
-                    self.log(f"HTTPException while adding role: {e}")
+                    self.log(f"HTTPException while adding role: {e}", member.guild)
 
         # Retrieve inviter
         inviter_id = await self.retrieve_inviter_id(member)
@@ -151,6 +158,7 @@ class Invites(BaseCog):
                 )
                 welcome_content = self.bot.t('invites.welcome_member', member.guild.id, member_id=member.id)
                 await announcement_channel.send(content=welcome_content, embed=embed)
+                self.log(f"Sent welcome announcement for {member.name} to #{announcement_channel.name}", member.guild)
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -164,7 +172,7 @@ class Invites(BaseCog):
                 if invite['expires'] is not None and invite['expires'] - datetime.datetime.now().timestamp() < 0:
                     await collection.delete_one({"code": invite['code']})
                     invites_num -= 1
-                    self.log(f"Deleted expired invite: {invite['code']}. {invites_num} remaining.")
+                    self.log(f"Deleted expired invite: {invite['code']}. {invites_num} remaining.", guild)
 
 def setup(bot):
     bot.add_cog(Invites(bot))
