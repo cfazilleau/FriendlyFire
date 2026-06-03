@@ -92,6 +92,23 @@ class Presence(BaseCog):
         await self.bot.user.edit(avatar=data)
         await ctx.respond(f"Avatar set to {avatar.filename}")
 
+    @discord.slash_command(name="say", description="Make the bot say something", default_member_permissions=discord.Permissions(administrator=True), contexts=[discord.InteractionContextType.guild])
+    @discord.option(name="message", description="The message for the bot to send", required=True)
+    @discord.option(name="channel", description="The channel to send the message to (defaults to current)", required=False, input_type=discord.SlashCommandOptionType.channel)
+    async def say(self, ctx: discord.ApplicationContext, message: str, channel: discord.abc.GuildChannel = None):
+        target_channel = channel or ctx.channel
+        if not isinstance(target_channel, (discord.TextChannel, discord.Thread)):
+            await ctx.respond("Can only send messages to text channels or threads.", ephemeral=True)
+            return
+
+        try:
+            await target_channel.send(message)
+            await ctx.respond(f"Message sent to {target_channel.mention}!", ephemeral=True)
+        except discord.Forbidden:
+            await ctx.respond(f"I do not have permission to send messages in {target_channel.mention}.", ephemeral=True)
+        except discord.HTTPException as e:
+            await ctx.respond(f"Failed to send message: {e}", ephemeral=True)
+
     @commands.Cog.listener()
     async def on_ready(self):
         await self.apply_status()
