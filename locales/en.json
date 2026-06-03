@@ -17,17 +17,17 @@
         "failed": "Failed to send message: %{error}"
       }
     },
-    "slow": {
+    "sos": {
       "non_text_channel": "This command can only be used in text channels or threads.",
       "already_active": "Slowmode is already active in this channel.",
       "no_permission": "I do not have permission to edit this channel's slowmode.",
       "failed": "Failed to set slowmode: %{error}",
-      "activated_ephemeral": "Thank you for reporting. Since this is the second request within the time frame, slowmode has been activated.",
-      "activated_public": "⏳ **Slowmode Activated**: Someone is annoyed by the discussion. Slowmode (%{delay}s) has been activated. Please take a deep breath, calm down, and keep the discussion respectful.",
-      "activated_mod": "🚨 **Slowmode Activated**: User %{user} triggered the second slowmode request in %{channel}. Slowmode (%{delay}s) has been activated. @everyone",
-      "first_request_ephemeral": "Thank you for reporting. Your report is anonymous, and we have alerted the moderators. Please stay safe.",
-      "first_request_public": "⚠️ **Notice**: A member has requested to slow down the discussion in this channel. Please keep the conversation calm and civil.",
-      "first_request_mod": "🚨 **Slowmode Request**: User %{user} has requested a slow down in %{channel}. @everyone",
+      "activated_ephemeral": "Thank you for your report, it has been received and the moderation team has been notified. In the meantime, please step away from the channel to avoid being exposed to the remarks that made you uncomfortable. 🫂",
+      "activated_public": "Several people have reported feeling uncomfortable, so the channel is switching to slow mode (MAX 1 message / minute) to return to a healthy conversation level. Please reflect on what led us to this situation, take a deep breath, and gauge whether your next messages would truly contribute to the good of the community.\n\nThe moderation team will analyze this situation to take the necessary measures.\n\nReminder: If you read a message or find yourself in a conversation that makes you uncomfortable, use the /sos command to report it instantly and anonymously.",
+      "activated_mod": "🚨 **SOS Activated**: User %{user} triggered the second report. Warning message: %{msg_url} @everyone",
+      "first_request_ephemeral": "Thank you for your report, it has been received and the moderation team has been notified. In the meantime, please step away from the channel to avoid being exposed to the remarks that made you uncomfortable. 🫂",
+      "first_request_public": "Hey everyone, the discussion seems to be taking a turn that could make the community uncomfortable. Remember that we're all here to have a good time together, and please be mindful of how you phrase things so as not to hurt those around you, okay? I'll leave you to it, be good.\n\nReminder: If you read a message or find yourself in a conversation that makes you uncomfortable, use the /sos command to report it instantly and anonymously.",
+      "first_request_mod": "🚨 **SOS Request**: User %{user} has submitted a report. Warning message: %{msg_url} @everyone",
       "unslow": {
         "disabled": "Slowmode has been turned off for this channel.",
         "failed": "Failed to disable slowmode: %{error}"

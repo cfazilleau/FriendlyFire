@@ -17,17 +17,17 @@
         "failed": "Impossible d'envoyer le message : %{error}"
       }
     },
-    "slow": {
+    "sos": {
       "non_text_channel": "Cette commande ne peut être utilisée que dans des salons textuels ou fils.",
       "already_active": "Le mode lent est déjà activé dans ce salon.",
       "no_permission": "Je n'ai pas la permission de modifier le mode lent de ce salon.",
       "failed": "Impossible de configurer le mode lent : %{error}",
-      "activated_ephemeral": "Merci pour votre signalement. Comme il s'agit du second signalement dans le temps imparti, le mode lent a été activé.",
-      "activated_public": "⏳ **Mode lent activé** : La discussion semble échauffer les esprits. Le mode lent (%{delay}s) a été activé. Respirez un grand coup, détendez-vous et restez respectueux.",
-      "activated_mod": "🚨 **Mode lent activé** : L'utilisateur %{user} a déclenché le second signalement dans %{channel}. Le mode lent (%{delay}s) a été activé. @everyone",
-      "first_request_ephemeral": "Merci pour votre signalement. Votre signalement est anonyme et les modérateurs ont été prévenus. Prenez soin de vous.",
-      "first_request_public": "⚠️ **Avis** : Un membre a demandé à ralentir la discussion dans ce salon. Merci de garder la conversation calme et courtoise.",
-      "first_request_mod": "🚨 **Signalement Mode lent** : L'utilisateur %{user} a demandé à ralentir la discussion dans %{channel}. @everyone",
+      "activated_ephemeral": "Merci pour ton signalement, il a bien été pris en compte et l'équipe de modération a été notifée. En attendant, éloigne-toi du salon pour ne pas être exposé/e aux propos qui t'ont mis/e mal à l'aise. 🫂",
+      "activated_public": "Plusieurs personnes ont signalé leur mal-être, le salon va donc passer en mode \"lent\" (1 Message / minute MAX) afin de revenir à un niveau de conversation sain. Veuillez prendre du recul sur ce qui nous a mené à cette situation, soufflez un grand coup, et jaugez si vos prochains messages contribueraient réellement au bien de la communauté.\n\nL'équipe de modération analysera cette situation pour prendre les mesures nécéssaires.\n\nRappel : Si tu lis un message ou tu te trouve dans une conversation qui te met mal à l'aise, utilise la commande /sos pour le signaler instantanément et anonymement",
+      "activated_mod": "🚨 **SOS Activé** : L'utilisateur %{user} a déclenché le second signalement (mode lent appliqué). Message d'avertissement : %{msg_url} @everyone",
+      "first_request_ephemeral": "Merci pour ton signalement, il a bien été pris en compte et l'équipe de modération a été notifée. En attendant, éloigne-toi du salon pour ne pas être exposé/e aux propos qui t'ont mis/e mal à l'aise. 🫂",
+      "first_request_public": "Hey tout le monde, la discussion à l'air de prendre une tournure qui pourrait mettre la communauté mal à l'aise, rappelez-vous qu'on est tous là pour passer un bon moment ensembles et soyez attentifs à la tournure de vos phrase afin de ne pas heurter les personnes autour de vous ok ? Allez, je vous laisse, soyez sages.\n\nRappel : Si tu lis un message ou tu te trouve dans une conversation qui te met mal à l'aise, utilise la commande /sos pour le signaler instantanément et anonymement",
+      "first_request_mod": "🚨 **Signalement SOS** : L'utilisateur %{user} a envoyé un signalement. Message d'avertissement : %{msg_url} @everyone",
       "unslow": {
         "disabled": "Le mode lent a été désactivé pour ce salon.",
         "failed": "Impossible de désactiver le mode lent : %{error}"
