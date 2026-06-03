@@ -1,0 +1,7 @@
+{
+    "global": {
+        "confirmThreshold": 50,
+        "maxMessages": 1000
+    },
+    "guilds": {}
+}
