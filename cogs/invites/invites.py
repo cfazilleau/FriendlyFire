@@ -56,9 +56,9 @@ class Invites(BaseCog):
         await ctx.defer(ephemeral=True)
 
         author = ctx.author
-        invite_max_age = self.config.get('inviteMaxAge')
+        invite_max_age = self.config.get('inviteMaxAge', ctx.guild_id)
 
-        invite = await ctx.channel.create_invite(temporary=True, max_age=invite_max_age)
+        invite = await ctx.channel.create_invite(temporary=True, max_age=invite_max_age, max_uses=1)
         invite_entry = InviteEntry(
             author_id=author.id,
             code=invite.code,
@@ -69,7 +69,7 @@ class Invites(BaseCog):
         expiry_text = f", It will be valid until {format_dt(invite.expires_at)}" if invite.expires_at else " (permanent)"
         await ctx.respond(f"Here is your invite link: {invite.url}{expiry_text}.")
 
-    @discord.slash_command(name="test_join", description="Generates a temporary invite", default_member_permissions=discord.Permissions(administrator=True), contexts=[discord.InteractionContextType.guild])
+    @discord.slash_command(name="test_join", description="Fakes a member joining the server to test greetings and roles", default_member_permissions=discord.Permissions(administrator=True), contexts=[discord.InteractionContextType.guild])
     @option(name="user", description="user to fake joining", required=True, input_type=discord.SlashCommandOptionType.user)
     async def test_join(self, ctx: discord.ApplicationContext, user: discord.User):
         await ctx.defer(ephemeral=True)
@@ -80,6 +80,39 @@ class Invites(BaseCog):
         await self.on_member_join(member)
         await ctx.respond("test_join succeeded!")
 
+    async def retrieve_inviter_id(self, member: discord.Member):
+        try:
+            # Server-side invites
+            server_invites = await member.guild.invites()
+            # Bot-side invites
+            collection: AsyncCollection[InviteEntry] = await self.bot.mongo.get_collection(member.guild.id, "invites")
+            saved_invites = await collection.find({}).to_list()
+
+            self.log(f"{len(server_invites)} invites server-side, {len(saved_invites)} invites bot-side.")
+
+            server_invites_set = {i.code for i in server_invites}
+            for invite in saved_invites:
+                code = invite['code']
+                if code not in server_invites_set:
+                    # Invite disappeared from server — if it hasn't expired it was consumed
+                    expires = invite.get('expires')
+                    if expires is None or expires > datetime.datetime.now().timestamp():
+                        inviter = member.guild.get_member(invite['author_id'])
+                        inviter_name = inviter.name if inviter else f"<unknown {invite['author_id']}>"
+                        self.log(f"{member.name} joined \"{member.guild.name}\" using one-time invite {code} by {inviter_name}")
+                        await collection.delete_one({"code": code})
+                        return invite['author_id']
+                    else:
+                        # Clean up expired invite code from MongoDB on-the-fly
+                        await collection.delete_one({"code": code})
+
+        except discord.Forbidden:
+            self.log("Missing MANAGE_GUILD permission, skipping invite tracking.")
+
+        self.log(f"{member.name} joined using unknown invite code.")
+        return None
+
+
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         # Add default role
@@ -89,35 +122,17 @@ class Invites(BaseCog):
             if role_to_add is None:
                 self.log("no role found, ignoring for new member.")
             else:
-                await member.add_roles(role_to_add)
+                try:
+                    await member.add_roles(role_to_add)
+                except discord.Forbidden:
+                    self.log(f"Failed to add role {role_to_add.name} due to missing permissions.")
+                except discord.HTTPException as e:
+                    self.log(f"HTTPException while adding role: {e}")
 
-        inviter_id = None
-        try:
-            server_invites = await member.guild.invites()
-            collection: AsyncCollection[InviteEntry] = await self.bot.mongo.get_collection(member.guild.id, "invites")
-            recorded_invites = await collection.find({}).to_list()
-
-            self.log(f"{len(server_invites)} invites server-side, {len(recorded_invites)} invites bot-side.")
-
-            server_invites_map = {i.code: i for i in server_invites}
-            for invite in recorded_invites:
-                code = invite['code']
-                if code not in server_invites_map:
-                    # Invite disappeared from server — if it hasn't expired it was consumed
-                    expires = invite.get('expires')
-                    if expires is None or expires > datetime.datetime.now().timestamp():
-                        inviter = member.guild.get_member(invite['author_id'])
-                        inviter_name = inviter.name if inviter else f"<unknown {invite['author_id']}>"
-                        self.log(f"{member.name} joined \"{member.guild.name}\" using one-time invite {code} by {inviter_name}")
-                        inviter_id = invite['author_id']
-                        await collection.delete_one({"code": code})
-                        break
-        except discord.Forbidden:
-            self.log("Missing MANAGE_GUILD permission, skipping invite tracking.")
-
-        if inviter_id is None:
-            self.log(f"{member.name} joined using unknown invite code.")
-
+        # Retrieve inviter
+        inviter_id = await self.retrieve_inviter_id(member)
+        
+        # Send announcement
         announcement_channel_id = self.config.get('invitesChannel', member.guild.id)
         if announcement_channel_id:
             announcement_channel = member.guild.get_channel(int(announcement_channel_id))
@@ -135,7 +150,7 @@ class Invites(BaseCog):
                     color=member.accent_color or discord.Color.default(),
                     description=description,
                 )
-                await announcement_channel.send(embed=embed)
+                await announcement_channel.send(content=f"Bienvenue <@{member.id}>!", embed=embed)
 
     @commands.Cog.listener()
     async def on_ready(self):
