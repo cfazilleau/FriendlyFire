@@ -33,17 +33,17 @@ class Starboard(BaseCog):
     async def set_channel(self, ctx: discord.ApplicationContext, channel: discord.TextChannel):
         await ctx.defer(ephemeral=True)
         self.config.set('starboardChannel', str(channel.id), guild_id=ctx.guild_id)
-        await ctx.respond(f"Starboard channel set to {channel.mention}.")
+        await ctx.respond(self.bot.t('starboard.set_channel_success', ctx.guild_id, channel=channel.mention))
 
     @starboardGroup.command(name="setstars", description="Set the minimum number of ⭐ reactions to appear on the starboard")
     @option(name="count", description="Minimum number of stars", required=True, input_type=int)
     async def set_stars(self, ctx: discord.ApplicationContext, count: int):
         await ctx.defer(ephemeral=True)
         if count < 1:
-            await ctx.respond("Minimum stars must be at least 1.")
+            await ctx.respond(self.bot.t('starboard.min_stars_error', ctx.guild_id))
             return
         self.config.set('minStars', count, guild_id=ctx.guild_id)
-        await ctx.respond(f"Minimum stars set to {count}.")
+        await ctx.respond(self.bot.t('starboard.min_stars_success', ctx.guild_id, count=count))
 
     def _star_count(self, message: discord.Message) -> int:
         for reaction in message.reactions:
@@ -58,7 +58,10 @@ class Starboard(BaseCog):
             timestamp=message.created_at,
         )
         embed.set_author(name=message.author.display_name, icon_url=message.author.display_avatar.url)
-        embed.add_field(name="Original", value=f"[Jump to message]({message.jump_url})")
+        embed.add_field(
+            name=self.bot.t('starboard.embed_original', message.guild.id),
+            value=f"[{self.bot.t('starboard.embed_jump', message.guild.id)}]({message.jump_url})"
+        )
         if message.attachments:
             att = message.attachments[0]
             if att.content_type and att.content_type.startswith('image/'):

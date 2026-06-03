@@ -2,24 +2,34 @@ import datetime
 import discord
 
 class ConfirmCopyView(discord.ui.View):
-    def __init__(self, requester_id: int, *args, **kwargs):
+    def __init__(self, cog, guild_id: int, requester_id: int, *args, **kwargs):
         super().__init__(timeout=60.0, *args, **kwargs)
+        self.cog = cog
+        self.guild_id = guild_id
         self.requester_id = requester_id
         self.value = None
 
-    @discord.ui.button(label="Confirm Copy", style=discord.ButtonStyle.danger)
+        # Dynamically localize button labels
+        for child in self.children:
+            if isinstance(child, discord.ui.Button):
+                if child.custom_id == "confirm_copy_btn":
+                    child.label = self.cog.bot.t('threads.button_confirm_copy', self.guild_id)
+                elif child.custom_id == "cancel_copy_btn":
+                    child.label = self.cog.bot.t('threads.button_cancel', self.guild_id)
+
+    @discord.ui.button(label="Confirm Copy", style=discord.ButtonStyle.danger, custom_id="confirm_copy_btn")
     async def confirm(self, button: discord.ui.Button, interaction: discord.Interaction):
         if interaction.user.id != self.requester_id:
-            await interaction.response.send_message("Only the person who initiated this move can confirm it.", ephemeral=True)
+            await interaction.response.send_message(self.cog.bot.t('threads.requester_lock_confirm', self.guild_id), ephemeral=True)
             return
         await interaction.response.defer(ephemeral=True)
         self.value = True
         self.stop()
 
-    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary, custom_id="cancel_copy_btn")
     async def cancel(self, button: discord.ui.Button, interaction: discord.Interaction):
         if interaction.user.id != self.requester_id:
-            await interaction.response.send_message("Only the person who initiated this move can cancel it.", ephemeral=True)
+            await interaction.response.send_message(self.cog.bot.t('threads.requester_lock_cancel', self.guild_id), ephemeral=True)
             return
         await interaction.response.defer(ephemeral=True)
         self.value = False
@@ -27,9 +37,19 @@ class ConfirmCopyView(discord.ui.View):
 
 
 class ConfirmMoveView(discord.ui.View):
-    def __init__(self, cog):
+    def __init__(self, cog, guild_id: int = None):
         super().__init__(timeout=None)
         self.cog = cog
+        self.guild_id = guild_id
+
+        # Dynamically localize button labels if guild_id is provided
+        if self.guild_id:
+            for child in self.children:
+                if isinstance(child, discord.ui.Button):
+                    if child.custom_id == "finalize_thread_move":
+                        child.label = self.cog.bot.t('threads.confirm_button_finalize', self.guild_id)
+                    elif child.custom_id == "cancel_thread_move":
+                        child.label = self.cog.bot.t('threads.confirm_button_cancel', self.guild_id)
 
     @discord.ui.button(label="Finalize Move", style=discord.ButtonStyle.success, custom_id="finalize_thread_move")
     async def finalize(self, button: discord.ui.Button, interaction: discord.Interaction):
@@ -38,13 +58,13 @@ class ConfirmMoveView(discord.ui.View):
         collection = await self.cog.bot.mongo.get_collection(interaction.guild_id, "thread_moves")
         transaction = await collection.find_one({"thread_id": str(interaction.channel.id)})
         if not transaction:
-            await interaction.followup.send("No active move transaction found for this thread.", ephemeral=True)
+            await interaction.followup.send(self.cog.bot.t('threads.no_active_transaction', interaction.guild_id), ephemeral=True)
             return
 
         # Enforce requester lock
         if str(interaction.user.id) != transaction.get("requester_id"):
             await interaction.followup.send(
-                f"Only <@{transaction.get('requester_id')}> (who initiated this move) can finalize it.",
+                self.cog.bot.t('threads.requester_lock_finalize', interaction.guild_id, user=f"<@{transaction.get('requester_id')}>"),
                 ephemeral=True
             )
             return
@@ -54,7 +74,7 @@ class ConfirmMoveView(discord.ui.View):
         try:
             thread_messages = [msg async for msg in thread.history(limit=None)]
         except Exception as e:
-            await interaction.followup.send(f"Failed to read thread history: {e}", ephemeral=True)
+            await interaction.followup.send(self.cog.bot.t('threads.error_read_history_view', interaction.guild_id, error=str(e)), ephemeral=True)
             return
 
         thread_msg_ids = {str(msg.id) for msg in thread_messages}
@@ -80,8 +100,7 @@ class ConfirmMoveView(discord.ui.View):
         anchor_url = f"https://discord.com/channels/{interaction.guild_id}/{main_channel.id}/{thread.id}"
         try:
             await main_channel.send(
-                f"🧹 **Move finalized**: Subsequent messages after [this message]({anchor_url}) "
-                f"have been moved to {thread.mention}."
+                self.cog.bot.t('threads.move_finalized_main', interaction.guild_id, anchor_url=anchor_url, thread=thread.mention)
             )
         except Exception as e:
             self.cog.log(f"Failed to send Move Finalized notice to main channel: {e}")
@@ -93,7 +112,7 @@ class ConfirmMoveView(discord.ui.View):
                 await self.cog.delete_messages_helper(main_channel, objects_to_delete)
             except Exception as e:
                 self.cog.log(f"Failed to delete original messages: {e}")
-                await interaction.followup.send(f"Failed to delete original messages: {e}", ephemeral=True)
+                await interaction.followup.send(self.cog.bot.t('threads.failed_delete_originals', interaction.guild_id, error=str(e)), ephemeral=True)
                 return
 
         # Clean up database
@@ -107,8 +126,8 @@ class ConfirmMoveView(discord.ui.View):
         except discord.NotFound:
             pass
 
-        await interaction.followup.send("Move finalized! Original messages have been deleted from the main channel.", ephemeral=True)
-        await thread.send(f"🧹 **Move finalized**: Original messages have been cleaned up from the main channel by {interaction.user.mention}.")
+        await interaction.followup.send(self.cog.bot.t('threads.move_finalized_ephemeral', interaction.guild_id), ephemeral=True)
+        await thread.send(self.cog.bot.t('threads.move_finalized_thread', interaction.guild_id, user=interaction.user.mention))
 
     @discord.ui.button(label="Cancel Move", style=discord.ButtonStyle.danger, custom_id="cancel_thread_move")
     async def cancel(self, button: discord.ui.Button, interaction: discord.Interaction):
@@ -117,13 +136,13 @@ class ConfirmMoveView(discord.ui.View):
         collection = await self.cog.bot.mongo.get_collection(interaction.guild_id, "thread_moves")
         transaction = await collection.find_one({"thread_id": str(interaction.channel.id)})
         if not transaction:
-            await interaction.followup.send("No active move transaction found for this thread.", ephemeral=True)
+            await interaction.followup.send(self.cog.bot.t('threads.no_active_transaction', interaction.guild_id), ephemeral=True)
             return
 
         # Enforce requester lock
         if str(interaction.user.id) != transaction.get("requester_id"):
             await interaction.followup.send(
-                f"Only <@{transaction.get('requester_id')}> (who initiated this move) can cancel it.",
+                self.cog.bot.t('threads.requester_lock_cancel_final', interaction.guild_id, user=f"<@{transaction.get('requester_id')}>"),
                 ephemeral=True
             )
             return
@@ -149,4 +168,4 @@ class ConfirmMoveView(discord.ui.View):
             await thread.delete(reason=f"Move cancelled by {interaction.user}")
         except discord.HTTPException as e:
             self.cog.log(f"Failed to delete thread on cancel: {e}")
-            await interaction.followup.send("Failed to delete thread, but the move transaction was aborted.", ephemeral=True)
+            await interaction.followup.send(self.cog.bot.t('threads.failed_delete_thread', interaction.guild_id), ephemeral=True)
