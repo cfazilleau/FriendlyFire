@@ -60,7 +60,9 @@ class Starboard(BaseCog):
         embed.set_author(name=message.author.display_name, icon_url=message.author.display_avatar.url)
         embed.add_field(name="Original", value=f"[Jump to message]({message.jump_url})")
         if message.attachments:
-            embed.set_image(url=message.attachments[0].url)
+            att = message.attachments[0]
+            if att.content_type and att.content_type.startswith('image/'):
+                embed.set_image(url=att.url)
         embed.set_footer(text=f"⭐ {star_count} | #{message.channel.name}")
         return embed
 
@@ -81,7 +83,7 @@ class Starboard(BaseCog):
 
         try:
             message = await channel.fetch_message(payload.message_id)
-        except discord.NotFound:
+        except discord.HTTPException:
             return
 
         star_count = self._star_count(message)
@@ -99,7 +101,7 @@ class Starboard(BaseCog):
                 try:
                     sb_msg = await starboard_channel.fetch_message(int(existing['starboard_message_id']))
                     await sb_msg.delete()
-                except discord.NotFound:
+                except discord.HTTPException:
                     pass
                 await collection.delete_one({"original_message_id": str(payload.message_id)})
             return
@@ -111,21 +113,27 @@ class Starboard(BaseCog):
             try:
                 sb_msg = await starboard_channel.fetch_message(int(existing['starboard_message_id']))
                 await sb_msg.edit(content=content, embed=embed)
-            except discord.NotFound:
-                sb_msg = await starboard_channel.send(content=content, embed=embed)
-                await collection.update_one(
-                    {"original_message_id": str(payload.message_id)},
-                    {"$set": {"starboard_message_id": str(sb_msg.id)}},
-                )
+            except discord.HTTPException:
+                try:
+                    sb_msg = await starboard_channel.send(content=content, embed=embed)
+                    await collection.update_one(
+                        {"original_message_id": str(payload.message_id)},
+                        {"$set": {"starboard_message_id": str(sb_msg.id)}},
+                    )
+                except discord.HTTPException:
+                    pass
         else:
-            sb_msg = await starboard_channel.send(content=content, embed=embed)
-            await collection.insert_one(StarboardEntry(
-                original_message_id=str(payload.message_id),
-                starboard_message_id=str(sb_msg.id),
-                channel_id=str(payload.channel_id),
-                author_id=payload.user_id,
-            ))
-            self.log(f"Posted message {payload.message_id} to starboard with {star_count} stars.")
+            try:
+                sb_msg = await starboard_channel.send(content=content, embed=embed)
+                await collection.insert_one(StarboardEntry(
+                    original_message_id=str(payload.message_id),
+                    starboard_message_id=str(sb_msg.id),
+                    channel_id=str(payload.channel_id),
+                    author_id=message.author.id,
+                ))
+                self.log(f"Posted message {payload.message_id} to starboard with {star_count} stars.")
+            except discord.HTTPException:
+                pass
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
