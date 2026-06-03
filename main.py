@@ -1,6 +1,10 @@
 from src.bot import FriendlyFire
 import os
 
+from dotenv import load_dotenv
+# Load variables from .env file
+load_dotenv()
+
 # load env variables
 TOKEN = os.environ['TOKEN']
 MONGO_URI = os.environ['MONGO_URI']
