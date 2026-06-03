@@ -52,7 +52,7 @@ class Presence(BaseCog):
         self.save_config()
 
         await self.apply_status()
-        await ctx.respond(f"Bot status set to: {new_status}")
+        await ctx.respond(self.bot.t('presence.status_set', ctx.guild_id, status=new_status))
 
     activity_group = discord.SlashCommandGroup(name="activity", description="manage current bot activity", default_member_permissions=discord.Permissions(administrator=True))
 
@@ -72,7 +72,8 @@ class Presence(BaseCog):
         self.save_config()
 
         await self.apply_status()
-        await ctx.respond(f"Bot activity set to: {activity} {text}{f' with {url}.' if url else '.'}")
+        url_part = f" with {url}" if url else ""
+        await ctx.respond(self.bot.t('presence.activity_set', ctx.guild_id, activity=activity, text=text, url_part=url_part))
 
     @activity_group.command(name="clear", description="clear current bot activity")
     async def clear_activity(self, ctx: discord.ApplicationContext):
@@ -82,7 +83,7 @@ class Presence(BaseCog):
         self.save_config()
 
         await self.apply_status()
-        await ctx.respond(f"Bot activity cleared")
+        await ctx.respond(self.bot.t('presence.activity_cleared', ctx.guild_id))
 
     @discord.slash_command(name="avatar", description="set the bot's avatar", default_member_permissions=discord.Permissions(administrator=True))
     @discord.option(name="avatar", description="new bot avatar", required=True, input_type=discord.SlashCommandOptionType.attachment)
@@ -90,7 +91,7 @@ class Presence(BaseCog):
         await ctx.defer(ephemeral=True)
         data = await avatar.read()
         await self.bot.user.edit(avatar=data)
-        await ctx.respond(f"Avatar set to {avatar.filename}")
+        await ctx.respond(self.bot.t('presence.avatar_set', ctx.guild_id, filename=avatar.filename))
 
     @discord.slash_command(name="say", description="Make the bot say something", default_member_permissions=discord.Permissions(administrator=True), contexts=[discord.InteractionContextType.guild])
     @discord.option(name="message", description="The message for the bot to send", required=True)
@@ -98,16 +99,16 @@ class Presence(BaseCog):
     async def say(self, ctx: discord.ApplicationContext, message: str, channel: discord.abc.GuildChannel = None):
         target_channel = channel or ctx.channel
         if not isinstance(target_channel, (discord.TextChannel, discord.Thread)):
-            await ctx.respond("Can only send messages to text channels or threads.", ephemeral=True)
+            await ctx.respond(self.bot.t('presence.say.non_text_channel', ctx.guild_id), ephemeral=True)
             return
 
         try:
             await target_channel.send(message)
-            await ctx.respond(f"Message sent to {target_channel.mention}!", ephemeral=True)
+            await ctx.respond(self.bot.t('presence.say.success', ctx.guild_id, channel=target_channel.mention), ephemeral=True)
         except discord.Forbidden:
-            await ctx.respond(f"I do not have permission to send messages in {target_channel.mention}.", ephemeral=True)
+            await ctx.respond(self.bot.t('presence.say.no_permission', ctx.guild_id, channel=target_channel.mention), ephemeral=True)
         except discord.HTTPException as e:
-            await ctx.respond(f"Failed to send message: {e}", ephemeral=True)
+            await ctx.respond(self.bot.t('presence.say.failed', ctx.guild_id, error=str(e)), ephemeral=True)
 
     @commands.Cog.listener()
     async def on_ready(self):

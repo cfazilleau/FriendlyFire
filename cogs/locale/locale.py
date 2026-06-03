@@ -25,16 +25,17 @@ class Locale(commands.Cog):
         await ctx.defer(ephemeral=True)
         available = self.bot.available_locales
         if language not in available:
-            await ctx.respond(f"Unknown language `{language}`. Available: {', '.join(f'`{l}`' for l in available)}")
+            available_str = ', '.join(f'`{l}`' for l in available)
+            await ctx.respond(self.bot.t('locale.unknown_lang', ctx.guild_id, language=language, available=available_str))
             return
         self.bot.locale_config.set('language', language, guild_id=ctx.guild_id)
-        await ctx.respond(f"Server language set to `{language}`.")
+        await ctx.respond(self.bot.t('locale.set_success', ctx.guild_id, language=language))
 
     @localeGroup.command(name="get", description="Show the current language for this server")
     async def locale_get(self, ctx: discord.ApplicationContext):
         await ctx.defer(ephemeral=True)
         lang = self.bot.locale_config.get('language', ctx.guild_id) or 'en'
-        await ctx.respond(f"Current language: `{lang}`.")
+        await ctx.respond(self.bot.t('locale.current_lang', ctx.guild_id, lang=lang))
 
 
 def setup(bot):

@@ -24,24 +24,24 @@ class Threads(BaseCog):
     async def move_to_thread(self, ctx: discord.ApplicationContext, message: discord.Message):
         # Safety checks
         if not ctx.guild:
-            await ctx.respond("This command can only be used in a server.", ephemeral=True)
+            await ctx.respond(self.bot.t('threads.non_guild', ctx.guild_id), ephemeral=True)
             return
 
         if isinstance(message.channel, discord.Thread):
-            await ctx.respond("Cannot create a thread inside a thread.", ephemeral=True)
+            await ctx.respond(self.bot.t('threads.inside_thread_error', ctx.guild_id), ephemeral=True)
             return
 
         if message.thread is not None:
-            await ctx.respond("A thread already exists on this message.", ephemeral=True)
+            await ctx.respond(self.bot.t('threads.exists_error', ctx.guild_id), ephemeral=True)
             return
 
         # Hard permission check on the invoking user
         if not ctx.author.guild_permissions.manage_messages:
-            await ctx.respond("You need the `Manage Messages` permission to use this command.", ephemeral=True)
+            await ctx.respond(self.bot.t('threads.no_permission_error', ctx.guild_id), ephemeral=True)
             return
 
         # Send modal
-        modal = MoveToThreadModal(message=message, cog=self, title="Move Messages to Thread")
+        modal = MoveToThreadModal(message=message, cog=self, title=self.bot.t('threads.modal_title', ctx.guild_id))
         await ctx.send_modal(modal)
 
     async def delete_messages_helper(self, channel: discord.TextChannel, messages: list[discord.Object]):

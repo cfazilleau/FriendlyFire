@@ -8,11 +8,23 @@ class Greeting(TypedDict):
     greeting: str
 
 class PaginatorView(discord.ui.View):
-    def __init__(self, invites_cog, pages, start_id):
+    def __init__(self, invites_cog, pages, start_id, guild_id: int):
         super().__init__(timeout=60)
         self.invites_cog = invites_cog
         self.pages = pages
+        self.guild_id = guild_id
         self.current_page = max(1, min(start_id, len(self.pages))) - 1
+
+        # Localize buttons dynamically
+        for child in self.children:
+            if isinstance(child, discord.ui.Button):
+                if child.custom_id == "prev_greeting_btn":
+                    child.label = self.invites_cog.bot.t('invites.btn_prev', self.guild_id)
+                elif child.custom_id == "next_greeting_btn":
+                    child.label = self.invites_cog.bot.t('invites.btn_next', self.guild_id)
+                elif child.custom_id == "delete_greeting_btn":
+                    child.label = self.invites_cog.bot.t('invites.btn_delete', self.guild_id)
+
         self.update_buttons()
 
     @staticmethod
@@ -20,7 +32,7 @@ class PaginatorView(discord.ui.View):
         return discord.Embed(color=discord.Color.green(), description=greeting['greeting'])
 
     def get_content(self) -> str:
-        return f"Greeting {self.current_page + 1}/{len(self.pages)}"
+        return self.invites_cog.bot.t('invites.greeting_page_count', self.guild_id, current=self.current_page + 1, total=len(self.pages))
 
     def get_embed(self) -> discord.Embed:
         return self.greeting_to_embed(self.pages[self.current_page])
@@ -40,32 +52,32 @@ class PaginatorView(discord.ui.View):
         self.pages.remove(greeting)
 
     def update_buttons(self):
-        # Iterate through the view's children to update button states
+        # Iterate through the view's children to update button states and labels
         for child in self.children:
             if isinstance(child, discord.ui.Button):
-                if child.label == "Prev":
+                if child.custom_id == "prev_greeting_btn":
                     child.disabled = (self.current_page <= 0)
-                elif child.label == "Next":
+                elif child.custom_id == "next_greeting_btn":
                     child.disabled = (self.current_page >= len(self.pages) - 1)
 
-    @discord.ui.button(label="Prev", style=ButtonStyle.gray)
+    @discord.ui.button(label="Prev", style=ButtonStyle.gray, custom_id="prev_greeting_btn")
     async def prev_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         if self.current_page > 0:
             self.current_page -= 1
             await self.update_message(interaction)
 
-    @discord.ui.button(label="Delete", style=ButtonStyle.red)
+    @discord.ui.button(label="Delete", style=ButtonStyle.red, custom_id="delete_greeting_btn")
     async def delete_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         await self.delete_current_greeting(interaction)
         if not self.pages:
             self.disable_all_items()
-            await interaction.response.edit_message(content="No greetings remaining.", embed=None, view=self)
+            await interaction.response.edit_message(content=self.invites_cog.bot.t('invites.no_greetings_remaining', self.guild_id), embed=None, view=self)
             return
         if self.current_page >= len(self.pages):
             self.current_page = len(self.pages) - 1
         await self.update_message(interaction)
 
-    @discord.ui.button(label="Next", style=ButtonStyle.gray)
+    @discord.ui.button(label="Next", style=ButtonStyle.gray, custom_id="next_greeting_btn")
     async def next_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         if self.current_page + 1 < len(self.pages):
             self.current_page += 1

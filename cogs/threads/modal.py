@@ -21,8 +21,8 @@ class MoveToThreadModal(discord.ui.Modal):
         default_name = default_name[:100]
 
         self.add_item(discord.ui.InputText(
-            label="Thread Name",
-            placeholder="Enter a name for the thread",
+            label=cog.bot.t('threads.modal_field_name', message.guild.id),
+            placeholder=cog.bot.t('threads.modal_placeholder', message.guild.id),
             value=default_name,
             required=True,
             max_length=100
@@ -41,27 +41,25 @@ class MoveToThreadModal(discord.ui.Modal):
         try:
             messages = [msg async for msg in channel.history(after=self.message, oldest_first=True, limit=max_messages + 1)]
         except Exception as e:
-            await interaction.followup.send(f"Failed to read channel history: {e}", ephemeral=True)
+            await interaction.followup.send(self.cog.bot.t('threads.error_read_history', interaction.guild_id, error=str(e)), ephemeral=True)
             return
 
         if not messages:
-            await interaction.followup.send("There are no messages after this one to move.", ephemeral=True)
+            await interaction.followup.send(self.cog.bot.t('threads.no_messages', interaction.guild_id), ephemeral=True)
             return
 
         if len(messages) > max_messages:
             await interaction.followup.send(
-                f"There are too many messages after this one (more than {max_messages}). "
-                f"To prevent API issues, the maximum number of messages that can be moved at once is {max_messages}.",
+                self.cog.bot.t('threads.too_many_messages', interaction.guild_id, max_messages=max_messages),
                 ephemeral=True
             )
             return
 
         # 2. Check if we need confirmation from the user
         if len(messages) > confirm_threshold:
-            view = ConfirmCopyView(requester_id=interaction.user.id)
+            view = ConfirmCopyView(cog=self.cog, guild_id=interaction.guild_id, requester_id=interaction.user.id)
             msg_confirm = await interaction.followup.send(
-                f"⚠️ **Warning**: You are about to copy **{len(messages)}** messages to the thread **{thread_name}**.\n"
-                f"This exceeds the threshold of {confirm_threshold} and might take a moment. Are you sure?",
+                self.cog.bot.t('threads.warning_confirm_title', interaction.guild_id, count=len(messages), thread_name=thread_name, confirm_threshold=confirm_threshold),
                 view=view,
                 ephemeral=True
             )
@@ -72,11 +70,11 @@ class MoveToThreadModal(discord.ui.Modal):
                     await msg_confirm.delete()
                 except discord.HTTPException:
                     pass
-                await interaction.followup.send("Move cancelled.", ephemeral=True)
+                await interaction.followup.send(self.cog.bot.t('threads.move_cancelled', interaction.guild_id), ephemeral=True)
                 return
             else:
                 # Edit the confirmation message to indicate we are copying
-                await msg_confirm.edit(content="Copying messages to thread, please wait...", view=None)
+                await msg_confirm.edit(content=self.cog.bot.t('threads.copying', interaction.guild_id), view=None)
 
         # 3. Check bot permissions
         bot_member = channel.guild.me
@@ -91,7 +89,7 @@ class MoveToThreadModal(discord.ui.Modal):
 
         if missing_perms:
             await interaction.followup.send(
-                f"I am missing the following permissions in this channel to perform this action: {', '.join(missing_perms)}",
+                self.cog.bot.t('threads.missing_permissions', interaction.guild_id, permissions=', '.join(missing_perms)),
                 ephemeral=True
             )
             return
@@ -99,8 +97,7 @@ class MoveToThreadModal(discord.ui.Modal):
         # 4. Create the temporary migration notice in the main channel
         try:
             wait_message = await channel.send(
-                f"⚠️ **Migration in progress**: Moving subsequent messages to thread **{thread_name}**. "
-                "Please wait before posting new messages in this channel."
+                self.cog.bot.t('threads.migration_in_progress', interaction.guild_id, thread_name=thread_name)
             )
         except Exception as e:
             self.cog.log(f"Failed to post migration notice: {e}")
@@ -112,7 +109,7 @@ class MoveToThreadModal(discord.ui.Modal):
         except Exception as e:
             if wait_message:
                 await wait_message.delete()
-            await interaction.followup.send(f"Failed to create thread: {e}", ephemeral=True)
+            await interaction.followup.send(self.cog.bot.t('threads.error_create_thread', interaction.guild_id, error=str(e)), ephemeral=True)
             return
 
         # 6. Get or create webhook
@@ -129,7 +126,7 @@ class MoveToThreadModal(discord.ui.Modal):
             if wait_message:
                 await wait_message.delete()
             await thread.delete(reason="Aborted due to webhook retrieval failure.")
-            await interaction.followup.send(f"Failed to retrieve/create webhook: {e}", ephemeral=True)
+            await interaction.followup.send(self.cog.bot.t('threads.error_webhook', interaction.guild_id, error=str(e)), ephemeral=True)
             return
 
         # 7. Repost messages and record mapping
@@ -173,13 +170,9 @@ class MoveToThreadModal(discord.ui.Modal):
 
         # 8. Post confirmation message with persistent view
         try:
-            confirm_view = ConfirmMoveView(cog=self.cog)
+            confirm_view = ConfirmMoveView(cog=self.cog, guild_id=interaction.guild_id)
             confirm_msg = await thread.send(
-                "### 📝 Move to Thread Confirmation\n"
-                "I have copied the messages to this thread.\n"
-                "- **Admins**: You can delete any copied messages in this thread that you do not want to keep.\n"
-                "- Once you are satisfied, click **Finalize Move** below to delete the corresponding original messages from the main channel.\n"
-                "- Click **Cancel Move** to abort the move (no original messages will be deleted).",
+                self.cog.bot.t('threads.confirm_box_title', interaction.guild_id),
                 view=confirm_view
             )
         except Exception as e:
@@ -187,7 +180,7 @@ class MoveToThreadModal(discord.ui.Modal):
             if wait_message:
                 await wait_message.delete()
             await thread.delete(reason="Aborted due to confirmation message send failure.")
-            await interaction.followup.send("Failed to start move transaction: could not send control view in thread.", ephemeral=True)
+            await interaction.followup.send(self.cog.bot.t('threads.start_transaction_failed', interaction.guild_id), ephemeral=True)
             return
 
         # 9. Store the transaction in MongoDB
@@ -202,6 +195,6 @@ class MoveToThreadModal(discord.ui.Modal):
         })
 
         await interaction.followup.send(
-            f"Successfully copied messages to <#{thread.id}>! Please review and finalize the move there.",
+            self.cog.bot.t('threads.success_copied', interaction.guild_id, thread=f"<#{thread.id}>"),
             ephemeral=True
         )

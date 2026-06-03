@@ -1,28 +1,154 @@
 {
-    "en": {
-        "invites": {
-            "welcome_title": "Welcome!",
-            "welcome_description": "Welcome <@%{member_id}>%{inviter_part} to the server!",
-            "invited_by": ", invited by <@%{inviter_id}>",
-            "server_link_text": "the server"
-        },
-        "topic": {
-            "subscribe_footer": "Click ✅ to subscribe to this topic"
-        },
-        "quotes": {
-            "quote_title": "Quote #%{idx}/%{total}",
-            "submitted_by": "submitted by %{submitter}",
-            "submitted_by_votes": "submitted by %{submitter}  •  👍 %{up}  👎 %{down}",
-            "saved_by": "Saved by %{submitter}. Quote #%{idx}/%{total}",
-            "no_quotes": "No quotes in the database.",
-            "no_safe_quotes": "No safe quotes in the database.",
-            "invalid_id": "Invalid id. Must be between 1 and %{total}.",
-            "unsafe_quote": "Quote #%{quote_id} is unsafe, I'd rather not share it...",
-            "quote_sent_to": "Quote sent to %{channel}.",
-            "reroll_not_requester": "Only the user who requested this quote can reroll it.",
-            "no_other_safe_quotes": "No other safe quotes available.",
-            "image_error": "Failed to fetch background image. Please try again.",
-            "already_voted": "You already voted on this quote."
-        }
+  "en": {
+    "locale": {
+      "unknown_lang": "Unknown language `%{language}`. Available: %{available}",
+      "set_success": "Server language set to `%{language}`.",
+      "current_lang": "Current language: `%{lang}`."
+    },
+    "presence": {
+      "status_set": "Bot status set to: %{status}",
+      "activity_set": "Bot activity set to: %{activity} %{text}%{url_part}.",
+      "activity_cleared": "Bot activity cleared",
+      "avatar_set": "Avatar set to %{filename}",
+      "say": {
+        "non_text_channel": "Can only send messages to text channels or threads.",
+        "success": "Message sent to %{channel}!",
+        "no_permission": "I do not have permission to send messages in %{channel}.",
+        "failed": "Failed to send message: %{error}"
+      }
+    },
+    "slow": {
+      "non_text_channel": "This command can only be used in text channels or threads.",
+      "already_active": "Slowmode is already active in this channel.",
+      "no_permission": "I do not have permission to edit this channel's slowmode.",
+      "failed": "Failed to set slowmode: %{error}",
+      "activated_ephemeral": "Thank you for reporting. Since this is the second request within the time frame, slowmode has been activated.",
+      "activated_public": "⏳ **Slowmode Activated**: Someone is annoyed by the discussion. Slowmode (%{delay}s) has been activated. Please take a deep breath, calm down, and keep the discussion respectful.",
+      "activated_mod": "🚨 **Slowmode Activated**: User %{user} triggered the second slowmode request in %{channel}. Slowmode (%{delay}s) has been activated. @everyone",
+      "first_request_ephemeral": "Thank you for reporting. Your report is anonymous, and we have alerted the moderators. Please stay safe.",
+      "first_request_public": "⚠️ **Notice**: A member has requested to slow down the discussion in this channel. Please keep the conversation calm and civil.",
+      "first_request_mod": "🚨 **Slowmode Request**: User %{user} has requested a slow down in %{channel}. @everyone",
+      "unslow": {
+        "disabled": "Slowmode has been turned off for this channel.",
+        "failed": "Failed to disable slowmode: %{error}"
+      },
+      "config": {
+        "channel_success": "Moderation alert channel set to %{channel}.",
+        "time_error": "Timeframe must be at least 1 minute.",
+        "time_success": "Request time window set to %{minutes} minutes.",
+        "delay_error": "Slowmode delay must be at least 1 second.",
+        "delay_success": "Applied slowmode delay set to %{seconds} seconds."
+      }
+    },
+    "starboard": {
+      "set_channel_success": "Starboard channel set to %{channel}.",
+      "min_stars_error": "Minimum stars must be at least 1.",
+      "min_stars_success": "Minimum stars set to %{count}.",
+      "embed_original": "Original",
+      "embed_jump": "Jump to message"
+    },
+    "threads": {
+      "non_guild": "This command can only be used in a server.",
+      "inside_thread_error": "Cannot create a thread inside a thread.",
+      "exists_error": "A thread already exists on this message.",
+      "no_permission_error": "You need the `Manage Messages` permission to use this command.",
+      "modal_title": "Move Messages to Thread",
+      "modal_field_name": "Thread Name",
+      "modal_placeholder": "Enter a name for the thread",
+      "error_read_history": "Failed to read channel history: %{error}",
+      "no_messages": "There are no messages after this one to move.",
+      "too_many_messages": "There are too many messages after this one (more than %{max_messages}). To prevent API issues, the maximum number of messages that can be moved at once is %{max_messages}.",
+      "warning_confirm_title": "⚠️ **Warning**: You are about to copy **%{count}** messages to the thread **%{thread_name}**.\nThis exceeds the threshold of %{confirm_threshold} and might take a moment. Are you sure?",
+      "move_cancelled": "Move cancelled.",
+      "copying": "Copying messages to thread, please wait...",
+      "missing_permissions": "I am missing the following permissions in this channel to perform this action: %{permissions}",
+      "migration_in_progress": "⚠️ **Migration in progress**: Moving subsequent messages to thread **%{thread_name}**. Please wait before posting new messages in this channel.",
+      "error_create_thread": "Failed to create thread: %{error}",
+      "error_webhook": "Failed to retrieve/create webhook: %{error}",
+      "confirm_box_title": "### 📝 Move to Thread Confirmation\nI have copied the messages to this thread.\n- **Admins**: You can delete any copied messages in this thread that you do not want to keep.\n- Once you are satisfied, click **Finalize Move** below to delete the corresponding original messages from the main channel.\n- Click **Cancel Move** to abort the move (no original messages will be deleted).",
+      "confirm_button_finalize": "Finalize Move",
+      "confirm_button_cancel": "Cancel Move",
+      "button_confirm_copy": "Confirm Copy",
+      "button_cancel": "Cancel",
+      "requester_lock_confirm": "Only the person who initiated this move can confirm it.",
+      "requester_lock_cancel": "Only the person who initiated this move can cancel it.",
+      "requester_lock_finalize": "Only %{user} (who initiated this move) can finalize it.",
+      "requester_lock_cancel_final": "Only %{user} (who initiated this move) can cancel it.",
+      "no_active_transaction": "No active move transaction found for this thread.",
+      "error_read_history_view": "Failed to read thread history: %{error}",
+      "move_finalized_main": "🧹 **Move finalized**: Subsequent messages after [this message](%{anchor_url}) have been moved to %{thread}.",
+      "move_finalized_thread": "🧹 **Move finalized**: Original messages have been cleaned up from the main channel by %{user}.",
+      "move_finalized_ephemeral": "Move finalized! Original messages have been deleted from the main channel.",
+      "failed_delete_originals": "Failed to delete original messages: %{error}",
+      "failed_delete_thread": "Failed to delete thread, but the move transaction was aborted.",
+      "start_transaction_failed": "Failed to start move transaction: could not send control view in thread.",
+      "success_copied": "Successfully copied messages to %{thread}! Please review and finalize the move there."
+    },
+    "invites": {
+      "welcome_title": "Welcome!",
+      "welcome_description": "Welcome <@%{member_id}>%{inviter_part} to the server!",
+      "invited_by": ", invited by <@%{inviter_id}>",
+      "server_link_text": "the server",
+      "created": "Greetings created: %{text}",
+      "no_greetings": "No greetings have been created yet.",
+      "invite_url": "Here is your invite link: %{url}%{expiry}.",
+      "expiry_text": ", It will be valid until %{time}",
+      "permanent": " (permanent)",
+      "not_member": "%{user} is not a member of this server.",
+      "test_success": "test_join succeeded!",
+      "welcome_member": "Welcome <@%{member_id}>!",
+      "no_greetings_remaining": "No greetings remaining.",
+      "greeting_page_count": "Greeting %{current}/%{total}",
+      "btn_prev": "Prev",
+      "btn_next": "Next",
+      "btn_delete": "Delete"
+    },
+    "topic": {
+      "subscribe_footer": "Click ✅ to subscribe to this topic",
+      "unknown_type": "Unknown topic type `%{topic_type}`. Valid types: %{valid_types}",
+      "create_success": "Created topic successfully!",
+      "not_found": "Topic not found in the database, you might need to delete this one manually.",
+      "channel_not_exists": "The topic's channel no longer exists. Please delete and recreate the topic.",
+      "message_not_exists": "The topic's message no longer exists. Please delete and recreate the topic.",
+      "edit_success": "Updated topic successfully!",
+      "delete_success": "Removed topic successfully!"
+    },
+    "quotes": {
+      "quote_title": "Quote #%{idx}/%{total}",
+      "submitted_by": "submitted by %{submitter}",
+      "submitted_by_votes": "submitted by %{submitter}  •  👍 %{up}  👎 %{down}",
+      "saved_by": "Saved by %{submitter}. Quote #%{idx}/%{total}",
+      "no_quotes": "No quotes in the database.",
+      "no_safe_quotes": "No safe quotes in the database.",
+      "invalid_id": "Invalid id. Must be between 1 and %{total}.",
+      "unsafe_quote": "Quote #%{quote_id} is unsafe, I'd rather not share it...",
+      "quote_sent_to": "Quote sent to %{channel}.",
+      "reroll_not_requester": "Only the user who requested this quote can reroll it.",
+      "no_other_safe_quotes": "No other safe quotes available.",
+      "image_error": "Failed to fetch background image. Please try again.",
+      "already_voted": "You already voted on this quote.",
+      "set_capture_success": "Capture channel set to %{channel}",
+      "set_reply_success": "Reply channel set to %{channel}",
+      "no_reply_channel": "Error: No reply channel is configured. Please configure one first using `/quotes set-reply-channel`.",
+      "reply_channel_not_found": "Error: The configured reply channel could not be found or accessed. Please re-configure it.",
+      "no_quotes_db": "No quotes in the database.",
+      "crawl_not_capture_channel": "This command must be run from the configured quote capture channel.",
+      "crawl_starting": "Starting...\n\n> %{checked} messages checked\n> %{saved} new quotes saved",
+      "crawl_saving": "Saving quotes...\n\n> %{checked} messages checked\n> %{saved} new quotes saved",
+      "crawl_done": "Done.\n\n> %{checked} messages checked\n> %{saved} new quotes saved",
+      "paginate_title": "Quote #%{idx}/%{total} (%{checked_str})",
+      "paginate_submitted_by": "Submitted by %{submitter}\n\n%{quote}",
+      "paginate_checked": "checked",
+      "paginate_unchecked": "unchecked",
+      "no_quotes_remaining": "No quotes remaining.",
+      "btn_safe": "Safe",
+      "btn_unsafe": "Unsafe",
+      "btn_prev": "Prev",
+      "btn_next": "Next",
+      "btn_show_payload": "Show Payload",
+      "btn_hide_payload": "Hide Payload",
+      "btn_delete": "Delete",
+      "btn_reroll": "Reroll"
     }
+  }
 }

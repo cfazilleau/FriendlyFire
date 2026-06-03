@@ -33,7 +33,7 @@ class Invites(BaseCog):
         await ctx.defer(ephemeral=True)
         collection: AsyncCollection[Greeting] = await self.bot.mongo.get_collection(ctx.guild_id, "greetings")
         await collection.insert_one(Greeting(greeting=text))
-        await ctx.respond(f"Greetings created: {text}")
+        await ctx.respond(self.bot.t('invites.created', ctx.guild_id, text=text))
 
     @greetingsGroup.command(name="paginate")
     @option(name="id", description="id of the greeting to look for", required=False, input_type=int, default=0)
@@ -42,9 +42,9 @@ class Invites(BaseCog):
         collection: AsyncCollection[Greeting] = await self.bot.mongo.get_collection(ctx.guild_id, "greetings")
         greetings = await collection.find({}).to_list()
         if not greetings:
-            await ctx.respond("No greetings have been created yet.")
+            await ctx.respond(self.bot.t('invites.no_greetings', ctx.guild_id))
             return
-        view = PaginatorView(self, greetings, id)
+        view = PaginatorView(self, greetings, id, ctx.guild_id)
         await ctx.respond(
             content=view.get_content(),
             embed=view.get_embed(),
@@ -66,8 +66,8 @@ class Invites(BaseCog):
         )
         collection: AsyncCollection[InviteEntry] = await self.bot.mongo.get_collection(ctx.guild_id, "invites")
         await collection.insert_one(invite_entry)
-        expiry_text = f", It will be valid until {format_dt(invite.expires_at)}" if invite.expires_at else " (permanent)"
-        await ctx.respond(f"Here is your invite link: {invite.url}{expiry_text}.")
+        expiry_text = self.bot.t('invites.expiry_text', ctx.guild_id, time=format_dt(invite.expires_at)) if invite.expires_at else self.bot.t('invites.permanent', ctx.guild_id)
+        await ctx.respond(self.bot.t('invites.invite_url', ctx.guild_id, url=invite.url, expiry=expiry_text))
 
     @discord.slash_command(name="test_join", description="Fakes a member joining the server to test greetings and roles", default_member_permissions=discord.Permissions(administrator=True), contexts=[discord.InteractionContextType.guild])
     @option(name="user", description="user to fake joining", required=True, input_type=discord.SlashCommandOptionType.user)
@@ -75,10 +75,10 @@ class Invites(BaseCog):
         await ctx.defer(ephemeral=True)
         member = ctx.guild.get_member(user.id)
         if member is None:
-            await ctx.respond(f"{user.mention} is not a member of this server.")
+            await ctx.respond(self.bot.t('invites.not_member', ctx.guild_id, user=user.mention))
             return
         await self.on_member_join(member)
-        await ctx.respond("test_join succeeded!")
+        await ctx.respond(self.bot.t('invites.test_success', ctx.guild_id))
 
     async def retrieve_inviter_id(self, member: discord.Member):
         try:
@@ -149,7 +149,8 @@ class Invites(BaseCog):
                     color=member.accent_color or discord.Color.default(),
                     description=self.bot.t('invites.welcome_description', member.guild.id, member_id=member.id, inviter_part=inviter_part) + greeting_suffix,
                 )
-                await announcement_channel.send(content=f"Bienvenue <@{member.id}>!", embed=embed)
+                welcome_content = self.bot.t('invites.welcome_member', member.guild.id, member_id=member.id)
+                await announcement_channel.send(content=welcome_content, embed=embed)
 
     @commands.Cog.listener()
     async def on_ready(self):

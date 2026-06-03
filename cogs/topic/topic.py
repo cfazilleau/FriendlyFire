@@ -50,7 +50,8 @@ class Topic(BaseCog):
 
         topic_types = self.config.get('topicTypes') or {}
         if topic_type not in topic_types:
-            await ctx.respond(f"Unknown topic type `{topic_type}`. Valid types: {', '.join(f'`{t}`' for t in topic_types)}")
+            valid_types = ', '.join(f'`{t}`' for t in topic_types)
+            await ctx.respond(self.bot.t('topic.unknown_type', ctx.guild_id, topic_type=topic_type, valid_types=valid_types))
             return
 
         type_descriptor = topic_types[topic_type]
@@ -81,7 +82,7 @@ class Topic(BaseCog):
             roleId=str(role.id),
             roleName=role.name
         ))
-        await ctx.respond("Created topic successfully!")
+        await ctx.respond(self.bot.t('topic.create_success', ctx.guild_id))
 
     @topicGroup.command(name="edit", description="edit a topic")
     @option(name="role", description="current role of the topic", required=True, input_type=discord.SlashCommandOptionType.role)
@@ -93,25 +94,26 @@ class Topic(BaseCog):
 
         topic_types = self.config.get('topicTypes') or {}
         if topic_type not in topic_types:
-            await ctx.respond(f"Unknown topic type `{topic_type}`. Valid types: {', '.join(f'`{t}`' for t in topic_types)}")
+            valid_types = ', '.join(f'`{t}`' for t in topic_types)
+            await ctx.respond(self.bot.t('topic.unknown_type', ctx.guild_id, topic_type=topic_type, valid_types=valid_types))
             return
 
         collection: AsyncCollection[TopicEntry] = await self.bot.mongo.get_collection(ctx.guild_id, "topics")
         topic = await collection.find_one(filter={"roleId": str(role.id)})
         if topic is None:
-            await ctx.respond("Topic not found in the database, you might need to delete this one manually.")
+            await ctx.respond(self.bot.t('topic.not_found', ctx.guild_id))
             return
         type_descriptor = topic_types[topic_type]
         color = discord.Color(int(type_descriptor["color"], 16))
 
         channel = self.bot.get_channel(int(topic["channelId"]))
         if channel is None:
-            await ctx.respond("The topic's channel no longer exists. Please delete and recreate the topic.")
+            await ctx.respond(self.bot.t('topic.channel_not_exists', ctx.guild_id))
             return
         try:
             message = await channel.fetch_message(int(topic["messageId"]))
         except discord.NotFound:
-            await ctx.respond("The topic's message no longer exists. Please delete and recreate the topic.")
+            await ctx.respond(self.bot.t('topic.message_not_exists', ctx.guild_id))
             return
 
         if name is None:
@@ -148,7 +150,7 @@ class Topic(BaseCog):
             "roleName": str(role.name)
         }})
 
-        await ctx.respond("Updated topic successfully!")
+        await ctx.respond(self.bot.t('topic.edit_success', ctx.guild_id))
 
     @topicGroup.command(name="delete", description="delete a topic")
     @option(name="role", description="role of the topic", required=True)
@@ -158,7 +160,7 @@ class Topic(BaseCog):
         topic = await collection.find_one(filter={"roleId": str(role.id)})
 
         if topic is None:
-            await ctx.respond("Topic not found in the database, you might need to delete this one manually")
+            await ctx.respond(self.bot.t('topic.not_found', ctx.guild_id))
             return
 
         channel = self.bot.get_channel(int(topic["channelId"]))
@@ -171,7 +173,7 @@ class Topic(BaseCog):
 
         await collection.delete_one({"_id": topic["_id"]})
         await role.delete()
-        await ctx.respond("Removed topic successfully!")
+        await ctx.respond(self.bot.t('topic.delete_success', ctx.guild_id))
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):

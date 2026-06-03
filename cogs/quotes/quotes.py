@@ -56,6 +56,13 @@ class QuoteView(discord.ui.View):
         self.current_quote = quote
         self.notify = notify  # persisted across rerolls
         self.message: discord.Message = None
+
+        # Dynamically translate Reroll button label
+        for child in self.children:
+            if isinstance(child, discord.ui.Button):
+                if child.custom_id == 'reroll':
+                    child.label = self.quotes_cog.bot.t('quotes.btn_reroll', self.guild_id)
+
         self._update_vote_buttons()
 
     def _update_vote_buttons(self):
@@ -175,28 +182,28 @@ class Quotes(BaseCog):
     async def set_capture_channel(self, ctx: discord.ApplicationContext, channel: discord.TextChannel):
         await ctx.defer(ephemeral=True)
         self.config.set('captureChannelId', str(channel.id), ctx.guild_id)
-        await ctx.respond(f"Capture channel set to {channel.mention}")
+        await ctx.respond(self.bot.t('quotes.set_capture_success', ctx.guild_id, channel=channel.mention))
 
     @quotesGroup.command(name="set-reply-channel", description="Set the channel where /quote sends its output")
     @discord.option(name="channel", required=True, input_type=discord.SlashCommandOptionType.channel)
     async def set_reply_channel(self, ctx: discord.ApplicationContext, channel: discord.TextChannel):
         await ctx.defer(ephemeral=True)
         self.config.set('replyChannelId', str(channel.id), ctx.guild_id)
-        await ctx.respond(f"Reply channel set to {channel.mention}")
+        await ctx.respond(self.bot.t('quotes.set_reply_success', ctx.guild_id, channel=channel.mention))
 
     @discord.slash_command(name="quote", description="Send a quote from the database.", contexts=[discord.InteractionContextType.guild])
     @discord.option(name="id", parameter_name="quote_id", description="Id of the quote to send", required=False, input_type=int)
     async def quote(self, ctx: discord.ApplicationContext, quote_id: int = None):
         reply_channel_id = self.config.get('replyChannelId', ctx.guild_id)
         if not reply_channel_id:
-            await ctx.respond("Error: No reply channel is configured. Please configure one first using `/quotes set-reply-channel`.", ephemeral=True)
+            await ctx.respond(self.bot.t('quotes.no_reply_channel', ctx.guild_id), ephemeral=True)
             return
 
         try:
             reply_channel = await self.bot.fetch_channel(int(reply_channel_id))
         except (discord.HTTPException, discord.Forbidden) as e:
             self.log(f"Failed to fetch configured reply channel {reply_channel_id}: {e}")
-            await ctx.respond("Error: The configured reply channel could not be found or accessed. Please re-configure it.", ephemeral=True)
+            await ctx.respond(self.bot.t('quotes.reply_channel_not_found', ctx.guild_id), ephemeral=True)
             return
 
         use_reply_channel = reply_channel.id != ctx.channel_id
@@ -257,7 +264,7 @@ class Quotes(BaseCog):
         quotes = await collection.find({}).sort('timestamp', 1).to_list()
 
         if not quotes:
-            await ctx.respond("No quotes in the database.")
+            await ctx.respond(self.bot.t('quotes.no_quotes_db', ctx.guild_id))
             return
 
         if quote_id is not None:
@@ -265,7 +272,7 @@ class Quotes(BaseCog):
         else:
             idx = next((i for i, q in enumerate(quotes) if not q.get('checked', False)), 0)
 
-        view = QuotesPaginateView(self, quotes, idx)
+        view = QuotesPaginateView(self, quotes, idx, ctx.guild_id)
         await ctx.respond(embed=view.get_embed(), view=view)
         view.message = await ctx.interaction.original_response()
 
@@ -273,7 +280,7 @@ class Quotes(BaseCog):
     async def crawl_missing_quotes(self, ctx: discord.ApplicationContext):
         capture_channel_id = self.config.get('captureChannelId', ctx.guild_id)
         if not capture_channel_id or str(ctx.channel_id) != capture_channel_id:
-            await ctx.respond("This command must be run from the configured quote capture channel.", ephemeral=True)
+            await ctx.respond(self.bot.t('quotes.crawl_not_capture_channel', ctx.guild_id), ephemeral=True)
             return
 
         await ctx.defer(ephemeral=True)
@@ -286,7 +293,7 @@ class Quotes(BaseCog):
         checked = 0
         saved = 0
 
-        await ctx.respond(f"Starting...\n\n> {checked} messages checked\n> {saved} new quotes saved")
+        await ctx.respond(self.bot.t('quotes.crawl_starting', ctx.guild_id, checked=checked, saved=saved))
 
         while True:
             batch = [msg async for msg in channel.history(limit=batch_size, before=discord.Object(id=last_id))]
@@ -317,14 +324,14 @@ class Quotes(BaseCog):
                 saved += 1
                 self.log(f'Found quote: "{entry["quote"]}" --{entry["author"]}')
 
-            await ctx.edit(content=f"Saving quotes...\n\n> {checked} messages checked\n> {saved} new quotes saved")
+            await ctx.edit(content=self.bot.t('quotes.crawl_saving', ctx.guild_id, checked=checked, saved=saved))
             last_id = batch[-1].id
 
             if len(batch) < batch_size:
                 break
 
         self.log(f'Crawl done: {checked} checked, {saved} saved')
-        await ctx.edit(content=f"Done.\n\n> {checked} messages checked\n> {saved} new quotes saved")
+        await ctx.edit(content=self.bot.t('quotes.crawl_done', ctx.guild_id, checked=checked, saved=saved))
 
     async def _try_capture_quote(self, message: discord.Message):
         if message.guild is None or message.author.bot:
