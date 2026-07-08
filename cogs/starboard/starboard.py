@@ -54,22 +54,80 @@ class Starboard(BaseCog):
         return 0
 
     def _build_embed(self, message: discord.Message, star_count: int) -> discord.Embed:
+        original_text = self.bot.t('starboard.embed_original', message.guild.id)
+        jump_link = f"[{original_text}]({message.jump_url})"
+        
+        description = message.content or ""
+        if description:
+            description += f"\n\n{jump_link}"
+        else:
+            description = jump_link
+
         embed = discord.Embed(
-            description=message.content or "",
+            description=description,
             color=discord.Color.gold(),
             timestamp=message.created_at,
         )
-        embed.set_author(name=message.author.display_name, icon_url=message.author.display_avatar.url)
-        embed.add_field(
-            name=self.bot.t('starboard.embed_original', message.guild.id),
-            value=f"[{self.bot.t('starboard.embed_jump', message.guild.id)}]({message.jump_url})"
+        embed.set_author(
+            name=message.author.display_name,
+            icon_url=message.author.display_avatar.url,
+            url=message.jump_url
         )
         if message.attachments:
             att = message.attachments[0]
             if att.content_type and att.content_type.startswith('image/'):
                 embed.set_image(url=att.url)
-        embed.set_footer(text=f"⭐ {star_count} | #{message.channel.name}")
+        embed.set_footer(text=f"⭐ {star_count} • #{message.channel.name}")
         return embed
+
+    def _sanitize_embed(self, embed: discord.Embed) -> discord.Embed:
+        # Convert embed to dictionary to clean up read-only or unsupported fields
+        embed_dict = embed.to_dict()
+        
+        # Force type to rich (otherwise Discord rejects it as a bot-sent embed)
+        embed_dict['type'] = 'rich'
+        
+        # Remove read-only root fields that bots are not allowed to send
+        embed_dict.pop('video', None)
+        embed_dict.pop('provider', None)
+        
+        # Clean thumbnail to remove dimensions and proxy urls
+        if 'thumbnail' in embed_dict and isinstance(embed_dict['thumbnail'], dict):
+            embed_dict['thumbnail'].pop('proxy_url', None)
+            embed_dict['thumbnail'].pop('height', None)
+            embed_dict['thumbnail'].pop('width', None)
+            
+        # Clean image to remove dimensions and proxy urls
+        if 'image' in embed_dict and isinstance(embed_dict['image'], dict):
+            embed_dict['image'].pop('proxy_url', None)
+            embed_dict['image'].pop('height', None)
+            embed_dict['image'].pop('width', None)
+            
+        # Clean author to remove proxy icon urls
+        if 'author' in embed_dict and isinstance(embed_dict['author'], dict):
+            embed_dict['author'].pop('proxy_icon_url', None)
+            
+        # Clean footer to remove proxy icon urls
+        if 'footer' in embed_dict and isinstance(embed_dict['footer'], dict):
+            embed_dict['footer'].pop('proxy_icon_url', None)
+            
+        return discord.Embed.from_dict(embed_dict)
+
+    def _get_starboard_embeds(self, message: discord.Message, star_count: int) -> list[discord.Embed]:
+        base_embed = self._build_embed(message, star_count)
+        embeds = [base_embed]
+        
+        # Add up to 9 original/link embeds (since Discord allows max 10 embeds per message)
+        for orig_embed in message.embeds:
+            if len(embeds) >= 10:
+                break
+            try:
+                sanitized = self._sanitize_embed(orig_embed)
+                embeds.append(sanitized)
+            except Exception as e:
+                self.log(f"Failed to sanitize embed for message {message.id}: {e}", message.guild)
+                
+        return embeds
 
     async def _handle_reaction_change(self, payload: discord.RawReactionActionEvent):
         if str(payload.emoji) != '⭐' or payload.guild_id is None:
@@ -113,17 +171,17 @@ class Starboard(BaseCog):
                 await collection.delete_one({"original_message_id": str(payload.message_id)})
             return
 
-        embed = self._build_embed(message, star_count)
+        embeds = self._get_starboard_embeds(message, star_count)
         content = f"⭐ **{star_count}**"
 
         if existing:
             try:
                 sb_msg = await starboard_channel.fetch_message(int(existing['starboard_message_id']))
-                await sb_msg.edit(content=content, embed=embed)
+                await sb_msg.edit(content=content, embeds=embeds)
                 self.log(f"Updated starboard entry for message {message.id} in #{channel.name} to {star_count} stars.", message.guild)
             except discord.HTTPException:
                 try:
-                    sb_msg = await starboard_channel.send(content=content, embed=embed)
+                    sb_msg = await starboard_channel.send(content=content, embeds=embeds)
                     await collection.update_one(
                         {"original_message_id": str(payload.message_id)},
                         {"$set": {"starboard_message_id": str(sb_msg.id)}},
@@ -133,7 +191,7 @@ class Starboard(BaseCog):
                     pass
         else:
             try:
-                sb_msg = await starboard_channel.send(content=content, embed=embed)
+                sb_msg = await starboard_channel.send(content=content, embeds=embeds)
                 await collection.insert_one(StarboardEntry(
                     original_message_id=str(payload.message_id),
                     starboard_message_id=str(sb_msg.id),
