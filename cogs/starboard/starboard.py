@@ -19,6 +19,7 @@ class Starboard(BaseCog):
     def __init__(self, bot: FriendlyFire):
         super().__init__(bot, 'starboard', {
             "minStars": 3,
+            "starboardEmoji": ["⭐"],
         })
 
     starboardGroup = discord.SlashCommandGroup(
@@ -36,8 +37,8 @@ class Starboard(BaseCog):
         self.config.set('starboardChannel', str(channel.id), guild_id=ctx.guild_id)
         await ctx.respond(self.bot.t('starboard.set_channel_success', ctx.guild_id, channel=channel.mention))
 
-    @starboardGroup.command(name="setstars", description="Set the minimum number of ⭐ reactions to appear on the starboard")
-    @option(name="count", description="Minimum number of stars", required=True, input_type=int)
+    @starboardGroup.command(name="setstars", description="Set the minimum number of reactions to appear on the starboard")
+    @option(name="count", description="Minimum number of reactions", required=True, input_type=int)
     async def set_stars(self, ctx: discord.ApplicationContext, count: int):
         await ctx.defer(ephemeral=True)
         self.log(f"Starboard setstars command issued by {ctx.author.name}. Count: {count}", ctx.guild)
@@ -47,11 +48,55 @@ class Starboard(BaseCog):
         self.config.set('minStars', count, guild_id=ctx.guild_id)
         await ctx.respond(self.bot.t('starboard.min_stars_success', ctx.guild_id, count=count))
 
-    def _star_count(self, message: discord.Message) -> int:
+    @starboardGroup.command(name="addemoji", description="Add an emoji to the starboard accepted list")
+    @option(name="emoji", description="The emoji to add (unicode or custom)", required=True, input_type=str)
+    async def add_emoji(self, ctx: discord.ApplicationContext, emoji: str):
+        await ctx.defer(ephemeral=True)
+        self.log(f"Starboard addemoji command issued by {ctx.author.name}. Emoji: {emoji}", ctx.guild)
+        emoji = emoji.strip()
+        current_emojis = self.config.get('starboardEmoji', ctx.guild_id) or ["⭐"]
+        if emoji in current_emojis:
+            await ctx.respond(self.bot.t('starboard.emoji_already_exists', ctx.guild_id, emoji=emoji))
+            return
+        new_emojis = list(current_emojis)
+        new_emojis.append(emoji)
+        self.config.set('starboardEmoji', new_emojis, guild_id=ctx.guild_id)
+        await ctx.respond(self.bot.t('starboard.emoji_add_success', ctx.guild_id, emoji=emoji))
+
+    @starboardGroup.command(name="removeemoji", description="Remove an emoji from the starboard accepted list")
+    @option(name="emoji", description="The emoji to remove", required=True, input_type=str)
+    async def remove_emoji(self, ctx: discord.ApplicationContext, emoji: str):
+        await ctx.defer(ephemeral=True)
+        self.log(f"Starboard removeemoji command issued by {ctx.author.name}. Emoji: {emoji}", ctx.guild)
+        emoji = emoji.strip()
+        current_emojis = self.config.get('starboardEmoji', ctx.guild_id) or ["⭐"]
+        if emoji not in current_emojis:
+            await ctx.respond(self.bot.t('starboard.emoji_not_found', ctx.guild_id, emoji=emoji))
+            return
+        if len(current_emojis) <= 1:
+            await ctx.respond(self.bot.t('starboard.emoji_remove_last_error', ctx.guild_id))
+            return
+        new_emojis = list(current_emojis)
+        new_emojis.remove(emoji)
+        self.config.set('starboardEmoji', new_emojis, guild_id=ctx.guild_id)
+        await ctx.respond(self.bot.t('starboard.emoji_remove_success', ctx.guild_id, emoji=emoji))
+
+    @starboardGroup.command(name="listemojis", description="List all accepted starboard emojis")
+    async def list_emojis(self, ctx: discord.ApplicationContext):
+        await ctx.defer(ephemeral=True)
+        current_emojis = self.config.get('starboardEmoji', ctx.guild_id) or ["⭐"]
+        emojis_str = " ".join(current_emojis)
+        await ctx.respond(self.bot.t('starboard.emoji_list', ctx.guild_id, emojis=emojis_str))
+
+    async def _star_count(self, message: discord.Message, accepted_emojis: list[str]) -> int:
+        unique_users = set()
         for reaction in message.reactions:
-            if str(reaction.emoji) == '⭐':
-                return reaction.count
-        return 0
+            emoji_str = str(reaction.emoji)
+            if emoji_str in accepted_emojis:
+                async for user in reaction.users():
+                    if not user.bot:
+                        unique_users.add(user.id)
+        return len(unique_users)
 
     def _build_embed(self, message: discord.Message, star_count: int) -> discord.Embed:
         original_text = self.bot.t('starboard.embed_original', message.guild.id)
@@ -77,7 +122,10 @@ class Starboard(BaseCog):
             att = message.attachments[0]
             if att.content_type and att.content_type.startswith('image/'):
                 embed.set_image(url=att.url)
-        embed.set_footer(text=f"⭐ {star_count} • #{message.channel.name}")
+                
+        accepted_emojis = self.config.get('starboardEmoji', message.guild.id) or ["⭐"]
+        primary_emoji = accepted_emojis[0] if accepted_emojis else "⭐"
+        embed.set_footer(text=f"{primary_emoji} {star_count} • #{message.channel.name}")
         return embed
 
     def _sanitize_embed(self, embed: discord.Embed) -> discord.Embed:
@@ -130,7 +178,11 @@ class Starboard(BaseCog):
         return embeds
 
     async def _handle_reaction_change(self, payload: discord.RawReactionActionEvent):
-        if str(payload.emoji) != '⭐' or payload.guild_id is None:
+        if payload.guild_id is None:
+            return
+
+        accepted_emojis = self.config.get('starboardEmoji', payload.guild_id) or ["⭐"]
+        if str(payload.emoji) not in accepted_emojis:
             return
 
         starboard_channel_id = self.config.get('starboardChannel', payload.guild_id)
@@ -149,7 +201,7 @@ class Starboard(BaseCog):
         except discord.HTTPException:
             return
 
-        star_count = self._star_count(message)
+        star_count = await self._star_count(message, accepted_emojis)
         min_stars = self.config.get('minStars', payload.guild_id) or 3
         self.log(f"Reaction change detected for message {message.id} in #{channel.name}. Star count: {star_count}, Minimum stars required: {min_stars}", message.guild)
 
@@ -172,7 +224,8 @@ class Starboard(BaseCog):
             return
 
         embeds = self._get_starboard_embeds(message, star_count)
-        content = f"⭐ **{star_count}**"
+        primary_emoji = accepted_emojis[0] if accepted_emojis else "⭐"
+        content = f"{primary_emoji} **{star_count}**"
 
         if existing:
             try:
