@@ -45,7 +45,13 @@
             "min_stars_error": "Le nombre minimum d'étoiles doit être d'au moins 1.",
             "min_stars_success": "Nombre minimum d'étoiles configuré sur %{count}.",
             "embed_original": "Original",
-            "embed_jump": "Aller au message"
+            "embed_jump": "Aller au message",
+            "emoji_already_exists": "L'émoji %{emoji} est déjà dans la liste des émojis starboard acceptés.",
+            "emoji_add_success": "L'émoji %{emoji} a bien été ajouté à la liste des émojis starboard acceptés.",
+            "emoji_not_found": "L'émoji %{emoji} n'est pas dans la liste des émojis starboard acceptés.",
+            "emoji_remove_last_error": "Impossible de retirer le dernier émoji starboard accepté. Vous devez en garder au moins un.",
+            "emoji_remove_success": "L'émoji %{emoji} a bien été retiré de la liste des émojis starboard acceptés.",
+            "emoji_list": "Émojis starboard acceptés : %{emojis}"
         },
         "threads": {
             "non_guild": "Cette commande ne peut être utilisée que dans un serveur.",
