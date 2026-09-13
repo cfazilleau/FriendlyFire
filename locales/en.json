@@ -45,7 +45,13 @@
       "min_stars_error": "Minimum stars must be at least 1.",
       "min_stars_success": "Minimum stars set to %{count}.",
       "embed_original": "Original",
-      "embed_jump": "Jump to message"
+      "embed_jump": "Jump to message",
+      "emoji_already_exists": "Emoji %{emoji} is already in the accepted starboard emojis list.",
+      "emoji_add_success": "Successfully added %{emoji} to the accepted starboard emojis list.",
+      "emoji_not_found": "Emoji %{emoji} is not in the accepted starboard emojis list.",
+      "emoji_remove_last_error": "Cannot remove the last accepted starboard emoji. You must have at least one accepted emoji.",
+      "emoji_remove_success": "Successfully removed %{emoji} from the accepted starboard emojis list.",
+      "emoji_list": "Accepted starboard emojis: %{emojis}"
     },
     "threads": {
       "non_guild": "This command can only be used in a server.",
@@ -90,6 +96,8 @@
       "invited_by": ", invited by <@%{inviter_id}>",
       "server_link_text": "the server",
       "created": "Greetings created: %{text}",
+      "updated": "Greeting %{id} updated: %{text}",
+      "invalid_id": "Invalid id. Must be between 1 and %{total}.",
       "no_greetings": "No greetings have been created yet.",
       "invite_url": "Here is your invite link: %{url}%{expiry}.",
       "expiry_text": ", It will be valid until %{time}",

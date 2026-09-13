@@ -36,6 +36,24 @@ class Invites(BaseCog):
         await collection.insert_one(Greeting(greeting=text))
         await ctx.respond(self.bot.t('invites.created', ctx.guild_id, text=text))
 
+    @greetingsGroup.command(name="update", description="update an existing greeting")
+    @option(name="id", description="id of the greeting to update (as shown in /greetings paginate)", required=True, input_type=int)
+    @option(name="text", description="new greeting text", required=True)
+    async def greetings_update(self, ctx: discord.ApplicationContext, id: int, text: str):
+        await ctx.defer(ephemeral=True)
+        self.log(f"Greetings update command issued by {ctx.author.name}. ID: {id}. Text: '{text}'", ctx.guild)
+        collection: AsyncCollection[Greeting] = await self.bot.mongo.get_collection(ctx.guild_id, "greetings")
+        greetings = await collection.find({}).to_list()
+        if not greetings:
+            await ctx.respond(self.bot.t('invites.no_greetings', ctx.guild_id))
+            return
+        if id < 1 or id > len(greetings):
+            await ctx.respond(self.bot.t('invites.invalid_id', ctx.guild_id, total=len(greetings)))
+            return
+        greeting = greetings[id - 1]
+        await collection.update_one({"_id": greeting['_id']}, {"$set": {"greeting": text}})
+        await ctx.respond(self.bot.t('invites.updated', ctx.guild_id, id=id, text=text))
+
     @greetingsGroup.command(name="paginate")
     @option(name="id", description="id of the greeting to look for", required=False, input_type=int, default=0)
     async def paginate(self, ctx: discord.ApplicationContext, id: int):
