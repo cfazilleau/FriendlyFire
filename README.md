@@ -14,6 +14,7 @@ A Discord bot for the Phoenix Legacy community, built with [py-cord](https://git
 ### Invites
 - `/invite` — generate a temporary invite link (auto-expires, tracked in DB)
 - `/greetings create` — add a welcome message shown to new members
+- `/greetings update` — edit an existing welcome message by its id
 - `/greetings paginate` — browse and delete welcome messages
 - Auto-assigns a role to new members
 - Posts a join announcement embed when someone joins
