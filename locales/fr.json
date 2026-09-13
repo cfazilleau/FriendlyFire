@@ -90,6 +90,8 @@
             "invited_by": ", invité.e par <@%{inviter_id}>",
             "server_link_text": "le serveur",
             "created": "Message de bienvenue créé : %{text}",
+            "updated": "Message de bienvenue %{id} mis à jour : %{text}",
+            "invalid_id": "Identifiant invalide. Il doit être compris entre 1 et %{total}.",
             "no_greetings": "Aucun message de bienvenue n'a été créé pour l'instant.",
             "invite_url": "Voici votre lien d'invitation : %{url}%{expiry}.",
             "expiry_text": ", il sera valide jusqu'au %{time}",

@@ -90,6 +90,8 @@
       "invited_by": ", invited by <@%{inviter_id}>",
       "server_link_text": "the server",
       "created": "Greetings created: %{text}",
+      "updated": "Greeting %{id} updated: %{text}",
+      "invalid_id": "Invalid id. Must be between 1 and %{total}.",
       "no_greetings": "No greetings have been created yet.",
       "invite_url": "Here is your invite link: %{url}%{expiry}.",
       "expiry_text": ", It will be valid until %{time}",
