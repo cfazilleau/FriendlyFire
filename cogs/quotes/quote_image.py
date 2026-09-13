@@ -16,7 +16,8 @@ def get_text_length(draw: ImageDraw.ImageDraw, text: str, font) -> float:
     # Replace Discord custom emojis and Unicode emojis with 'M' (standard proxy width)
     text_without_custom = DISCORD_EMOJI_REGEX.sub('M', text)
     clean_text = ''.join('M' if emoji.is_emoji(c) else c for c in text_without_custom)
-    return draw.textlength(clean_text, font=font)
+    # textlength() can't measure multiline text, so measure the widest line.
+    return max((draw.textlength(line, font=font) for line in clean_text.split('\n')), default=0.0)
 
 
 def _wrap_text(draw: ImageDraw.ImageDraw, text: str, font, max_width: int) -> list[str]:
@@ -73,8 +74,8 @@ def _render(bg_data: bytes, quote: str, author: str, font_path: str) -> bytes:
                 pilmoji.text((x, y), line, font=font_quote, fill=(255, 255, 255, 255))
             y += line_h
 
-        # Author centered near bottom
-        author_str = f'\u2014 {author}'
+        # Author centered near bottom (collapse whitespace/newlines to keep it one line)
+        author_str = f'\u2014 {" ".join(author.split())}'
         ax = int((IMG_W - get_text_length(draw, author_str, font_author)) // 2)
         ay = IMG_H - 90
         pilmoji.text((ax + 2, ay + 2), author_str, font=font_author, fill=(0, 0, 0, 180))
