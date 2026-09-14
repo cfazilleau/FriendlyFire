@@ -23,12 +23,12 @@ class Topic(BaseCog):
         })
 
         if not self.config.get('topicTypes'):
-            self.log('No topic types configured in config/topic.json — topic commands will be unavailable.')
+            self.log('No global topic types configured in config/topic.json — topic commands rely on per-guild config where set.')
 
     topicGroup = discord.SlashCommandGroup(name="topic", description="manage topics", default_member_permissions=discord.Permissions(administrator=True), contexts=[discord.InteractionContextType.guild])
 
     async def get_topic_types(self, ctx: discord.AutocompleteContext):
-        return list(self.config.get('topicTypes').keys())
+        return list((self.config.get('topicTypes', ctx.interaction.guild_id) or {}).keys())
 
     async def _fetch_image(self, url: str) -> bytes | None:
         try:
@@ -49,7 +49,7 @@ class Topic(BaseCog):
         await ctx.defer(ephemeral=True)
         self.log(f"Topic create command issued by {ctx.author.name}. Name: '{name}', Type: '{topic_type}', Image: {image}", ctx.guild)
 
-        topic_types = self.config.get('topicTypes') or {}
+        topic_types = self.config.get('topicTypes', ctx.guild_id) or {}
         if topic_type not in topic_types:
             valid_types = ', '.join(f'`{t}`' for t in topic_types)
             await ctx.respond(self.bot.t('topic.unknown_type', ctx.guild_id, topic_type=topic_type, valid_types=valid_types))
@@ -95,7 +95,7 @@ class Topic(BaseCog):
         await ctx.defer(ephemeral=True)
         self.log(f"Topic edit command issued by {ctx.author.name}. Target Role: {role.name}, Type: '{topic_type}', New Name: '{name}', New Image: {image}", ctx.guild)
 
-        topic_types = self.config.get('topicTypes') or {}
+        topic_types = self.config.get('topicTypes', ctx.guild_id) or {}
         if topic_type not in topic_types:
             valid_types = ', '.join(f'`{t}`' for t in topic_types)
             await ctx.respond(self.bot.t('topic.unknown_type', ctx.guild_id, topic_type=topic_type, valid_types=valid_types))
