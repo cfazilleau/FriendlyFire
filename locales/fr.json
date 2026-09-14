@@ -113,13 +113,16 @@
         },
         "topic": {
             "subscribe_footer": "Clique sur ✅ pour t'abonner à ce topic",
+            "channel_description": "Rejoins le salon dédié : %{channel}",
+            "channel_create_failed": "Échec de la création du salon du topic. Vérifiez mes permissions et réessayez.",
             "unknown_type": "Type de topic inconnu `%{topic_type}`. Types valides : %{valid_types}",
             "create_success": "Topic créé avec succès !",
             "not_found": "Topic non trouvé dans la base de données, vous devrez peut-être le supprimer manuellement.",
             "channel_not_exists": "Le salon du topic n'existe plus. Veuillez supprimer et recréer le topic.",
             "message_not_exists": "Le message du topic n'existe plus. Veuillez supprimer et recréer le topic.",
             "edit_success": "Topic mis à jour avec succès !",
-            "delete_success": "Topic supprimé avec succès !"
+            "delete_success": "Topic supprimé avec succès !",
+            "delete_success_channel_kept": "Topic supprimé avec succès ! Le salon dédié %{channel} a été conservé."
         },
         "quotes": {
             "quote_title": "Quote n°%{idx}/%{total}",
