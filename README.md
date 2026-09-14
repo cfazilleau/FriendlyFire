@@ -20,10 +20,11 @@ A Discord bot for the Phoenix Legacy community, built with [py-cord](https://git
 - Posts a join announcement embed when someone joins
 
 ### Topics
-- `/topic create` — create a topic channel with a role and a subscribe message
+- `/topic create` — create a topic with a role and a subscribe message; set `channel: true` to also create a dedicated channel that subscribers can access
 - `/topic edit` — edit an existing topic's name, type, or image
-- `/topic delete` — remove a topic and its role
+- `/topic delete` — remove a topic and its role (the dedicated channel, if any, is kept)
 - Users subscribe/unsubscribe by reacting with ✅
+- When a topic has a dedicated channel, the subscribe message links to it
 - Topic types (name, color, emoji) are configured in `config/topic.json`
 
 ### Quotes
