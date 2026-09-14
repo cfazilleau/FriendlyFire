@@ -87,7 +87,9 @@ class QuoteView(discord.ui.View):
             try:
                 embed = self.quotes_cog._quote_embed(self.current_quote, self.current_idx + 1, self.total, guild_id=self.guild_id, show_votes=True)
                 await self.message.edit(embed=embed, view=None)
-            except discord.NotFound:
+            except discord.HTTPException:
+                # Message deleted, or the interaction webhook token has expired
+                # (only valid for 15 min) so the message can no longer be edited.
                 pass
 
     @discord.ui.button(label='Reroll', style=discord.ButtonStyle.secondary, emoji='🎲', custom_id='reroll')

@@ -73,7 +73,9 @@ class QuotesPaginateView(discord.ui.View):
         if self.message:
             try:
                 await self.message.edit(view=None)
-            except discord.NotFound:
+            except discord.HTTPException:
+                # Message deleted, or the interaction webhook token has expired
+                # (only valid for 15 min) so an ephemeral message can no longer be edited.
                 pass
 
     async def refresh_view(self, interaction: discord.Interaction):
