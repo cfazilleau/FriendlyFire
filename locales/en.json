@@ -46,6 +46,7 @@
       "min_stars_success": "Minimum stars set to %{count}.",
       "embed_original": "Original",
       "embed_jump": "Jump to message",
+      "embed_attachments": "Attachments",
       "emoji_already_exists": "Emoji %{emoji} is already in the accepted starboard emojis list.",
       "emoji_add_success": "Successfully added %{emoji} to the accepted starboard emojis list.",
       "emoji_not_found": "Emoji %{emoji} is not in the accepted starboard emojis list.",

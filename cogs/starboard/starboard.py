@@ -98,10 +98,10 @@ class Starboard(BaseCog):
                         unique_users.add(user.id)
         return len(unique_users)
 
-    def _build_embed(self, message: discord.Message, star_count: int) -> discord.Embed:
+    def _build_embed(self, message: discord.Message, star_count: int) -> tuple[discord.Embed, list[discord.Attachment]]:
         original_text = self.bot.t('starboard.embed_original', message.guild.id)
         jump_link = f"[{original_text}]({message.jump_url})"
-        
+
         description = message.content or ""
         if description:
             description += f"\n\n{jump_link}"
@@ -111,6 +111,8 @@ class Starboard(BaseCog):
         embed = discord.Embed(
             description=description,
             color=discord.Color.gold(),
+            # Shared url across embeds so multiple images group into a single gallery
+            url=message.jump_url,
             timestamp=message.created_at,
         )
         embed.set_author(
@@ -118,15 +120,28 @@ class Starboard(BaseCog):
             icon_url=message.author.display_avatar.url,
             url=message.jump_url
         )
-        if message.attachments:
-            att = message.attachments[0]
-            if att.content_type and att.content_type.startswith('image/'):
-                embed.set_image(url=att.url)
-                
+
+        image_attachments = [
+            att for att in message.attachments
+            if att.content_type and att.content_type.startswith('image/')
+        ]
+        other_attachments = [att for att in message.attachments if att not in image_attachments]
+
+        if image_attachments:
+            embed.set_image(url=image_attachments[0].url)
+
+        if other_attachments:
+            files_text = "\n".join(f"[{att.filename}]({att.url})" for att in other_attachments)
+            embed.add_field(
+                name=self.bot.t('starboard.embed_attachments', message.guild.id),
+                value=files_text,
+                inline=False,
+            )
+
         accepted_emojis = self.config.get('starboardEmoji', message.guild.id) or ["⭐"]
         primary_emoji = accepted_emojis[0] if accepted_emojis else "⭐"
         embed.set_footer(text=f"{primary_emoji} {star_count} • #{message.channel.name}")
-        return embed
+        return embed, image_attachments[1:]
 
     def _sanitize_embed(self, embed: discord.Embed) -> discord.Embed:
         # Convert embed to dictionary to clean up read-only or unsupported fields
@@ -162,10 +177,18 @@ class Starboard(BaseCog):
         return discord.Embed.from_dict(embed_dict)
 
     def _get_starboard_embeds(self, message: discord.Message, star_count: int) -> list[discord.Embed]:
-        base_embed = self._build_embed(message, star_count)
+        base_embed, extra_images = self._build_embed(message, star_count)
         embeds = [base_embed]
-        
-        # Add up to 9 original/link embeds (since Discord allows max 10 embeds per message)
+
+        # Additional image attachments are shown as a gallery by sharing the base embed's url
+        for att in extra_images:
+            if len(embeds) >= 10:
+                break
+            gallery_embed = discord.Embed(url=message.jump_url)
+            gallery_embed.set_image(url=att.url)
+            embeds.append(gallery_embed)
+
+        # Add remaining original/link embeds (since Discord allows max 10 embeds per message)
         for orig_embed in message.embeds:
             if len(embeds) >= 10:
                 break
@@ -255,6 +278,25 @@ class Starboard(BaseCog):
             except discord.HTTPException:
                 pass
 
+    async def _remove_starboard_entry(self, guild_id: int, message_id: int):
+        collection: AsyncCollection[StarboardEntry] = await self.bot.mongo.get_collection(guild_id, "starboard")
+        existing = await collection.find_one({"original_message_id": str(message_id)})
+        if not existing:
+            return
+
+        starboard_channel_id = self.config.get('starboardChannel', guild_id)
+        if starboard_channel_id:
+            starboard_channel = self.bot.get_channel(int(starboard_channel_id))
+            if starboard_channel is not None:
+                try:
+                    sb_msg = await starboard_channel.fetch_message(int(existing['starboard_message_id']))
+                    await sb_msg.delete()
+                except discord.HTTPException:
+                    pass
+
+        await collection.delete_one({"original_message_id": str(message_id)})
+        self.log(f"Original message {message_id} was deleted. Removed its starboard entry.", guild_id)
+
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         await self._handle_reaction_change(payload)
@@ -262,6 +304,19 @@ class Starboard(BaseCog):
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
         await self._handle_reaction_change(payload)
+
+    @commands.Cog.listener()
+    async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent):
+        if payload.guild_id is None:
+            return
+        await self._remove_starboard_entry(payload.guild_id, payload.message_id)
+
+    @commands.Cog.listener()
+    async def on_raw_bulk_message_delete(self, payload: discord.RawBulkMessageDeleteEvent):
+        if payload.guild_id is None:
+            return
+        for message_id in payload.message_ids:
+            await self._remove_starboard_entry(payload.guild_id, message_id)
 
 
 def setup(bot):
