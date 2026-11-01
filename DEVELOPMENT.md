@@ -122,7 +122,7 @@ web app never call each other; this collection is their whole interface.
   `messageUrl`; a missing channel, `discord.Forbidden` or `discord.HTTPException` makes it `failed`
   with `error`. All updates filter on `{_id, status: 'pending'}`, so an event is resolved only once.
 - Config (`config/quiz.json`, global only): `database`, `resultsChannelId`, `quizUrl` (optional
-  link shown in the embed).
+  link shown in the embed; production value `https://app.phxlgc.com`).
 
 ---
 
