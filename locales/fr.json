@@ -157,6 +157,15 @@
             "btn_hide_payload": "Masquer les détails",
             "btn_delete": "Supprimer",
             "btn_reroll": "Relancer"
+        },
+        "quiz": {
+            "results_author": "Résultats du quiz",
+            "score": "%{score} pts",
+            "no_players": "Personne n'a joué à cette partie.",
+            "leaderboard": "Classement",
+            "players": "Joueurs",
+            "play_link": "Jouer sur PhoenixQuiz",
+            "ended": "Quiz terminé"
         }
     }
 }

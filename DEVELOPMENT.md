@@ -68,6 +68,7 @@ cogs/<cog_name>/<cog_name>.py   ← Must define the setup(bot) entry point
 | `locale` | `cogs/locale/locale.py` | Admin commands to set and query the preferred guild language. |
 | `sos` | `cogs/sos/sos.py` | Anonymous `/sos` distress reports; a second report inside the time window applies slowmode and alerts moderators. |
 | `threads` | `cogs/threads/threads.py` | "Move to Thread" message command — relocates a conversation into a new thread. |
+| `quiz` | `cogs/quiz/quiz.py` | No commands. Background listener that posts PhoenixQuiz results requested by the quiz web app (see `bot_events` below). |
 
 ---
 
@@ -93,6 +94,35 @@ Each guild is isolated in its own database named `str(guild_id)`. Active collect
 
 > `sos` keeps request windows **in memory only** (per-channel dict) and `threads` stores no
 > persistent data — neither uses a MongoDB collection.
+
+### Shared database: `quiz` ↔ PhoenixQuiz web app
+
+`quiz` is the bot's **only non-per-guild database**. The PhoenixQuiz web app (separate repo and
+host) connects to the same cluster and owns a database named by the cog's `database` config key
+(`phoenixquiz` in production, e.g. `phoenixquiz_dev` locally). The cog reaches it directly with
+`self.bot.mongo.client.get_database(<database>)` instead of `Mongo.get_collection`. The bot and the
+web app never call each other; this collection is their whole interface.
+
+`bot_events` — written by the web app when an admin presses "Post results to Discord":
+```
+{ _id, type: 'post_results', sessionId: str,
+  requestedBy: { discordId: str, displayName: str },
+  createdAt: datetime,
+  status: 'pending' | 'posted' | 'failed' | 'expired',
+  payload: { activityTitle: str, endedAt: datetime, playerCount: int,
+             top: [{ rank: int, displayName: str, avatarUrl: str, score: int }] },  # max 10
+  error?: str, messageUrl?: str, processedAt?: datetime }   # set by the bot
+```
+- The app inserts with `status: 'pending'`; only the bot changes `status` afterwards.
+- On `on_ready` the cog starts one background task that opens a change stream on inserts with
+  `type: 'post_results'`, then drains every existing `pending` event. If the stream drops it is
+  reopened with exponential backoff (5 s → 5 min) and pending events are drained again.
+- Events older than 15 minutes become `expired`. Otherwise the results embed is posted to
+  `resultsChannelId` (in that channel's guild language) and the event becomes `posted` with
+  `messageUrl`; a missing channel, `discord.Forbidden` or `discord.HTTPException` makes it `failed`
+  with `error`. All updates filter on `{_id, status: 'pending'}`, so an event is resolved only once.
+- Config (`config/quiz.json`, global only): `database`, `resultsChannelId`, `quizUrl` (optional
+  link shown in the embed; production value `https://app.phxlgc.com`).
 
 ---
 
