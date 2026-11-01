@@ -1,0 +1,8 @@
+{
+    "global": {
+        "database": "phoenixquiz",
+        "resultsChannelId": null,
+        "quizUrl": null
+    },
+    "guilds": {}
+}

@@ -157,6 +157,15 @@
       "btn_hide_payload": "Hide Payload",
       "btn_delete": "Delete",
       "btn_reroll": "Reroll"
+    },
+    "quiz": {
+      "results_author": "Quiz results",
+      "score": "%{score} pts",
+      "no_players": "Nobody played this round.",
+      "leaderboard": "Leaderboard",
+      "players": "Players",
+      "play_link": "Play on PhoenixQuiz",
+      "ended": "Quiz ended"
     }
   }
 }
