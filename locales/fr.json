@@ -52,7 +52,7 @@
             "emoji_remove_last_error": "Impossible de retirer le dernier émoji starboard accepté. Vous devez en garder au moins un.",
             "emoji_remove_success": "L'émoji %{emoji} a bien été retiré de la liste des émojis starboard acceptés.",
             "emoji_list": "Émojis starboard acceptés : %{emojis}",
-            "legendary_title": "🏆 Message légendaire",
+            "legendary_label": "🏆 Message légendaire",
             "legendary_content": "🏆 **LÉGENDAIRE** · %{emoji} **%{count}**",
             "legendary_stars_error": "Le seuil légendaire ne peut pas être négatif.",
             "legendary_stars_success": "Les messages avec %{count} réactions ou plus sont désormais légendaires.",

@@ -52,7 +52,7 @@
       "emoji_remove_last_error": "Cannot remove the last accepted starboard emoji. You must have at least one accepted emoji.",
       "emoji_remove_success": "Successfully removed %{emoji} from the accepted starboard emojis list.",
       "emoji_list": "Accepted starboard emojis: %{emojis}",
-      "legendary_title": "🏆 Legendary post",
+      "legendary_label": "🏆 Legendary post",
       "legendary_content": "🏆 **LEGENDARY** · %{emoji} **%{count}**",
       "legendary_stars_error": "The legendary threshold cannot be negative.",
       "legendary_stars_success": "Posts with %{count} or more reactions are now legendary.",

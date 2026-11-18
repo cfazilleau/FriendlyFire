@@ -208,21 +208,48 @@ class Starboard(BaseCog):
             return None
         return self.bot.get_channel(int(channel_id))
 
-    def _apply_style(self, embed: discord.Embed, guild_id, star_count: int) -> discord.Embed:
-        """Colors and titles the main starboard embed according to its legendary status."""
-        if self._is_legendary(guild_id, star_count):
-            embed.color = self._legendary_color(guild_id)
-            embed.title = self.bot.t('starboard.legendary_title', guild_id)
-        else:
-            embed.color = discord.Color.gold()
-            embed.title = None
+    def _apply_style(self, embed: discord.Embed, guild_id, star_count: int,
+                     channel_name: str | None = None) -> discord.Embed:
+        """Colors the main starboard embed and writes its footer according to its legendary status.
+
+        Without `channel_name` (restyling a post whose original is gone), the "#channel" part of
+        the embed's current footer is kept.
+        """
+        legendary = self._is_legendary(guild_id, star_count)
+        embed.color = self._legendary_color(guild_id) if legendary else discord.Color.gold()
+        embed.title = None
+        if channel_name is None:
+            footer_text = getattr(embed.footer, 'text', None) or ""
+            last_part = footer_text.split(" • ")[-1]
+            channel_name = last_part[1:] if last_part.startswith("#") else None
+
+        parts = []
+        if legendary:
+            parts.append(self.bot.t('starboard.legendary_label', guild_id))
+        parts.append(f"{self._accepted_emojis(guild_id)[0]} {star_count}")
+        if channel_name:
+            parts.append(f"#{channel_name}")
+        embed.set_footer(text=" • ".join(parts))
         return embed
 
-    def _render_content(self, guild_id, star_count: int) -> str:
+    def _render_content(self, guild_id, star_count: int, links: list[str] = ()) -> str:
+        """Header line, followed by media links that Discord turns into playable embeds."""
         primary_emoji = self._accepted_emojis(guild_id)[0]
         if self._is_legendary(guild_id, star_count):
-            return self.bot.t('starboard.legendary_content', guild_id, emoji=primary_emoji, count=star_count)
-        return f"{primary_emoji} **{star_count}**"
+            header = self.bot.t('starboard.legendary_content', guild_id, emoji=primary_emoji, count=star_count)
+        else:
+            header = f"{primary_emoji} **{star_count}**"
+        return "\n".join([header, *links])
+
+    @staticmethod
+    def _video_links(message: discord.Message) -> list[str]:
+        """Links to the message's videos. Bots cannot put videos in embeds, but Discord plays a
+        video link posted in the message content, so the file is shown without re-uploading."""
+        links = [att.url for att in message.attachments
+                 if att.content_type and att.content_type.startswith('video/')]
+        links += [e.url for e in message.embeds
+                  if e.url and (e.type in ('video', 'gifv') or getattr(e.video, 'url', None))]
+        return list(dict.fromkeys(links))[:5]
 
     async def _star_count(self, messages: list[discord.Message | None], accepted_emojis: list[str]) -> int:
         """Counts distinct non-bot users who starred any of `messages` (the original and its
@@ -253,7 +280,7 @@ class Starboard(BaseCog):
             description=description,
             timestamp=message.created_at,
         )
-        self._apply_style(embed, message.guild.id, star_count)
+        self._apply_style(embed, message.guild.id, star_count, channel_name=message.channel.name)
         embed.set_author(
             name=message.author.display_name,
             icon_url=message.author.display_avatar.url,
@@ -264,8 +291,6 @@ class Starboard(BaseCog):
             if att.content_type and att.content_type.startswith('image/'):
                 embed.set_image(url=att.url)
                 
-        primary_emoji = self._accepted_emojis(message.guild.id)[0]
-        embed.set_footer(text=f"{primary_emoji} {star_count} • #{message.channel.name}")
         return embed
 
     def _sanitize_embed(self, embed: discord.Embed) -> discord.Embed:
@@ -305,10 +330,14 @@ class Starboard(BaseCog):
         base_embed = self._build_embed(message, star_count)
         embeds = [base_embed]
         
-        # Add up to 9 original/link embeds (since Discord allows max 10 embeds per message)
+        # Add up to 9 original/link embeds (since Discord allows max 10 embeds per message).
+        # Video embeds are skipped: their link goes in the content, where Discord plays it.
+        video_links = self._video_links(message)
         for orig_embed in message.embeds:
             if len(embeds) >= 10:
                 break
+            if orig_embed.url and orig_embed.url in video_links:
+                continue
             try:
                 sanitized = self._sanitize_embed(orig_embed)
                 embeds.append(sanitized)
@@ -377,7 +406,7 @@ class Starboard(BaseCog):
             return
 
         embeds = self._get_starboard_embeds(message, star_count)
-        content = self._render_content(payload.guild_id, star_count)
+        content = self._render_content(payload.guild_id, star_count, self._video_links(message))
 
         if existing:
             previous_count = existing.get('star_count')
@@ -475,11 +504,12 @@ class Starboard(BaseCog):
                     failed += 1
                     continue
 
-                content = self._render_content(guild.id, star_count)
                 if original is not None:
+                    content = self._render_content(guild.id, star_count, self._video_links(original))
                     embeds = self._get_starboard_embeds(original, star_count)
                 else:
-                    # Original deleted: restyle the embeds already on the starboard post.
+                    # Original deleted: restyle the post, keeping its media links and embeds.
+                    content = self._render_content(guild.id, star_count, sb_msg.content.split("\n")[1:])
                     embeds = [self._sanitize_embed(e) for e in sb_msg.embeds]
                     if embeds:
                         self._apply_style(embeds[0], guild.id, star_count)
