@@ -232,24 +232,18 @@ class Starboard(BaseCog):
         embed.set_footer(text=" • ".join(parts))
         return embed
 
-    def _render_content(self, guild_id, star_count: int, links: list[str] = ()) -> str:
-        """Header line, followed by media links that Discord turns into playable embeds."""
+    def _render_content(self, guild_id, star_count: int) -> str:
         primary_emoji = self._accepted_emojis(guild_id)[0]
         if self._is_legendary(guild_id, star_count):
-            header = self.bot.t('starboard.legendary_content', guild_id, emoji=primary_emoji, count=star_count)
-        else:
-            header = f"{primary_emoji} **{star_count}**"
-        return "\n".join([header, *links])
+            return self.bot.t('starboard.legendary_content', guild_id, emoji=primary_emoji, count=star_count)
+        return f"{primary_emoji} **{star_count}**"
 
     @staticmethod
-    def _video_links(message: discord.Message) -> list[str]:
-        """Links to the message's videos. Bots cannot put videos in embeds, but Discord plays a
-        video link posted in the message content, so the file is shown without re-uploading."""
-        links = [att.url for att in message.attachments
-                 if att.content_type and att.content_type.startswith('video/')]
-        links += [e.url for e in message.embeds
-                  if e.url and (e.type in ('video', 'gifv') or getattr(e.video, 'url', None))]
-        return list(dict.fromkeys(links))[:5]
+    def _video_frame_url(attachment: discord.Attachment) -> str:
+        """A still frame of a video attachment, served by Discord's media proxy. Bots cannot put
+        playable videos in embeds, so the frame is shown like an image, without re-uploading."""
+        separator = '&' if '?' in attachment.proxy_url else '?'
+        return f"{attachment.proxy_url}{separator}format=jpeg"
 
     async def _star_count(self, messages: list[discord.Message | None], accepted_emojis: list[str]) -> int:
         """Counts distinct non-bot users who starred any of `messages` (the original and its
@@ -267,7 +261,19 @@ class Starboard(BaseCog):
         return len(unique_users)
 
     def _build_embed(self, message: discord.Message, star_count: int) -> discord.Embed:
-        original_text = self.bot.t('starboard.embed_original', message.guild.id)
+        # Show the first picture; failing that, a frame of the first video (and say it's a video).
+        image_url = None
+        is_video = False
+        for att in message.attachments:
+            content_type = att.content_type or ""
+            if content_type.startswith('image/'):
+                image_url, is_video = att.url, False
+                break
+            if content_type.startswith('video/') and image_url is None:
+                image_url, is_video = self._video_frame_url(att), True
+
+        link_key = 'starboard.embed_video' if is_video else 'starboard.embed_original'
+        original_text = self.bot.t(link_key, message.guild.id)
         jump_link = f"[{original_text}]({message.jump_url})"
         
         description = message.content or ""
@@ -286,11 +292,8 @@ class Starboard(BaseCog):
             icon_url=message.author.display_avatar.url,
             url=message.jump_url
         )
-        if message.attachments:
-            att = message.attachments[0]
-            if att.content_type and att.content_type.startswith('image/'):
-                embed.set_image(url=att.url)
-                
+        if image_url:
+            embed.set_image(url=image_url)
         return embed
 
     def _sanitize_embed(self, embed: discord.Embed) -> discord.Embed:
@@ -330,14 +333,10 @@ class Starboard(BaseCog):
         base_embed = self._build_embed(message, star_count)
         embeds = [base_embed]
         
-        # Add up to 9 original/link embeds (since Discord allows max 10 embeds per message).
-        # Video embeds are skipped: their link goes in the content, where Discord plays it.
-        video_links = self._video_links(message)
+        # Add up to 9 original/link embeds (since Discord allows max 10 embeds per message)
         for orig_embed in message.embeds:
             if len(embeds) >= 10:
                 break
-            if orig_embed.url and orig_embed.url in video_links:
-                continue
             try:
                 sanitized = self._sanitize_embed(orig_embed)
                 embeds.append(sanitized)
@@ -406,7 +405,7 @@ class Starboard(BaseCog):
             return
 
         embeds = self._get_starboard_embeds(message, star_count)
-        content = self._render_content(payload.guild_id, star_count, self._video_links(message))
+        content = self._render_content(payload.guild_id, star_count)
 
         if existing:
             previous_count = existing.get('star_count')
@@ -504,12 +503,11 @@ class Starboard(BaseCog):
                     failed += 1
                     continue
 
+                content = self._render_content(guild.id, star_count)
                 if original is not None:
-                    content = self._render_content(guild.id, star_count, self._video_links(original))
                     embeds = self._get_starboard_embeds(original, star_count)
                 else:
-                    # Original deleted: restyle the post, keeping its media links and embeds.
-                    content = self._render_content(guild.id, star_count, sb_msg.content.split("\n")[1:])
+                    # Original deleted: restyle the embeds already on the starboard post.
                     embeds = [self._sanitize_embed(e) for e in sb_msg.embeds]
                     if embeds:
                         self._apply_style(embeds[0], guild.id, star_count)

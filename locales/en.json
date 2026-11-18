@@ -45,6 +45,7 @@
       "min_stars_error": "Minimum stars must be at least 1.",
       "min_stars_success": "Minimum stars set to %{count}.",
       "embed_original": "Original",
+      "embed_video": "▶️ Watch the video",
       "embed_jump": "Jump to message",
       "emoji_already_exists": "Emoji %{emoji} is already in the accepted starboard emojis list.",
       "emoji_add_success": "Successfully added %{emoji} to the accepted starboard emojis list.",
