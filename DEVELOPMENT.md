@@ -64,7 +64,7 @@ cogs/<cog_name>/<cog_name>.py   ← Must define the setup(bot) entry point
 | `invites` | `cogs/invites/invites.py` | One-time invite tracking, join greeting cards, and auto-assigning roles. |
 | `topic` | `cogs/topic/topic.py` | Reaction-based role subscription for specific topic channels. |
 | `quotes` | `cogs/quotes/quotes.py` | Quote submission, voting, pagination, and visual quote-image card generation. |
-| `starboard` | `cogs/starboard/starboard.py` | Monitors ⭐ reactions and posts starred messages in a designated channel. Posts over `legendaryStars` get a distinct "legendary" style, and the top `pinCount` posts are kept pinned in rank order. |
+| `starboard` | `cogs/starboard/starboard.py` | Monitors ⭐ reactions and posts starred messages in a designated channel. Stars added on a starboard post count toward the original (each user once). Posts over `legendaryStars` get a distinct "legendary" style, and the top `pinCount` posts are kept pinned in rank order. |
 | `locale` | `cogs/locale/locale.py` | Admin commands to set and query the preferred guild language. |
 | `sos` | `cogs/sos/sos.py` | Anonymous `/sos` distress reports; a second report inside the time window applies slowmode and alerts moderators. |
 | `threads` | `cogs/threads/threads.py` | "Move to Thread" message command — relocates a conversation into a new thread. |

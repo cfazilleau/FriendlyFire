@@ -224,14 +224,19 @@ class Starboard(BaseCog):
             return self.bot.t('starboard.legendary_content', guild_id, emoji=primary_emoji, count=star_count)
         return f"{primary_emoji} **{star_count}**"
 
-    async def _star_count(self, message: discord.Message, accepted_emojis: list[str]) -> int:
+    async def _star_count(self, messages: list[discord.Message | None], accepted_emojis: list[str]) -> int:
+        """Counts distinct non-bot users who starred any of `messages` (the original and its
+        starboard post), so starring both only counts once."""
         unique_users = set()
-        for reaction in message.reactions:
-            emoji_str = str(reaction.emoji)
-            if emoji_str in accepted_emojis:
-                async for user in reaction.users():
-                    if not user.bot:
-                        unique_users.add(user.id)
+        for message in messages:
+            if message is None:
+                continue
+            for reaction in message.reactions:
+                emoji_str = str(reaction.emoji)
+                if emoji_str in accepted_emojis:
+                    async for user in reaction.users():
+                        if not user.bot:
+                            unique_users.add(user.id)
         return len(unique_users)
 
     def _build_embed(self, message: discord.Message, star_count: int) -> discord.Embed:
@@ -320,42 +325,54 @@ class Starboard(BaseCog):
         if str(payload.emoji) not in accepted_emojis:
             return
 
-        starboard_channel_id = self.config.get('starboardChannel', payload.guild_id)
-        if not starboard_channel_id:
+        starboard_channel = self._get_starboard_channel(payload.guild_id)
+        if starboard_channel is None:
             return
 
-        if str(payload.channel_id) == str(starboard_channel_id):
-            return
+        collection: AsyncCollection[StarboardEntry] = await self.bot.mongo.get_collection(payload.guild_id, "starboard")
 
-        channel = self.bot.get_channel(payload.channel_id)
+        if payload.channel_id == starboard_channel.id:
+            # A star on a starboard post counts toward its original message.
+            existing = await collection.find_one({"starboard_message_id": str(payload.message_id)})
+            if existing is None:
+                return
+            channel = self.bot.get_channel(int(existing['channel_id']))
+            original_id = int(existing['original_message_id'])
+        else:
+            channel = self.bot.get_channel(payload.channel_id)
+            original_id = payload.message_id
+            existing = await collection.find_one({"original_message_id": str(original_id)})
+
         if channel is None:
             return
 
         try:
-            message = await channel.fetch_message(payload.message_id)
+            message = await channel.fetch_message(original_id)
         except discord.HTTPException:
             return
 
-        star_count = await self._star_count(message, accepted_emojis)
+        sb_msg: discord.Message | None = None
+        if existing:
+            try:
+                sb_msg = await starboard_channel.fetch_message(int(existing['starboard_message_id']))
+            except discord.NotFound:
+                sb_msg = None  # deleted by hand: re-posted below if still above the threshold
+            except discord.HTTPException:
+                return
+
+        star_count = await self._star_count([message, sb_msg], accepted_emojis)
         min_stars = self.config.get('minStars', payload.guild_id) or 3
         self.log(f"Reaction change detected for message {message.id} in #{channel.name}. Star count: {star_count}, Minimum stars required: {min_stars}", message.guild)
 
-        collection: AsyncCollection[StarboardEntry] = await self.bot.mongo.get_collection(payload.guild_id, "starboard")
-        existing = await collection.find_one({"original_message_id": str(payload.message_id)})
-
-        starboard_channel = self.bot.get_channel(int(starboard_channel_id))
-        if starboard_channel is None:
-            return
-
         if star_count < min_stars:
             if existing:
-                try:
-                    sb_msg = await starboard_channel.fetch_message(int(existing['starboard_message_id']))
-                    await sb_msg.delete()
-                    self.log(f"Message {message.id} fell below minStars ({min_stars}) with {star_count} stars. Deleted starboard entry.", message.guild)
-                except discord.HTTPException:
-                    pass
-                await collection.delete_one({"original_message_id": str(payload.message_id)})
+                if sb_msg is not None:
+                    try:
+                        await sb_msg.delete()
+                        self.log(f"Message {message.id} fell below minStars ({min_stars}) with {star_count} stars. Deleted starboard entry.", message.guild)
+                    except discord.HTTPException:
+                        pass
+                await collection.delete_one({"original_message_id": str(original_id)})
                 await self._sync_pins(payload.guild_id, starboard_channel)
             return
 
@@ -367,19 +384,24 @@ class Starboard(BaseCog):
             if (previous_count is not None and self._is_legendary(payload.guild_id, star_count)
                     and not self._is_legendary(payload.guild_id, previous_count)):
                 self.log(f"Message {message.id} in #{channel.name} became legendary with {star_count} stars.", message.guild)
-            try:
-                sb_msg = await starboard_channel.fetch_message(int(existing['starboard_message_id']))
-                await sb_msg.edit(content=content, embeds=embeds)
+            edited = False
+            if sb_msg is not None:
+                try:
+                    await sb_msg.edit(content=content, embeds=embeds)
+                    edited = True
+                except discord.HTTPException:
+                    pass
+            if edited:
                 await collection.update_one(
-                    {"original_message_id": str(payload.message_id)},
+                    {"original_message_id": str(original_id)},
                     {"$set": {"star_count": star_count}},
                 )
                 self.log(f"Updated starboard entry for message {message.id} in #{channel.name} to {star_count} stars.", message.guild)
-            except discord.HTTPException:
+            else:
                 try:
                     sb_msg = await starboard_channel.send(content=content, embeds=embeds)
                     await collection.update_one(
-                        {"original_message_id": str(payload.message_id)},
+                        {"original_message_id": str(original_id)},
                         {"$set": {"starboard_message_id": str(sb_msg.id), "star_count": star_count}},
                     )
                     self.log(f"Re-posted starboard entry for message {message.id} in #{channel.name} with {star_count} stars (previous message not found/deleted).", message.guild)
@@ -389,9 +411,9 @@ class Starboard(BaseCog):
             try:
                 sb_msg = await starboard_channel.send(content=content, embeds=embeds)
                 await collection.insert_one(StarboardEntry(
-                    original_message_id=str(payload.message_id),
+                    original_message_id=str(original_id),
                     starboard_message_id=str(sb_msg.id),
-                    channel_id=str(payload.channel_id),
+                    channel_id=str(channel.id),
                     author_id=message.author.id,
                     star_count=star_count,
                 ))
@@ -405,7 +427,7 @@ class Starboard(BaseCog):
                              only: Callable[[int], bool] | None = None) -> tuple[int, int, int, int] | None:
         """Re-render existing starboard posts so they match the current legendary settings.
 
-        `recount` re-reads reactions on every original message; otherwise the stored count is
+        `recount` re-reads reactions on every original message and its starboard post; otherwise the stored count is
         used (entries created before star counts were stored are always recounted).
         `only` filters entries by their stored star count (ignored when recounting; entries
         without a stored count are always re-rendered). Entries whose starboard post was deleted
@@ -436,22 +458,28 @@ class Starboard(BaseCog):
                 except discord.HTTPException:
                     original = None
 
-            if original is not None and (recount or star_count is None):
-                star_count = await self._star_count(original, accepted_emojis)
-            if star_count is None:
-                # Original is gone and the count was never stored: nothing reliable to show.
-                self.log(f"Cannot refresh starboard post {entry['starboard_message_id']}: original message is gone and no star count was stored.", guild)
-                failed += 1
-                continue
-
-            content = self._render_content(guild.id, star_count)
+            needs_count = original is not None and (recount or star_count is None)
             try:
+                # The full starboard post is needed to read its reactions or reuse its embeds.
+                sb_id = int(entry['starboard_message_id'])
+                if needs_count or original is None:
+                    sb_msg = await starboard_channel.fetch_message(sb_id)
+                else:
+                    sb_msg = starboard_channel.get_partial_message(sb_id)
+
+                if needs_count:
+                    star_count = await self._star_count([original, sb_msg], accepted_emojis)
+                if star_count is None:
+                    # Original is gone and the count was never stored: nothing reliable to show.
+                    self.log(f"Cannot refresh starboard post {sb_id}: original message is gone and no star count was stored.", guild)
+                    failed += 1
+                    continue
+
+                content = self._render_content(guild.id, star_count)
                 if original is not None:
                     embeds = self._get_starboard_embeds(original, star_count)
-                    sb_msg = starboard_channel.get_partial_message(int(entry['starboard_message_id']))
                 else:
                     # Original deleted: restyle the embeds already on the starboard post.
-                    sb_msg = await starboard_channel.fetch_message(int(entry['starboard_message_id']))
                     embeds = [self._sanitize_embed(e) for e in sb_msg.embeds]
                     if embeds:
                         self._apply_style(embeds[0], guild.id, star_count)
