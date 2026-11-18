@@ -63,7 +63,7 @@
             "pin_count_success": "Les %{count} meilleurs messages du starboard seront désormais épinglés.",
             "pin_count_disabled": "Les messages du starboard ne seront plus épinglés.",
             "no_channel": "Aucun salon starboard n'est configuré. Utilisez d'abord `/starboard setchannel`.",
-            "refresh_summary": "Starboard actualisé : %{updated} messages mis à jour (%{legendary} légendaires), %{failed} en échec."
+            "refresh_summary": "Starboard actualisé : %{updated} messages mis à jour (%{legendary} légendaires), %{removed} messages supprimés nettoyés, %{failed} en échec."
         },
         "threads": {
             "non_guild": "Cette commande ne peut être utilisée que dans un serveur.",

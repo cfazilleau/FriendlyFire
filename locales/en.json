@@ -63,7 +63,7 @@
       "pin_count_success": "The top %{count} starboard posts will now be pinned.",
       "pin_count_disabled": "Starboard posts will no longer be pinned.",
       "no_channel": "No starboard channel is configured. Use `/starboard setchannel` first.",
-      "refresh_summary": "Starboard refreshed: %{updated} posts updated (%{legendary} legendary), %{failed} failed."
+      "refresh_summary": "Starboard refreshed: %{updated} posts updated (%{legendary} legendary), %{removed} deleted posts cleaned up, %{failed} failed."
     },
     "threads": {
       "non_guild": "This command can only be used in a server.",

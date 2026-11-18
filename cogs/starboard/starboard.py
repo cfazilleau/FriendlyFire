@@ -118,7 +118,7 @@ class Starboard(BaseCog):
         key = 'starboard.legendary_stars_disabled' if count == 0 else 'starboard.legendary_stars_success'
         message = self.bot.t(key, ctx.guild_id, count=count)
         if result is not None:
-            message += "\n" + self.bot.t('starboard.refresh_summary', ctx.guild_id, updated=result[0], legendary=result[1], failed=result[2])
+            message += "\n" + self._refresh_summary(ctx.guild_id, result)
         await ctx.respond(message)
 
     @starboardGroup.command(name="setlegendarycolor", description="Set the embed color of legendary posts")
@@ -136,7 +136,7 @@ class Starboard(BaseCog):
         result = await self._refresh_posts(ctx.guild, recount=False, only=lambda stars: self._is_legendary(ctx.guild_id, stars))
         message = self.bot.t('starboard.legendary_color_success', ctx.guild_id, color=normalized)
         if result is not None:
-            message += "\n" + self.bot.t('starboard.refresh_summary', ctx.guild_id, updated=result[0], legendary=result[1], failed=result[2])
+            message += "\n" + self._refresh_summary(ctx.guild_id, result)
         await ctx.respond(message)
 
     @starboardGroup.command(name="setpins", description="Set how many top starboard posts are pinned (0 to disable)")
@@ -162,9 +162,14 @@ class Starboard(BaseCog):
         if result is None:
             await ctx.respond(self.bot.t('starboard.no_channel', ctx.guild_id))
             return
-        await ctx.respond(self.bot.t('starboard.refresh_summary', ctx.guild_id, updated=result[0], legendary=result[1], failed=result[2]))
+        await ctx.respond(self._refresh_summary(ctx.guild_id, result))
 
     # --- Helpers -----------------------------------------------------------------------------
+
+    def _refresh_summary(self, guild_id, result: tuple[int, int, int, int]) -> str:
+        updated, legendary, removed, failed = result
+        return self.bot.t('starboard.refresh_summary', guild_id,
+                          updated=updated, legendary=legendary, removed=removed, failed=failed)
 
     def _accepted_emojis(self, guild_id) -> list[str]:
         return self.config.get('starboardEmoji', guild_id) or ["⭐"]
@@ -397,14 +402,15 @@ class Starboard(BaseCog):
         await self._sync_pins(payload.guild_id, starboard_channel)
 
     async def _refresh_posts(self, guild: discord.Guild, recount: bool,
-                             only: Callable[[int], bool] | None = None) -> tuple[int, int, int] | None:
+                             only: Callable[[int], bool] | None = None) -> tuple[int, int, int, int] | None:
         """Re-render existing starboard posts so they match the current legendary settings.
 
         `recount` re-reads reactions on every original message; otherwise the stored count is
         used (entries created before star counts were stored are always recounted).
         `only` filters entries by their stored star count (ignored when recounting; entries
-        without a stored count are always re-rendered). Returns (updated, legendary, failed),
-        or None when no starboard channel is configured.
+        without a stored count are always re-rendered). Entries whose starboard post was deleted
+        are removed. Returns (updated, legendary, removed, failed), or None when no starboard
+        channel is configured.
         """
         starboard_channel = self._get_starboard_channel(guild.id)
         if starboard_channel is None:
@@ -413,7 +419,7 @@ class Starboard(BaseCog):
         collection: AsyncCollection[StarboardEntry] = await self.bot.mongo.get_collection(guild.id, "starboard")
         entries = await collection.find({}).to_list(None)
         accepted_emojis = self._accepted_emojis(guild.id)
-        updated = legendary = failed = 0
+        updated = legendary = removed = failed = 0
         self.log(f"Refreshing {len(entries)} starboard posts (recount={recount}).", guild)
 
         for entry in entries:
@@ -449,6 +455,12 @@ class Starboard(BaseCog):
                     if embeds:
                         self._apply_style(embeds[0], guild.id, star_count)
                 await sb_msg.edit(content=content, embeds=embeds)
+            except discord.NotFound:
+                # The starboard post was deleted by hand: forget it (a new reaction re-posts it).
+                await collection.delete_one({"_id": entry["_id"]})
+                self.log(f"Starboard post {entry['starboard_message_id']} no longer exists; removed its entry.", guild)
+                removed += 1
+                continue
             except discord.HTTPException as e:
                 self.log(f"Failed to refresh starboard post {entry['starboard_message_id']}: {e}", guild)
                 failed += 1
@@ -460,56 +472,68 @@ class Starboard(BaseCog):
                 legendary += 1
 
         await self._sync_pins(guild.id, starboard_channel, force=True)
-        self.log(f"Starboard refresh done: {updated} updated, {legendary} legendary, {failed} failed.", guild)
-        return updated, legendary, failed
+        self.log(f"Starboard refresh done: {updated} updated, {legendary} legendary, {removed} removed, {failed} failed.", guild)
+        return updated, legendary, removed, failed
 
     async def _sync_pins(self, guild_id: int, starboard_channel: discord.TextChannel, force: bool = False):
         """Keep the top `pinCount` starboard posts pinned, ranked #1 on top of the pin list."""
         lock = self._pin_locks.setdefault(guild_id, asyncio.Lock())
         async with lock:
-            desired: list[int] = []
-            count = self._pin_count(guild_id)
-            if count > 0:
-                collection: AsyncCollection[StarboardEntry] = await self.bot.mongo.get_collection(guild_id, "starboard")
-                cursor = collection.find({"star_count": {"$exists": True}}).sort([("star_count", -1), ("_id", 1)]).limit(count)
-                desired = [int(doc['starboard_message_id']) async for doc in cursor]
+            collection: AsyncCollection[StarboardEntry] = await self.bot.mongo.get_collection(guild_id, "starboard")
+            # Retry a few times: posts deleted by hand are dropped and the next ones take their place.
+            for _ in range(3):
+                desired: list[int] = []
+                count = self._pin_count(guild_id)
+                if count > 0:
+                    cursor = collection.find({"star_count": {"$exists": True}}).sort([("star_count", -1), ("_id", 1)]).limit(count)
+                    desired = [int(doc['starboard_message_id']) async for doc in cursor]
 
-            if not force and self._last_pinned.get(guild_id) == desired:
-                return
+                if not force and self._last_pinned.get(guild_id) == desired:
+                    return
 
-            try:
-                pins = await starboard_channel.pins()
-            except discord.HTTPException as e:
-                self.log(f"Failed to read starboard pins: {e}", guild_id)
-                return
+                try:
+                    pins = await starboard_channel.pins()
+                except discord.HTTPException as e:
+                    self.log(f"Failed to read starboard pins: {e}", guild_id)
+                    return
 
-            # Pins are returned most recently pinned first; only touch the bot's own posts.
-            current = [m.id for m in pins if m.author.id == self.bot.user.id]
-            if current == desired:
-                self._last_pinned[guild_id] = desired
-                return
+                # Pins are returned most recently pinned first; only touch the bot's own posts.
+                current = [m.id for m in pins if m.author.id == self.bot.user.id]
+                if current == desired:
+                    self._last_pinned[guild_id] = desired
+                    return
 
-            try:
-                for message_id in current:
-                    if message_id not in desired:
-                        await self._set_pinned(starboard_channel, message_id, False)
-                kept = [m for m in current if m in desired]
+                missing: list[int] = []
+                try:
+                    for message_id in current:
+                        if message_id not in desired:
+                            await self._set_pinned(starboard_channel, message_id, False)
+                    kept = [m for m in current if m in desired]
 
-                # Discord lists the most recently pinned message first, so find the smallest
-                # prefix of the ranking to (re)pin such that the untouched pins already sit
-                # below it in the right order, then pin that prefix from last to first.
-                split = next(k for k in range(len(desired) + 1)
-                             if [m for m in kept if m not in desired[:k]] == desired[k:])
-                for message_id in reversed(desired[:split]):
-                    if message_id in kept:
-                        await self._set_pinned(starboard_channel, message_id, False)
-                    await self._set_pinned(starboard_channel, message_id, True)
-            except discord.Forbidden:
-                self.log("Missing permission to pin messages in the starboard channel.", guild_id)
-            self._last_pinned[guild_id] = desired
-            self.log(f"Starboard pins updated: {desired}", guild_id)
+                    # Discord lists the most recently pinned message first, so find the smallest
+                    # prefix of the ranking to (re)pin such that the untouched pins already sit
+                    # below it in the right order, then pin that prefix from last to first.
+                    split = next(k for k in range(len(desired) + 1)
+                                 if [m for m in kept if m not in desired[:k]] == desired[k:])
+                    for message_id in reversed(desired[:split]):
+                        if message_id in kept:
+                            await self._set_pinned(starboard_channel, message_id, False)
+                        if not await self._set_pinned(starboard_channel, message_id, True):
+                            missing.append(message_id)
+                except discord.Forbidden:
+                    self.log("Missing permission to pin messages in the starboard channel.", guild_id)
 
-    async def _set_pinned(self, channel: discord.TextChannel, message_id: int, pinned: bool):
+                if not missing:
+                    self._last_pinned[guild_id] = desired
+                    self.log(f"Starboard pins updated: {desired}", guild_id)
+                    return
+
+                await collection.delete_many({"starboard_message_id": {"$in": [str(m) for m in missing]}})
+                self.log(f"Removed {len(missing)} starboard entries whose posts no longer exist: {missing}", guild_id)
+                force = True
+
+    async def _set_pinned(self, channel: discord.TextChannel, message_id: int, pinned: bool) -> bool:
+        """Pins or unpins a message. Returns False when the message no longer exists."""
         partial = channel.get_partial_message(message_id)
         try:
             if pinned:
@@ -517,7 +541,8 @@ class Starboard(BaseCog):
             else:
                 await partial.unpin(reason="Starboard top posts")
         except discord.NotFound:
-            pass
+            return False
+        return True
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
