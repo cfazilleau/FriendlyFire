@@ -440,6 +440,7 @@ class Starboard(BaseCog):
                 star_count = await self._star_count(original, accepted_emojis)
             if star_count is None:
                 # Original is gone and the count was never stored: nothing reliable to show.
+                self.log(f"Cannot refresh starboard post {entry['starboard_message_id']}: original message is gone and no star count was stored.", guild)
                 failed += 1
                 continue
 
