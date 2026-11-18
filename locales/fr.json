@@ -51,7 +51,19 @@
             "emoji_not_found": "L'émoji %{emoji} n'est pas dans la liste des émojis starboard acceptés.",
             "emoji_remove_last_error": "Impossible de retirer le dernier émoji starboard accepté. Vous devez en garder au moins un.",
             "emoji_remove_success": "L'émoji %{emoji} a bien été retiré de la liste des émojis starboard acceptés.",
-            "emoji_list": "Émojis starboard acceptés : %{emojis}"
+            "emoji_list": "Émojis starboard acceptés : %{emojis}",
+            "legendary_title": "🏆 Message légendaire",
+            "legendary_content": "🏆 **LÉGENDAIRE** · %{emoji} **%{count}**",
+            "legendary_stars_error": "Le seuil légendaire ne peut pas être négatif.",
+            "legendary_stars_success": "Les messages avec %{count} réactions ou plus sont désormais légendaires.",
+            "legendary_stars_disabled": "Les messages légendaires sont désormais désactivés.",
+            "legendary_color_error": "`%{color}` n'est pas une couleur hexadécimale valide. Utilisez un format comme `#FF8C00`.",
+            "legendary_color_success": "Couleur des messages légendaires configurée sur `%{color}`.",
+            "pin_count_error": "Le nombre de messages épinglés doit être compris entre 0 et %{max}.",
+            "pin_count_success": "Les %{count} meilleurs messages du starboard seront désormais épinglés.",
+            "pin_count_disabled": "Les messages du starboard ne seront plus épinglés.",
+            "no_channel": "Aucun salon starboard n'est configuré. Utilisez d'abord `/starboard setchannel`.",
+            "refresh_summary": "Starboard actualisé : %{updated} messages mis à jour (%{legendary} légendaires), %{failed} en échec."
         },
         "threads": {
             "non_guild": "Cette commande ne peut être utilisée que dans un serveur.",

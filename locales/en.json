@@ -51,7 +51,19 @@
       "emoji_not_found": "Emoji %{emoji} is not in the accepted starboard emojis list.",
       "emoji_remove_last_error": "Cannot remove the last accepted starboard emoji. You must have at least one accepted emoji.",
       "emoji_remove_success": "Successfully removed %{emoji} from the accepted starboard emojis list.",
-      "emoji_list": "Accepted starboard emojis: %{emojis}"
+      "emoji_list": "Accepted starboard emojis: %{emojis}",
+      "legendary_title": "🏆 Legendary post",
+      "legendary_content": "🏆 **LEGENDARY** · %{emoji} **%{count}**",
+      "legendary_stars_error": "The legendary threshold cannot be negative.",
+      "legendary_stars_success": "Posts with %{count} or more reactions are now legendary.",
+      "legendary_stars_disabled": "Legendary posts are now disabled.",
+      "legendary_color_error": "`%{color}` is not a valid hex color. Use a format like `#FF8C00`.",
+      "legendary_color_success": "Legendary posts color set to `%{color}`.",
+      "pin_count_error": "The number of pinned posts must be between 0 and %{max}.",
+      "pin_count_success": "The top %{count} starboard posts will now be pinned.",
+      "pin_count_disabled": "Starboard posts will no longer be pinned.",
+      "no_channel": "No starboard channel is configured. Use `/starboard setchannel` first.",
+      "refresh_summary": "Starboard refreshed: %{updated} posts updated (%{legendary} legendary), %{failed} failed."
     },
     "threads": {
       "non_guild": "This command can only be used in a server.",
