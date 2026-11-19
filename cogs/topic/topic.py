@@ -1,6 +1,6 @@
 import asyncio
 import io
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 import aiohttp
 import discord
@@ -15,6 +15,7 @@ class TopicEntry(TypedDict):
     channelId: str
     roleId: str
     roleName: str
+    topicChannelId: NotRequired[str]
 
 class Topic(BaseCog):
     def __init__(self, bot: FriendlyFire):
@@ -45,9 +46,10 @@ class Topic(BaseCog):
     @option(name="name", description="name of the new topic", required=True)
     @option(name="type", parameter_name="topic_type", description="type of topic", required=True, autocomplete=get_topic_types)
     @option(name="image", description="URL of an image for this topic", required=False)
-    async def create_topic(self, ctx: discord.ApplicationContext, name: str, topic_type: str, image: str = None):
+    @option(name="channel", parameter_name="create_channel", description="also create a dedicated channel for this topic", required=False)
+    async def create_topic(self, ctx: discord.ApplicationContext, name: str, topic_type: str, image: str = None, create_channel: bool = False):
         await ctx.defer(ephemeral=True)
-        self.log(f"Topic create command issued by {ctx.author.name}. Name: '{name}', Type: '{topic_type}', Image: {image}", ctx.guild)
+        self.log(f"Topic create command issued by {ctx.author.name}. Name: '{name}', Type: '{topic_type}', Image: {image}, Channel: {create_channel}", ctx.guild)
 
         topic_types = self.config.get('topicTypes', ctx.guild_id) or {}
         if topic_type not in topic_types:
@@ -61,8 +63,26 @@ class Topic(BaseCog):
         color = discord.Color(int(type_descriptor["color"], 16))
         role = await ctx.guild.create_role(name=name, color=color, mentionable=True)
 
+        # optionally create a dedicated channel, visible only to subscribers of the topic role
+        topic_channel = None
+        if create_channel:
+            try:
+                overwrites = {
+                    ctx.guild.default_role: discord.PermissionOverwrite(view_channel=False),
+                    role: discord.PermissionOverwrite(view_channel=True),
+                }
+                category = ctx.channel.category if isinstance(ctx.channel, discord.TextChannel) else None
+                topic_channel = await ctx.guild.create_text_channel(name=name, category=category, overwrites=overwrites)
+                self.log(f"Created dedicated channel '{topic_channel.name}' for topic '{name}'", ctx.guild)
+            except (discord.Forbidden, discord.HTTPException):
+                self.log(f"Failed to create channel for topic '{name}', rolling back role", ctx.guild)
+                await role.delete()
+                await ctx.respond(self.bot.t('topic.channel_create_failed', ctx.guild_id))
+                return
+
         embed = discord.Embed(
             title=f"{name} {type_descriptor['emoji']} {type_descriptor['text']}",
+            description=self.bot.t('topic.channel_description', ctx.guild_id, channel=topic_channel.mention) if topic_channel else None,
             color=color,
             footer=discord.embeds.EmbedFooter(text=self.bot.t('topic.subscribe_footer', ctx.guild_id)),
         )
@@ -76,13 +96,17 @@ class Topic(BaseCog):
 
         await message.add_reaction("✅")
 
-        collection: AsyncCollection[TopicEntry] = await self.bot.mongo.get_collection(ctx.guild_id, "topics")
-        await collection.insert_one(TopicEntry(
+        entry = TopicEntry(
             messageId=str(message.id),
             channelId=str(message.channel.id),
             roleId=str(role.id),
             roleName=role.name
-        ))
+        )
+        if topic_channel is not None:
+            entry["topicChannelId"] = str(topic_channel.id)
+
+        collection: AsyncCollection[TopicEntry] = await self.bot.mongo.get_collection(ctx.guild_id, "topics")
+        await collection.insert_one(entry)
         self.log(f"Successfully created role '{role.name}' and message for topic '{name}'", ctx.guild)
         await ctx.respond(self.bot.t('topic.create_success', ctx.guild_id))
 
@@ -124,8 +148,13 @@ class Topic(BaseCog):
         else:
             await role.edit(name=name)
 
+        # keep the channel mention in the message if a dedicated channel exists
+        topic_channel_id = topic.get("topicChannelId")
+        description = self.bot.t('topic.channel_description', ctx.guild_id, channel=f"<#{topic_channel_id}>") if topic_channel_id else None
+
         embed = discord.Embed(
             title=f"{name} {type_descriptor['emoji']} {type_descriptor['text']}",
+            description=description,
             color=color,
             footer=discord.embeds.EmbedFooter(text=self.bot.t('topic.subscribe_footer', ctx.guild_id)),
         )
@@ -177,7 +206,15 @@ class Topic(BaseCog):
 
         await collection.delete_one({"_id": topic["_id"]})
         await role.delete()
-        await ctx.respond(self.bot.t('topic.delete_success', ctx.guild_id))
+
+        # the dedicated topic channel is intentionally NOT deleted, only its
+        # message and role are removed. Let the admin know it was kept.
+        topic_channel_id = topic.get("topicChannelId")
+        if topic_channel_id:
+            self.log(f"Topic deleted, keeping dedicated channel {topic_channel_id}", ctx.guild)
+            await ctx.respond(self.bot.t('topic.delete_success_channel_kept', ctx.guild_id, channel=f"<#{topic_channel_id}>"))
+        else:
+            await ctx.respond(self.bot.t('topic.delete_success', ctx.guild_id))
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):

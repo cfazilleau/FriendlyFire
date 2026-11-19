@@ -87,7 +87,7 @@ Stateful Discord components (like dropdowns and buttons) are organized alongside
 Each guild is isolated in its own database named `str(guild_id)`. Active collections include:
 - `greetings` — `{ greeting: str }`
 - `invites` — `{ author_id: int, code: str, expires: int }`
-- `topics` — `{ messageId: str, channelId: str, roleId: str, roleName: str }`
+- `topics` — `{ messageId: str, channelId: str, roleId: str, roleName: str, topicChannelId?: str }` (`topicChannelId` is set only when the topic was created with a dedicated channel)
 - `quotes` — `{ quote: str, author: str, submitted_by: str, upvoted_by: list[str], downvoted_by: list[str], ... }`
 - `starboard` — `{ original_message_id: str, starboard_message_id: str, channel_id: str, author_id: int, star_count: int }` (`star_count` is missing on legacy entries until `/starboard refresh` or the next reaction)
 
