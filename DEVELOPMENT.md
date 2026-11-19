@@ -64,7 +64,7 @@ cogs/<cog_name>/<cog_name>.py   ← Must define the setup(bot) entry point
 | `invites` | `cogs/invites/invites.py` | One-time invite tracking, join greeting cards, and auto-assigning roles. |
 | `topic` | `cogs/topic/topic.py` | Reaction-based role subscription for specific topic channels. |
 | `quotes` | `cogs/quotes/quotes.py` | Quote submission, voting, pagination, and visual quote-image card generation. |
-| `starboard` | `cogs/starboard/starboard.py` | Monitors ⭐ reactions and posts starred messages in a designated channel. |
+| `starboard` | `cogs/starboard/starboard.py` | Monitors ⭐ reactions and posts starred messages in a designated channel. Stars added on a starboard post count toward the original (each user once). Posts over `legendaryStars` get a distinct "legendary" style, and the top `pinCount` posts are kept pinned in rank order. |
 | `locale` | `cogs/locale/locale.py` | Admin commands to set and query the preferred guild language. |
 | `sos` | `cogs/sos/sos.py` | Anonymous `/sos` distress reports; a second report inside the time window applies slowmode and alerts moderators. |
 | `threads` | `cogs/threads/threads.py` | "Move to Thread" message command — relocates a conversation into a new thread. |
@@ -89,7 +89,7 @@ Each guild is isolated in its own database named `str(guild_id)`. Active collect
 - `invites` — `{ author_id: int, code: str, expires: int }`
 - `topics` — `{ messageId: str, channelId: str, roleId: str, roleName: str }`
 - `quotes` — `{ quote: str, author: str, submitted_by: str, upvoted_by: list[str], downvoted_by: list[str], ... }`
-- `starboard` — `{ original_message_id: int, starboard_message_id: int, star_count: int }`
+- `starboard` — `{ original_message_id: str, starboard_message_id: str, channel_id: str, author_id: int, star_count: int }` (`star_count` is missing on legacy entries until `/starboard refresh` or the next reaction)
 
 > `sos` keeps request windows **in memory only** (per-channel dict) and `threads` stores no
 > persistent data — neither uses a MongoDB collection.
